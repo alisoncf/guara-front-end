@@ -23,33 +23,46 @@ if (is_dir($pastaFiles)) {
 			$arquivo = $pastaFiles . $file;
 			list($id, $ext) = explode('.', $file);
 			if ($fh = fopen($arquivo, 'r')) {
+				$cpf_nao_informado = '';
 				$cpf_nao_encontrado = '';
+				$cpf_duplicado = '';
+				$email_ja_cadastrado = '';
 				while (!feof($fh)) {
-					$line = fgets($fh);
-					if (strlen($line) == 0) {
+					$linhaArranjo = fgetcsv($fh);
+					if(!isset($linhaArranjo[10])){
+						Util::shellDebug($linhaArranjo);
+						//linha incompleta
 						continue;
 					}
-					$linhaArranjo = explode(',', $line);
-					if (!is_numeric($linhaArranjo[10])) {
-						$cpf_nao_encontrado .= $cpf_nao_encontrado == '' ? (implode(',', $linhaArranjo)) : ("\n" . implode(',', $linhaArranjo));
+					$cpf = Conversor::somenteNumero($linhaArranjo[10]);
+					if (!is_numeric($cpf)) {
+						$cpf_nao_informado.= $cpf_nao_informado == '' ? (implode(',', $linhaArranjo)) : ("\n" . implode(',', $linhaArranjo));
 						continue;
-					} 
-					$cpf = $linhaArranjo[10];
+					}
 					$pessoa = getPessoa($cpf);
-					if (count($pessoa) > 0) {
-						$sqlGeral .= "
-									INSERT INTO ueg.vinculacao_administrativo (ref_motivo_inicio, aud_usrcpf, dt_criacao, ref_departamento, fk_vinculos, dt_inicio) 
-									VALUES(, '86458256191', now(), $id, {$pessoa[0]['id']}, '');";
-					} else {
-						
-					}
+					if (count($pessoa) == 1) {
+						$emailUeg = trim($linhaArranjo[2]);
+						if($emailUeg == trim($pessoa[0]['email'])){
+							$email_ja_cadastrado.= $email_ja_cadastrado == '' ? (implode(',', $linhaArranjo)) : ("\n" . implode(',', $linhaArranjo));
+						}else {
+							$sqlGeral .= "update ueg.pessoas_fisicas set email_alt = email, email = '$emailUeg' where id = '{$pessoa[0]['id']}'; \n";
+						}						
+					}elseif (count($pessoa) > 1) {
+						$cpf_duplicado.= $cpf_duplicado == '' ? (implode(',', $linhaArranjo)) : ("\n" . implode(',', $linhaArranjo));
+					} else{
+						$cpf_nao_encontrado.= $cpf_nao_encontrado == '' ? (implode(',', $linhaArranjo)) : ("\n" . implode(',', $linhaArranjo));
+					} 
 				}
 				fclose($fh);
 			}
 		}
 		closedir($dh);
+		criarArquivo($pastaLogs.'cpf_nao_informado.csv', $cpf_nao_informado);
 		criarArquivo($pastaLogs.'cpf_nao_encontrado.csv', $cpf_nao_encontrado);
-		Debug::tail($sqlGeral, $pastaLogs . "log.sql");
+		criarArquivo($pastaLogs.'cpf_duplicado.csv', $cpf_duplicado);
+		criarArquivo($pastaLogs.'email_ja_cadastrado.csv', $email_ja_cadastrado);
+		criarArquivo($pastaLogs.'sqlGeral.sql', $sqlGeral);		
+//		Debug::tail($sqlGeral, $pastaLogs . "log.sql");
 //		TDG::getInstance()->genericQuery($sqlGeral);
 	}
 }
@@ -57,15 +70,21 @@ $fim = Util::getElapsedExecutionTime($start);
 echo "Fim:    " . date('d-m-Y H:i:s', $start + $fim);
 echo "\n";
 
+
+function printTime($start) {
+	$fim = Util::getElapsedExecutionTime($start);
+	echo "Tempo:    " . date('d-m-Y H:i:s', $start + $fim)."\n";
+}
+
 function getPessoa(string $cpf) {
 	$cpfFormatado = Conversor::somenteNumero($cpf);
-	$sql = "select distinct pf.nome, pf.cpf, v.id
-			from ueg.vinculos v 
-			join ueg.pessoas_fisicas pf on v.ref_pessoa = pf.id
-			join ueg.lotacoes l on l.fk_vinculos = v.id and (l.dt_fim is null or l.dt_fim > now()::date) -- and l.is_ativo is true
-			WHERE (v.dt_desativacao is null or v.dt_desativacao >=  now()::date)
-			and v.ref_tipo_v in(2) AND pf.cpf = '$cpfFormatado'";
-	return TDG::getInstance()->genericQuery($sql);
+	$sql = "select distinct pf.nome, pf.cpf, pf.id, pf.email
+			from ueg.pessoas_fisicas pf 
+			WHERE pf.cpf like '%$cpfFormatado'
+			order by pf.id desc
+			limit 1";
+	$return = TDG::getInstance()->genericQuery($sql);
+	return $return;
 }
 
 function criarArquivo($file, $message) {
