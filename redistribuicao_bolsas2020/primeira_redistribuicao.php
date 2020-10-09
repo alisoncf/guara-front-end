@@ -9,7 +9,7 @@ include './source/functions.php';
 include './source/functions_importacao.php';
 
 $tdg = TDG::getInstance();
-$pastaFiles = __DIR__ . '/arquivos/';
+$pastaFiles = __DIR__ . '/arquivos/primeira/';
 $pastaLogs = __DIR__ . '/arquivos/log/';
 $sqlGeral = '';
 $start = Util::getStartExecutionTime();
