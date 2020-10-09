@@ -5,8 +5,8 @@ $loader['dependencias'][] = '../../html/library/';
 include("../../html/library/AutoLoader.php5");
 AutoLoader::init();
 include '../config/config_banco.php';
-include './arquivos/functions.php';
-include './arquivos/functions_importacao.php';
+include './source/functions.php';
+include './source/functions_importacao.php';
 
 $tdg = TDG::getInstance();
 $pastaFiles = __DIR__ . '/arquivos/';
@@ -50,19 +50,20 @@ $docentesBolsitasProdutividadeFinal = [];
 for ($index = 0; $index < count($docentesBolsitasProdutividade); $index++) {
 	$docentesBolsitasProdutividadeFinal[] = $docentesBolsitasProdutividade[$index]['id'];
 }
-criarArquivoCSV($pastaFiles . 'bolsistas2020.csv', $bolsistas2020);
-
+criarArquivoCSV($pastaFiles . 'bolsistas_todos2020.csv', $bolsistas2020);
+criarArquivoCSV($pastaFiles . 'orientadores2020_produtividade.csv', $docentesBolsitasProdutividade);
 $orientadores = getOrientadoresSemAjudaCusta($bolsistas2020);
 $orientadoresCandidatos = array_merge($docentesBolsitasProdutividadeFinal,$orientadores);
 
 $id_coordenadores = implode(',', $orientadoresCandidatos);
 
 
-$sql = "
-	select nome_coordenador, nome_academico,modalidade_exec_final, id_bolsista,id_coordenador,modalidade_vigente_final_exec_id, modalidade, modalidade_id
+$sqlRedistribuicao = "
+	select grande_area, nome_coordenador, nome_academico,modalidade_exec_final, id_bolsista,id_coordenador,modalidade_vigente_final_exec_id, modalidade, modalidade_id, modalidade_vigente_final_id, modalidade_final
 from
 	public._bolsistas_2020
 	where id_coordenador in ($id_coordenadores)
+	and modalidade_vigente_final_exec_id not in (56,57,58)
 order by 
 	grande_area,
 	ordem,
@@ -72,10 +73,7 @@ order by
 	dt_nascimento asc
 	";
 
-Util::shellDebug($sql);
-$bolsistasCandidatos2020 = TDG::getInstance()->genericQuery($sql);
-
-Util::shellDebug(count($bolsistasCandidatos2020));
+Util::shellDebug($sqlRedistribuicao,false);
 
 
 
