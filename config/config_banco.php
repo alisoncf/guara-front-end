@@ -4,9 +4,9 @@ $configDb['desenvIp'] = "10.20.3.15";
 $_SERVER['SERVER_ADDR'] = $configDb['desenvIp'];
 
 //Db Desenvolvimento
-$GLOBALS['configDb']['host'] = DatabaseConfig::getHostDev();
+$GLOBALS['configDb']['host'] = '10.20.60.33';
 
-$GLOBALS['configDb']['bd'] = DatabaseConfig::getBancoDev();
+$GLOBALS['configDb']['bd'] = "ueg_central_24h";
 
 $GLOBALS['configDb']['login'] = 'postgres';
 $GLOBALS['configDb']['password'] = "Hitokiri_Battousai";
