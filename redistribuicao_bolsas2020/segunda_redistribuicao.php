@@ -11,10 +11,15 @@ include './source/functions_importacao.php';
 $tdg = TDG::getInstance();
 $pastaFiles = __DIR__ . '/arquivos/segunda/';
 $pastaLogs = __DIR__ . '/arquivos/log/';
-$sqlGeral = '';
+
 $start = Util::getStartExecutionTime();
 echo "Inicio: " . date('d-m-Y H:i:s', $start);
 echo "\n";
+
+$sqlGeral = '';
+
+$sqlView = "refresh MATERIALIZED VIEW public._bolsistas_2020;";
+$tdg->genericQuery($sqlView);
 
 $sql = "
 select grande_area, nome_coordenador, nome_academico,modalidade_exec_final, id_bolsista,id_coordenador,modalidade_vigente_final_exec_id, modalidade, modalidade_id, modalidade_vigente_final_id, modalidade_final
