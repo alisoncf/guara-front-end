@@ -9,7 +9,11 @@ include '../config/config_banco_producao.php';
 $tdg = TDG::getInstance();
 $sql = "select count(*) as conexoes 
 from pg_stat_activity
-where client_addr = '10.20.60.22';";
+where client_addr in (
+'10.20.60.22', -- centralapache
+'10.20.60.69' --morpheus
+)
+;";
 
 while (true) {
 	$result = $tdg->genericQuery($sql);
