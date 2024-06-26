@@ -24,6 +24,7 @@
           :label="activeTabLabel"
           @keyup.enter="search"
         />
+        <q-btn @click="search" color="teal" label="Pesquisar" icon="search" class="q-ml-md" />
       </q-card-section>
 
       <q-card-section class="q-pa-none">
@@ -43,13 +44,16 @@
 import { ref, computed } from 'vue';
 import axios from 'axios';
 
+
+
 const keyword = ref('');
 const rows = ref([]);
 const activeTab = ref('quem');
 const columns = [
-  { name: 'subject', label: 'Sujeito', align: 'left', field: row => row.subject },
-  { name: 'predicate', label: 'Predicado', align: 'left', field: row => row.predicate },
-  { name: 'object', label: 'Objeto', align: 'left', field: row => row.object }
+  { name: 'objeto', label: 'Objeto', align: 'left', field: row => row.obj.value },
+  { name: 'titulo', label: 'Título', align: 'left', field: row => row.titulo.value },
+  { name: 'tipo', label: 'Tipo', align: 'left', field: row => row.tipo.value },
+  { name: 'resumo', label: 'Resumo', align: 'left', field: row => row.resumo.value }
 ];
 
 const activeTabLabel = computed(() => {
@@ -69,17 +73,25 @@ const activeTabLabel = computed(() => {
 
 async function search() {
   try {
-    const response = await axios.get(`http://localhost:5000/search`, {
-      params: {
-        keyword: keyword.value,
-        type: activeTab.value
-      }
+    const response = await axios.post('http://localhost:5000/objectapi/listar_objetos', {
+      keyword: keyword.value,
+      type: activeTab.value
     });
-    rows.value = response.data;
+
+    //rows.value = response.data;
+    // Mapear os resultados para um formato adequado para a q-table
+    // Mapear os resultados para um formato adequado para a q-table
+    rows.value = response.data.results.bindings.map(item => ({
+      obj: { type: item.obj.type, value: item.obj.value },
+      titulo: { type: item.titulo.type, value: item.titulo.value },
+      resumo: { type: item.resumo.type, value: item.resumo.value },
+      tipo: { type: item.tipo.type, value: item.tipo.value }
+    }));
   } catch (error) {
-    console.error("Erro ao buscar dados:", error);
+    console.error('Erro ao buscar dados:', error);
   }
 }
+
 </script>
 
 <style scoped>

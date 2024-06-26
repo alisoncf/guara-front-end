@@ -76,7 +76,7 @@ const linksList: EssentialLinkProps[] = [
     title: 'Repositórios amigos',
     caption: 'Rede de repositórios conectados',
     icon: 'public',
-    link: '/repositoros-amigos'
+    link: '/repositorios-amigos'
   },
   {
     title: 'Contato',
