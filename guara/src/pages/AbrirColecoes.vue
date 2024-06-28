@@ -8,10 +8,8 @@
         active-color="teal"
         indicator-color="teal"
       >
-        <q-tab name="quem" label="Quem" />
-        <q-tab name="o-que" label="O quê" />
-        <q-tab name="onde" label="Onde" />
-        <q-tab name="quando" label="Quando" />
+        <q-tab name="fisicos" label="Físicos" />
+        <q-tab name="dimensionais" label="Dimensionais" />
       </q-tabs>
 
       <q-separator />
@@ -29,7 +27,7 @@
 
       <q-card-section class="q-pa-none">
         <q-table
-          :rows="rows"
+          :rows="listaObj"
           :columns="columns"
           row-key="id"
           class="full-height"
@@ -40,32 +38,30 @@
   </q-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import axios from 'axios';
+import type { ObjetoFisico } from './tipos'; // Certifique-se de que esta importação está correta
+import { Coluna } from './tipos';
 
+const keyword = ref<string>('');
 
+const listaObj = ref<ObjetoFisico[]>([]);
 
-const keyword = ref('');
-const rows = ref([]);
-const activeTab = ref('quem');
+const activeTab = ref<string>('fisicos');
 const columns = [
-  { name: 'objeto', label: 'Objeto', align: 'left', field: row => row.obj.value },
-  { name: 'titulo', label: 'Título', align: 'left', field: row => row.titulo.value },
-  { name: 'tipo', label: 'Tipo', align: 'left', field: row => row.tipo.value },
-  { name: 'resumo', label: 'Resumo', align: 'left', field: row => row.resumo.value }
-];
+  { name: 'objeto', label: 'Objeto',  align: 'left',    field: 'id'  },
+    { name: 'titulo',   label: 'Título', align: 'left',  field: 'titulo' },
+  { name: 'tipo', label: 'Tipo', align: 'left',   field: 'tipo_id' },
+  { name: 'resumo', label: 'Resumo', align: 'left',  field: 'resumo' }
+] as Coluna[];
 
 const activeTabLabel = computed(() => {
   switch (activeTab.value) {
-    case 'quem':
-      return 'Palavra-chave (Quem)';
-    case 'o-que':
-      return 'Palavra-chave (O quê)';
-    case 'onde':
-      return 'Palavra-chave (Onde)';
-    case 'quando':
-      return 'Palavra-chave (Quando)';
+    case 'fisicos':
+      return 'Palavra-chave (Objetos físicos)';
+    case 'dimensionais':
+      return 'Palavra-chave (Objetos dimensionais)';
     default:
       return 'Palavra-chave';
   }
@@ -73,25 +69,34 @@ const activeTabLabel = computed(() => {
 
 async function search() {
   try {
-    const response = await axios.post('http://localhost:5000/objectapi/listar_objetos', {
+    const response =
+    await axios.post('http://localhost:5000/objectapi/listar_objetos', {
       keyword: keyword.value,
       type: activeTab.value
     });
 
-    //rows.value = response.data;
-    // Mapear os resultados para um formato adequado para a q-table
-    // Mapear os resultados para um formato adequado para a q-table
-    rows.value = response.data.results.bindings.map(item => ({
-      obj: { type: item.obj.type, value: item.obj.value },
-      titulo: { type: item.titulo.type, value: item.titulo.value },
-      resumo: { type: item.resumo.type, value: item.resumo.value },
-      tipo: { type: item.tipo.type, value: item.tipo.value }
-    }));
+    listaObj.value = response.data.results.bindings.map((item: any) => ({
+      obj: item.obj.value,
+      titulo: item.titulo.value,
+      resumo: item.resumo.value,
+      tipo: item.tipo.value,
+      id: textoAposUltimoChar(item.obj.value,'/'),
+      tipo_id: textoAposUltimoChar(item.tipo.value,'#')
+    })) as ObjetoFisico[];
+
+    console.log(listaObj.value);
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
   }
 }
 
+function textoAposUltimoChar(texto: string, char: string) {
+    const ultimaBarraIndex = texto.lastIndexOf(char);
+    if (ultimaBarraIndex === -1) {
+        return texto;
+    }
+    return texto.substring(ultimaBarraIndex + 1);
+}
 </script>
 
 <style scoped>
@@ -116,5 +121,8 @@ async function search() {
 }
 .q-table tbody tr:nth-child(even) td {
   background-color: white; /* Cor de fundo para linhas pares */
+}
+.body-2 {
+  font-size: 14px !important; /* Tamanho da fonte menor */
 }
 </style>
