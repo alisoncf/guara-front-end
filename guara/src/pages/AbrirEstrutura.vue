@@ -90,6 +90,8 @@ import { reactive, ref } from 'vue';
 import axios from 'axios';
 
 import { Coluna, ClasseComum, ClassQueryResult, TreeNode } from './tipos';
+import Quasar, { useQuasar } from 'quasar';
+import { Notify } from 'quasar'
 const dialogOpen = ref<boolean>(false);
 
 // Estado da nova classe a ser criada
@@ -105,9 +107,9 @@ const selectedNode = ref(null)
 const classeMaeSelecionada = ref<ClasseComum>();
 // Lista de classes mãe disponíveis (para selecionar a subClassOf)
 function onNodeSelect() {
-  classeMaeSelecionada.value='';//aqui
+  classeMaeSelecionada.value = undefined;
 }
-function encontrarClassePorLabel(label) {
+function encontrarClassePorLabel(label: string ): any {
   return listaClassesMae.value.find(classe => classe.label === label);
 }
 
@@ -127,7 +129,7 @@ const columns = [
 
 function organiza_arvore(lista: ClasseComum[]) {
 
-  let raiz = '';
+
   lista.forEach(classItem => {
     if(classItem.subclassof=='-'){
         arvoreClasses.value.push({
@@ -137,7 +139,7 @@ function organiza_arvore(lista: ClasseComum[]) {
           children: [],
           classData: classItem,
         });
-        raiz = classItem.nome_curto;
+
     }
 
 
@@ -157,10 +159,10 @@ function organiza_arvore(lista: ClasseComum[]) {
     }
   }
 });
-  return ;
+
 }
 
-function findParentNode(nodes, parentLabel) {
+function findParentNode(nodes: TreeNode[], parentLabel: string ): any {
   for (let node of nodes) {
     if (node.label === parentLabel) {
       return node;
@@ -203,37 +205,50 @@ async function loadParentClasses() {
 }
 
 
-function selectParentClass(node: any) {
-  novaClasse.subclassof = node.class;
-  alert('')
-}
+
 function closeDialog() {
   dialogOpen.value = false;
   // Limpar os dados da nova classe
   novaClasse.label = '';
   novaClasse.class = '';
   novaClasse.subclassof = '';
-  novaClasse.nome_curto = '',
-  novaClasse.mae_curta = ''
+  novaClasse.nome_curto = '';
+  novaClasse.mae_curta = '';
 
 }
 
 // Função para salvar a nova classe
 async function saveNewClass() {
   try {
-    const response = await axios.post('http://localhost:5000/classapi/criar_classe', {
+    const subClassOfValue = novaClasse.subclassof.class;
+    const response = await axios.post('http://localhost:5000/classapi/adicionar_classe', {
       label: novaClasse.label,
       comment: novaClasse.description,
-      subClassOf: novaClasse.subclassof
+      subClassOf: subClassOfValue,
     });
-    console.log('Nova classe criada:', response.data);
 
+
+    if (response.status === 200) {
+      Notify.create({
+        message: 'Classe criada com sucesso',
+        type: 'positive'
+      })
+    } else {
+      Notify.create({
+        message: 'Erro na criação da classe',
+        type: 'negative'
+      })
+
+    }
 
     await search();
     closeDialog(); // Fechar o diálogo após salvar
-
   } catch (error) {
-    console.error('Erro ao salvar nova classe:', error);
+    Notify.create({
+        message: 'Erro na criação da classe',
+        type: 'negative'
+      })
+
   }
 }
 
