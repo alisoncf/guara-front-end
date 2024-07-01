@@ -107,7 +107,9 @@ const classeMaeSelecionada = ref<ClasseComum>();
 function onNodeSelect() {
   classeMaeSelecionada.value='';//aqui
 }
-
+function encontrarClassePorLabel(label) {
+  return listaClassesMae.value.find(classe => classe.label === label);
+}
 
 const listaClassesMae = ref<ClasseComum[]>([]);
 const keyword = ref<string>('');
