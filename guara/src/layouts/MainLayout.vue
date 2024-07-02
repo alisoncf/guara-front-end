@@ -30,6 +30,7 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+    <q-notifications />
   </q-layout>
 </template>
 

@@ -16,6 +16,7 @@
         />
         <q-btn @click="search" color="teal" label="Pesquisar" icon="search" class="q-ml-md" />
         <q-btn @click="openCreateClassDialog" color="primary" label="Nova Classe" />
+
       </q-card-section>
 
       <q-card-section class="q-pa-none">
@@ -50,30 +51,21 @@
           <q-input v-model="novaClasse.description" outlined dense label="Descrição da Classe" />
         </q-card-section>
         <q-card-section>
-          <q-select
-            v-model="novaClasse.subclassof"
-            outlined
-            dense
-            label="Classe Mãe"
-            :options="listaClassesMae"
-            option-value="class"
-            option-label="label"
-          />
-        </q-card-section>
-        <q-card-section >
+          <q-item-label header>Escolha uma classe mãe</q-item-label>
 
           <q-tree
-
             :nodes="arvoreClasses"
             node-key="label"
             v-model:selected="selectedNode"
             @update:selected="onNodeSelect"
           />
-          <div>{{ selectedNode }}</div>
         </q-card-section>
+        <div class=" q-pa-md q-my-lg">{{ classeMaeSelecionada?.uri }}</div>
+        <q-separator></q-separator>
         <q-card-actions align="right">
           <q-btn label="Cancelar" color="negative" @click="closeDialog" />
           <q-btn label="Salvar" color="primary" @click="saveNewClass" />
+
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -88,29 +80,36 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import axios from 'axios';
-
 import { Coluna, ClasseComum, ClassQueryResult, TreeNode } from './tipos';
-import Quasar, { useQuasar } from 'quasar';
-import { Notify } from 'quasar'
+import {useQuasar } from 'quasar';
 const dialogOpen = ref<boolean>(false);
 
-// Estado da nova classe a ser criada
+
+
 const novaClasse = reactive<ClasseComum>({
   label: '',
   description: '',
   subclassof: '',
-  class: '',
+  uri: '',
   mae_curta: '',
   nome_curto: ''
 });
-const selectedNode = ref(null)
-const classeMaeSelecionada = ref<ClasseComum>();
+const selectedNode = ref<string>('')
+const classeMaeSelecionada = ref<ClasseComum|null>(null);
 // Lista de classes mãe disponíveis (para selecionar a subClassOf)
 function onNodeSelect() {
-  classeMaeSelecionada.value = undefined;
+  classeMaeSelecionada.value = encontrarClassePorLabel(selectedNode.value);
 }
-function encontrarClassePorLabel(label: string ): any {
-  return listaClassesMae.value.find(classe => classe.label === label);
+function encontrarClassePorLabel(label: string ): ClasseComum {
+  const data = listaClassesMae.value.find(classe => classe.nome_curto === label);
+  if (data){
+    return data;
+  }else{
+    return {
+      uri: '', label: '', description: '', subclassof: '', mae_curta: '',  nome_curto: ''
+    };
+  }
+
 }
 
 const listaClassesMae = ref<ClasseComum[]>([]);
@@ -128,8 +127,6 @@ const columns = [
 ] as Coluna[];
 
 function organiza_arvore(lista: ClasseComum[]) {
-
-
   lista.forEach(classItem => {
     if(classItem.subclassof=='-'){
         arvoreClasses.value.push({
@@ -139,10 +136,7 @@ function organiza_arvore(lista: ClasseComum[]) {
           children: [],
           classData: classItem,
         });
-
     }
-
-
   });
 
   lista.forEach(classItem => {
@@ -186,9 +180,9 @@ async function loadParentClasses() {
     arvoreClasses.value = [];
     listaClassesMae.value = [];
     response.data.results.bindings.forEach((item) => {
-      console.log(item);
+
       const classItem: ClasseComum = {
-        class: item.class.value,
+        uri: item.class.value,
         label: item.label ? item.label.value : '',
         description: item.description ? item.description.value : '',
         subclassof: item.subclassof ? item.subclassof.value : '-',
@@ -208,9 +202,8 @@ async function loadParentClasses() {
 
 function closeDialog() {
   dialogOpen.value = false;
-  // Limpar os dados da nova classe
   novaClasse.label = '';
-  novaClasse.class = '';
+  novaClasse.uri = '';
   novaClasse.subclassof = '';
   novaClasse.nome_curto = '';
   novaClasse.mae_curta = '';
@@ -220,35 +213,26 @@ function closeDialog() {
 // Função para salvar a nova classe
 async function saveNewClass() {
   try {
-    const subClassOfValue = novaClasse.subclassof.class;
-    const response = await axios.post('http://localhost:5000/classapi/adicionar_classe', {
-      label: novaClasse.label,
+    const subClassOfValue = textoAposUltimoChar(classeMaeSelecionada.value?.uri,'#');
+
+    const data =
+      {label: novaClasse.label,
       comment: novaClasse.description,
-      subClassOf: subClassOfValue,
-    });
+      subclassof: subClassOfValue };
+
+      const response = await axios.post(
+        'http://localhost:5000/classapi/adicionar_classe', data);
 
 
     if (response.status === 200) {
-      Notify.create({
-        message: 'Classe criada com sucesso',
-        type: 'positive'
-      })
+      showNotif('Classe gravada com sucesso!')
     } else {
-      Notify.create({
-        message: 'Erro na criação da classe',
-        type: 'negative'
-      })
-
+      showNotif('Erro ao criar classe');
     }
-
     await search();
-    closeDialog(); // Fechar o diálogo após salvar
-  } catch (error) {
-    Notify.create({
-        message: 'Erro na criação da classe',
-        type: 'negative'
-      })
-
+    closeDialog();
+  } catch (error: any) {
+    showNotif(`Erro ao tentar gravar: ${error.message}`);
   }
 }
 
@@ -261,9 +245,9 @@ async function search() {
 
     listaClasses.value = [];
     response.data.results.bindings.forEach((item) => {
-      console.log(item);
+
       const classItem: ClasseComum = {
-        class: item.class.value,
+        uri: item.class.value,
         label: item.label ? item.label.value : '',
         description: item.description ? item.description.value : '',
         subclassof: item.subclassof ? item.subclassof.value : '-',
@@ -272,13 +256,13 @@ async function search() {
       };
       listaClasses.value.push(classItem);
     });
-    console.log(listaClasses.value);
+
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
   }
 }
 
-function textoAposUltimoChar(texto: string, char: string) {
+function textoAposUltimoChar(texto: any, char: any) {
   const ultimaBarraIndex = texto.lastIndexOf(char);
   if (ultimaBarraIndex === -1) {
     return texto;
@@ -293,86 +277,22 @@ function editClass(row: ClasseComum) {
 }
 
 function openCollection(row: ClasseComum) {
-  // Função para abrir a coleção da classe selecionada
+
   console.log('Abrir coleção da classe:', row);
-  // Aqui você pode navegar para outra página ou abrir um modal com a coleção
+
 }
 function openCreateClassDialog() {
-  console.log('Abrir diálogo para criar nova classe');
+
   loadParentClasses();
   dialogOpen.value = true;
 
 }
-
-
+const $q = useQuasar()
+const showNotif =  (mensagem: any) => {
+  $q.notify({
+    message: mensagem,
+    color: 'purple'
+  });
+};
 </script>
-
-
-
-<style scoped>
-.q-page {
-  min-height: 80vh; /* Ajuste a altura mínima conforme necessário */
-}
-.q-card {
-  width: 100%;
-}
-.q-table {
-  background-color: white; /* Fundo branco para a tabela */
-  color: black; /* Cor do texto preta */
-}
-.q-table th,
-.q-table td {
-  background-color: white; /* Fundo branco para as células */
-  color: black; /* Cor do texto preta */
-}
-.q-table tbody tr:nth-child(odd) td {
-  background-color: #f0f0f0; /* Cor de fundo para linhas ímpares */
-}
-.q-table tbody tr:nth-child(even) td {
-  background-color: white; /* Cor de fundo para linhas pares */
-}
-.body-2 {
-  font-size: 14px !important; /* Tamanho da fonte menor */
-}
-
-.organizacao-estrutura {
-  background-color: #f0f0f0; /* Cor de fundo destacada */
-  padding: 10px; /* Espaçamento interno */
-  margin-bottom: 20px; /* Margem inferior */
-}
-
-.organizacao-titulo {
-  font-size: 1.5rem; /* Tamanho do título */
-  font-weight: bold; /* Negrito */
-  color: #333; /* Cor do texto */
-  text-align: left; /* Alinhamento à esquerda */
-  margin-bottom: 10px; /* Margem inferior */
-}
-
-.tabela-classes {
-  height: calc(100vh - 230px); /* Ajuste a altura da tabela conforme necessário */
-  overflow-y: auto; /* Adicionar scroll vertical se necessário */
-}
-</style>
-
-
-<style scoped>
-.q-page {
-  min-height: 80vh;
-}
-
-.organizacao-estrutura {
-  background-color: #f0f0f0;
-  padding: 10px;
-  margin-bottom: 20px;
-}
-
-.organizacao-titulo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
-  text-align: left;
-  margin-bottom: 10px;
-}
-</style>
-
+<style src="./AbrirEstrutura.css"></style>

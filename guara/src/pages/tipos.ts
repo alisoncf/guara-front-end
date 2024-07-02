@@ -16,7 +16,7 @@ export interface ObjetoFisico {
 }
 
 export interface ClasseComum {
-  class: string; // URI completa da classe
+  uri: string; // URI completa da classe
   label: string;
   description: string;
   subclassof: string;
