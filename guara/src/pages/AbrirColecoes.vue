@@ -23,6 +23,7 @@
           @keyup.enter="search"
         />
         <q-btn @click="search" color="teal" label="Pesquisar" icon="search" class="q-ml-md" />
+        <q-btn @click="irParaNovo" color="primary" label="Criar novo objeto" />
       </q-card-section>
 
       <q-card-section class="q-pa-none">
@@ -30,9 +31,23 @@
           :rows="listaObj"
           :columns="columns"
           row-key="id"
-          class="full-height"
+
           striped
-        />
+          title="Objetos digitais do Acervo">
+          <template v-slot:body-cell-#="{ rowIndex }">
+            <q-td>{{ rowIndex + 1 }}</q-td>
+          </template>
+
+          <template v-slot:body-cell-acoes="props">
+            <q-td :props="props" >
+              <q-btn dense color="blue-9" icon="edit"  title="alterar a classe"/>
+              <q-btn dense color="purple-6 "
+              icon="format_list_bulleted"  title="ir para as mídias deste objeto" />
+              <q-btn dense color="red-7" icon="delete"  title="excluir definitivamente essa classe" />
+            </q-td>
+          </template>
+        </q-table>
+
       </q-card-section>
     </q-card>
   </q-page>
@@ -50,10 +65,11 @@ const listaObj = ref<ObjetoFisico[]>([]);
 
 const activeTab = ref<string>('fisicos');
 const columns = [
-  { name: 'objeto', label: 'Objeto',  align: 'left',    field: 'id'  },
-    { name: 'titulo',   label: 'Título', align: 'left',  field: 'titulo' },
+  { name: '#', label: 'Objeto',  align: 'left' },
+  { name: 'titulo',   label: 'Título', align: 'left',  field: 'titulo' },
   { name: 'tipo', label: 'Tipo', align: 'left',   field: 'tipo_id' },
-  { name: 'resumo', label: 'Resumo', align: 'left',  field: 'resumo' }
+  { name: 'resumo', label: 'Resumo', align: 'left',  field: 'resumo' },
+  { name: 'acoes', label: 'Ações', align: 'center' }
 ] as Coluna[];
 
 const activeTabLabel = computed(() => {
@@ -97,32 +113,8 @@ function textoAposUltimoChar(texto: string, char: string) {
     }
     return texto.substring(ultimaBarraIndex + 1);
 }
+function irParaNovo() {
+  console.log('novo')
+}
 </script>
-
-<style scoped>
-.q-page {
-  min-height: 80vh; /* Ajuste a altura mínima conforme necessário */
-}
-.q-card {
-  width: 100%;
-}
-.q-table {
-  height: calc(100vh - 150px); /* Ajuste a altura da tabela conforme necessário */
-  background-color: white; /* Fundo branco para a tabela */
-  color: black; /* Cor do texto preta */
-}
-.q-table th,
-.q-table td {
-  background-color: white; /* Fundo branco para as células */
-  color: black; /* Cor do texto preta */
-}
-.q-table tbody tr:nth-child(odd) td {
-  background-color: #f0f0f0; /* Cor de fundo para linhas ímpares */
-}
-.q-table tbody tr:nth-child(even) td {
-  background-color: white; /* Cor de fundo para linhas pares */
-}
-.body-2 {
-  font-size: 14px !important; /* Tamanho da fonte menor */
-}
-</style>
+<style src="./Estilo.css"></style>

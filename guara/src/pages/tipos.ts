@@ -12,7 +12,7 @@ export interface ObjetoFisico {
   tipo: string;
   resumo: string;
   tipo_id: string; //apenas o final do tipo
-
+  contentUrl: string[];
 }
 
 export interface ClasseComum {
