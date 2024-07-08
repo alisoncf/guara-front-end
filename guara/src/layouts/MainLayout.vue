@@ -1,6 +1,6 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+  <q-layout view="lHh LpR fFf">
+    <q-header elevated class="bg-primary text-white" height-hint="98">
       <q-toolbar>
         <q-btn
           flat
@@ -18,6 +18,11 @@
         </q-toolbar-title>
         <div><img src="../assets/cmg.gif" width="100" alt="" /></div>
       </q-toolbar>
+      <q-tabs align="left">
+        <q-route-tab to="/organizacao-estrutura" label="Catálogo" />
+        <q-route-tab to="/abrir-colecoes" label="Explorar coleções" />
+        <q-route-tab to="/" label="O Espaço" />
+      </q-tabs>
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
@@ -30,6 +35,18 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+    <q-footer elevated class="bg-grey-8 text-white">
+      <q-toolbar>
+        <q-toolbar-title>
+          <q-avatar>
+            <img src="../assets/guara.png" style="width: 50px;">
+
+          </q-avatar>
+<div>Guará</div>
+        </q-toolbar-title>
+      </q-toolbar>
+    </q-footer>
+
     <q-notifications />
   </q-layout>
 </template>
@@ -43,7 +60,13 @@ defineOptions({
 });
 
 const linksList: EssentialLinkProps[] = [
-  {
+{
+    title: 'Início',
+    caption: 'Página Inicial',
+    icon: 'home',
+    link: '/'
+  },
+{
     title: 'Login',
     caption: 'Acesso Administrativo',
     icon: 'login',

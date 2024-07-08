@@ -1,5 +1,5 @@
 <template>
-  <q-page class="flex flex-center q-pa-md q-my-lg" style="min-height: 80vh;">
+  <q-page class="flex flex-center q-pa-md q-my-lg" >
     <q-card class="full-width">
       <q-tabs
         v-model="activeTab"
@@ -86,7 +86,7 @@ const activeTabLabel = computed(() => {
 async function search() {
   try {
     const response =
-    await axios.post('http://localhost:5000/objectapi/listar_objetos', {
+    await axios.post('https://localhost:5000/objectapi/listar_objetos', {
       keyword: keyword.value,
       type: activeTab.value
     });

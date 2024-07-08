@@ -1,10 +1,10 @@
 <template>
-  <q-page class=" q-pa-md q-my-lg" style="min-height: 80vh;">
-    <div class="organizacao-estrutura">
-      <div class="organizacao-titulo">Organização e estrutura do espaço</div>
-    </div>
-    <q-card class="full-width, full-height">
-      <q-card-section>
+  <q-page class=" q-pa-md q-my-lg" >
+
+    <q-card class="full-width">
+      <div class="" ></div>
+      <q-card-section title="Estrutura do Centro de Memória">
+
         <q-input
           outlined
           dense
@@ -189,7 +189,7 @@ function findParentNode(nodes: TreeNode[], parentLabel: string ): any {
 async function loadParentClasses() {
   try {
     const response =
-      await axios.post<ClassQueryResult>('http://localhost:5000/classapi/listar_classes', {
+      await axios.post<ClassQueryResult>('https://localhost:5000/classapi/listar_classes', {
         keyword: keyword.value,
         orderby: 'subclassof',
       });
@@ -240,7 +240,7 @@ async function excluir_classe(row: ClasseComum) {
     };
 
     // Enviar a requisição DELETE para a API
-    const response = await axios.delete('http://localhost:5000/classapi/excluir_classe', { data });
+    const response = await axios.delete('https://localhost:5000/classapi/excluir_classe', { data });
 
     if (response.status === 200) {
       showNotif('Classe excluída com sucesso!');
@@ -268,8 +268,8 @@ async function saveClass() {
     };
 
     const url = editMode.value
-      ? 'http://localhost:5000/classapi/alterar_classe'
-      : 'http://localhost:5000/classapi/adicionar_classe';
+      ? 'https://localhost:5000/classapi/alterar_classe'
+      : 'https://localhost:5000/classapi/adicionar_classe';
     const response = await axios.post(url, data);
 
     if (response.status === 200) {
@@ -288,7 +288,7 @@ async function saveClass() {
 async function search() {
   try {
     const response =
-      await axios.post<ClassQueryResult>('http://localhost:5000/classapi/listar_classes', {
+      await axios.post<ClassQueryResult>('https://localhost:5000/classapi/listar_classes', {
         keyword: keyword.value,
       });
 
