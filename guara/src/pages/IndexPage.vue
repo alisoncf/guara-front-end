@@ -1,14 +1,17 @@
 <template>
   <div class="home-container">
-    <div class="hero-section">
-      <h1>Guará: Sistema RDF para Centros de Memória</h1>
-      <p>Uma plataforma inovadora para gerenciar e explorar informações sobre patrimônio cultural.</p>
-      <q-btn color="primary" @click="goToCollections">Explorar Coleções</q-btn>
+    <div class="project-section">
+      <div class="info">
+        <div class="vertical-line"></div>
+        <div class="content">
+          <h2>Projeto Guará</h2>
+          <p>O Guará é um sistema de informação baseado em RDF projetado para centros de memória. Ele permite a organização e a exploração de coleções de patrimônio cultural de maneira eficiente e integrada.</p>
+          <q-btn flat @click="goToMemorySpaces">Informações do Espaço de Memória</q-btn>
+        </div>
+      </div>
     </div>
-    <div class="info-section">
-      <h2>Sobre o Projeto Guará</h2>
-      <p>O Guará é um sistema de informação baseado em RDF projetado para centros de memória. Ele permite a organização e a exploração de coleções de patrimônio cultural de maneira eficiente e integrada.</p>
-      <q-btn flat @click="goToMemorySpaces">Informações do Espaço de Memória</q-btn>
+    <div class="hero-section">
+      <q-btn color="primary" @click="goToCollections">Explorar Coleções</q-btn>
     </div>
   </div>
 </template>
@@ -29,37 +32,62 @@ function goToMemorySpaces() {
 
 <style scoped>
 .home-container {
-  padding: 20px;
-  text-align: center;
+  padding: 5px;
+}
+
+.project-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.info {
+  display: flex;
+  align-items: center;
+}
+
+.vertical-line {
+  width: 1px;
+  background-color: #0b0a0b;
+  forced-color-adjust: auto;
+
+  margin-right: 5px;
+}
+
+.content {
+  text-align: left;
+}
+
+.content h2 {
+  font-size: 2.0rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.content p {
+  font-size: 1.00rem;
+  margin-bottom: 20px;
 }
 
 .hero-section {
   background: url('../assets/hero-background.jpg') no-repeat center center;
   background-size: cover;
-  padding: 50px;
-  color: white;
+  padding: 5px;
+  color: rgb(128, 119, 119);
+  text-align: left;
 }
 
 .hero-section h1 {
-  font-size: 2.5rem;
+  font-size: 3rem;
+  font-weight: 700;
 }
 
 .hero-section p {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   margin: 20px 0;
 }
 
-.info-section {
-  margin-top: 40px;
-}
-
-.info-section h2 {
-  font-size: 2rem;
-  margin-bottom: 20px;
-}
-
-.info-section p {
-  font-size: 1.25rem;
-  margin-bottom: 20px;
+.q-btn {
+  font-size: 1rem;
 }
 </style>

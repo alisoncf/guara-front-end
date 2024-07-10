@@ -7,10 +7,26 @@ const defaultState: ObjetoFisico = {
   id: '',
   obj: '',
   resumo: '',
-  tipo: '',
+  tipo: [],
   tipo_id: '',
   titulo: '',
-  contentUrl: []
+  contentUrl: [],
+  altura: 0,
+  dataCriacao:'',
+  dataModificacao:'',
+  descricao:'',
+  classe: '',
+  largura: 0,
+  material: '',
+  profundidade: 0,
+  peso: 0,
+  type: [],
+  pertence: ''
+
+
+
+
+
 };
 
 export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {

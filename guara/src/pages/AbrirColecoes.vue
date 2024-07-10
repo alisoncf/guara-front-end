@@ -58,6 +58,8 @@ import { ref, computed } from 'vue';
 import axios from 'axios';
 import type { ObjetoFisico } from './tipos'; // Certifique-se de que esta importação está correta
 import { Coluna } from './tipos';
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 const keyword = ref<string>('');
 
@@ -114,7 +116,7 @@ function textoAposUltimoChar(texto: string, char: string) {
     return texto.substring(ultimaBarraIndex + 1);
 }
 function irParaNovo() {
-  console.log('novo')
+  router.push('/criar-objeto')
 }
 </script>
-<style src="./Estilo.css"></style>
+
