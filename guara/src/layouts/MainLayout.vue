@@ -13,7 +13,7 @@
         />
         <q-toolbar-title>
           <div style="color: black">
-            Guará: Cultural Heritage RDF Information System
+            Guará: Repositório Digital do Patrimônio Cultural do Estado de Goiás
           </div>
         </q-toolbar-title>
         <div><img src="../assets/cmg.gif" width="100" alt="" /></div>
@@ -28,7 +28,11 @@
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <q-list>
         <q-item-label header></q-item-label>
-        <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" />
+        <EssentialLink
+          v-for="link in linksList"
+          :key="link.title"
+          v-bind="link"
+        />
       </q-list>
     </q-drawer>
 
@@ -39,10 +43,9 @@
       <q-toolbar>
         <q-toolbar-title>
           <q-avatar>
-            <img src="../assets/guara.png" style="width: 50px;">
-
+            <img src="../assets/guara.png" style="width: 50px" />
           </q-avatar>
-<div>Guará</div>
+          <div>Guará</div>
         </q-toolbar-title>
       </q-toolbar>
     </q-footer>
@@ -53,61 +56,63 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import EssentialLink, { EssentialLinkProps } from 'components/EssentialLink.vue';
+import EssentialLink, {
+  EssentialLinkProps,
+} from 'components/EssentialLink.vue';
 
 defineOptions({
-  name: 'MainLayout'
+  name: 'MainLayout',
 });
 
 const linksList: EssentialLinkProps[] = [
-{
+  {
     title: 'Início',
     caption: 'Página Inicial',
     icon: 'home',
-    link: '/'
+    link: '/',
   },
-{
+  {
     title: 'Login',
     caption: 'Acesso Administrativo',
     icon: 'login',
-    link: '/login'
+    link: '/login',
   },
   {
     title: 'Objetos e Coleções',
     caption: 'Pesquisar objetos e coleções',
     icon: 'category',
-    link: '/abrir-colecoes'
+    link: '/abrir-colecoes',
   },
   {
     title: 'Organização e Estrutura',
     caption: 'Definição da estrutura do espaço de memória',
     icon: 'corporate_fare',
-    link: '/organizacao-estrutura'
+    link: '/organizacao-estrutura',
   },
   {
     title: 'Vocabulário',
     caption: 'Definições de vocabulário e ontologias',
     icon: 'chat',
-    link: '/vocabulario'
+    link: '/vocabulario',
   },
   {
     title: 'Informações do Espaço',
     caption: 'Endereço, telefone e email',
     icon: 'rss_feed',
-    link: '/informacoes-espaco'
+    link: '/informacoes-espaco',
   },
   {
     title: 'Repositórios amigos',
     caption: 'Rede de repositórios conectados',
     icon: 'public',
-    link: '/repositorios-amigos'
+    link: '/repositorios-amigos',
   },
   {
     title: 'Contato',
     caption: 'Informações e contato do projeto guará',
     icon: 'favorite',
-    link: '/contato'
-  }
+    link: '/contato',
+  },
 ];
 
 const leftDrawerOpen = ref(false);

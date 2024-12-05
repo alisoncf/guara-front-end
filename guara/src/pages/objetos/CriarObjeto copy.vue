@@ -55,6 +55,39 @@
               <q-input v-model="objeto.material" label="Material" />
             </div>
 
+            <label>URLs de Conteúdo</label>
+            <div v-for="(url, index) in objeto.contentUrl" :key="index">
+              <q-toggle
+                v-model="useFileUpload[index]"
+                label="Usar upload de arquivo"
+              />
+              <div v-if="useFileUpload[index]">
+                <input type="file" @change="handleFileUpload($event, index)" />
+                <div v-if="thumbnails[index]">
+                  <img
+                    v-if="isImage(thumbnails[index])"
+                    :src="thumbnails[index] || undefined"
+                    alt="Imagem"
+                    style="max-width: 100px; max-height: 100px"
+                  />
+                  <video
+                    v-else
+                    controls
+                    style="max-width: 100px; max-height: 100px"
+                  >
+                    <source :src="thumbnails[index] || undefined" />
+                  </video>
+                </div>
+              </div>
+              <div v-else>
+                <q-input
+                  v-model="objeto.contentUrl[index]"
+                  label="URL ou Link do recurso"
+                />
+              </div>
+            </div>
+
+            <q-btn label="Adicionar Mídia" @click="addContentUrl" />
             <q-btn type="submit" label="Salvar Objeto" color="primary" />
           </q-form>
         </q-card-section>
@@ -112,10 +145,36 @@ const tipos = [
   { label: 'Arqueológico', value: 'Arqueologico' },
   { label: 'Museológico', value: 'MuseuLogico' },
   { label: 'Arquivístico-Documental', value: 'Arquivistico-Documental' },
-  { label: 'Imagético-Sonoro', value: 'Imagetico-Sonoro' },
 ];
 
 const mostrarCamposOpcionais = ref(false);
+const useFileUpload = ref<boolean[]>([]);
+const thumbnails = ref<(string | null)[]>([]);
+
+function addContentUrl() {
+  objeto.value.contentUrl.push('');
+  useFileUpload.value.push(false);
+  thumbnails.value.push(null);
+}
+
+function handleFileUpload(event: Event, index: number) {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result) {
+        objeto.value.contentUrl[index] = reader.result as string;
+        thumbnails.value[index] = reader.result as string;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function isImage(file: string | null): boolean {
+  return file ? file.startsWith('data:image') : false;
+}
 
 function onNodeSelect() {
   ClasseSelecionada.value = encontrarClassePorLabel(
@@ -136,7 +195,7 @@ function submitForm() {
     .then((response) => response.json())
     .then((data) => {
       console.log('Objeto criado com sucesso:', data);
-      router.push(`/objetos/${data.id}/midias`); // Redireciona para a página de mídias do objeto
+      router.push('/objetos');
     })
     .catch((error) => {
       console.error('Erro ao criar objeto:', error);

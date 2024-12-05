@@ -10,6 +10,16 @@ const routes: RouteRecordRaw[] = [
       { path: 'organizacao-estrutura', component: () => import('pages/AbrirEstrutura.vue') },
       { path: 'criar-objeto', component: () => import('pages/objetos/CriarObjeto.vue') },
       {
+        path: 'objetos/:id/midias',
+        component: () => import('pages/objetos/GerenciarMidias.vue'),
+        props: true // Passa o ID como prop para o componente
+      },
+      {
+        path: 'upload-midias/:id',
+        component: () => import('pages/objetos/UploadMidias.vue'),
+        props: true // Passa o ID como prop para o componente
+      },
+      {
         path: '/login',
         component: () => import('pages/LoginPage.vue')
       },

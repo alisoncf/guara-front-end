@@ -14,7 +14,7 @@ export function organiza_arvore(lista: ClasseComum[]):TreeNode[] {
       arvoreClasses.value.push({
         label: classItem.nome_curto,
         icon: 'home',
-        displayLabel: classItem.label,
+        displayLabel: classItem.nome_curto,
         children: [],
         classData: classItem,
       });
