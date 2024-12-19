@@ -67,17 +67,13 @@
 import axios from 'axios';
 import { ref, onBeforeMount } from 'vue';
 import { useRouter } from 'vue-router';
+import { ObjetoFisico } from './manter-objeto';
 import {
   textoAposUltimoChar,
   organiza_arvore,
   encontrarClassePorLabel,
 } from '../funcoes';
-import {
-  ClasseComum,
-  ClassQueryResult,
-  ObjetoFisico,
-  TreeNode,
-} from '../tipos';
+import { ClasseComum, ClassQueryResult, TreeNode } from '../tipos';
 
 const listaClasses = ref<ClasseComum[]>([]);
 const ClasseSelecionada = ref<ClasseComum>();

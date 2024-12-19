@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { SessionStorage } from 'quasar';
 import { StorageKey } from 'src/constants/StorageKey';
-import { ObjetoFisico } from './../pages/tipos';
+import { ObjetoFisico } from '../pages/objetos/manter-objeto';
 
 const defaultState: ObjetoFisico = {
   id: '',
@@ -36,13 +36,13 @@ export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {
   }),
 
   getters: {
-    getObjetoFisico(): ObjetoFisico {
+    get(): ObjetoFisico {
       return this.$state;
     },
   },
 
   actions: {
-    salvarObjetoFisico(objeto: ObjetoFisico) {
+    set(objeto: ObjetoFisico) {
       SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(objeto));
       this.$state = { ...objeto };
     },

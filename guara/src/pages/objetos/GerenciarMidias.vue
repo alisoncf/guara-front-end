@@ -1,9 +1,7 @@
 <template>
   <q-page>
     <q-toolbar class="bg-secondary text-white">
-      <q-toolbar-title
-        >Gerenciar Mídias para Objeto {{ objetoId }}</q-toolbar-title
-      >
+      <q-toolbar-title>Gerenciar Mídias</q-toolbar-title>
     </q-toolbar>
     <div class="gerenciar-midias-container">
       <q-card class="q-pa-md">
@@ -65,13 +63,18 @@
 <script setup>
 import { ref, onMounted, onBeforeMount } from 'vue';
 import axios from 'axios';
+import { useRouter } from 'vue-router';
+import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
+import { ObjetoFisico } from './manter-objeto';
 
-const objetoId = ''; // Ajuste conforme necessário
+const objetoId = {}; // Ajuste conforme necessário
+const objetoStore = useDadosObjetoFisico();
 
+const objetoSelecionado = ref < ObjetoFisico > {};
 const midias = ref([]);
 const useFileUpload = ref([]);
 const thumbnails = ref([]);
-
+const router = useRouter();
 function adicionarMidia() {
   midias.value.push({ url: '' });
   useFileUpload.value.push(false);
@@ -149,7 +152,9 @@ onMounted(() => {
     });
 });
 onBeforeMount(() => {
-  objetoId = route.params.id;
+  objetoId.value = router.currentRoute.value.params.id;
+  objetoSelecionado.value = objetoStore.get;
+  console.log('objeto', router.currentRoute.value.params.id);
 });
 </script>
 

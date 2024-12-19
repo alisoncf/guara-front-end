@@ -57,7 +57,7 @@
                 color="purple-6 "
                 icon="format_list_bulleted"
                 title="ir para as mídias deste objeto"
-                @click="irParaMidias(props.row.id)"
+                @click="irParaMidias(props.row)"
               />
               <q-btn
                 v-if="1 > 1"
@@ -84,14 +84,17 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeMount } from 'vue';
 import axios from 'axios';
-import type { ObjetoFisico } from './tipos'; // Certifique-se de que esta importação está correta
+import { ObjetoFisico } from './objetos/manter-objeto';
 import { Coluna } from './tipos';
 import { useRouter } from 'vue-router';
+import { useDadosObjetoFisico } from '../stores/objeto-fisico';
+
 const router = useRouter();
 
 const keyword = ref<string>('');
 
 const listaObj = ref<ObjetoFisico[]>([]);
+const useObjetoStore = useDadosObjetoFisico();
 
 const activeTab = ref<string>('fisicos');
 const columns = [
@@ -148,8 +151,9 @@ function textoAposUltimoChar(texto: string, char: string) {
 function irParaNovo() {
   router.push('/criar-objeto');
 }
-function irParaMidias(id: string) {
-  router.push(`/objetos/${id}/midias`);
+function irParaMidias(obj: ObjetoFisico) {
+  useObjetoStore.set(obj);
+  router.push(`/objetos/${obj.id}/midias`);
 }
 function Upload(id: string) {
   router.push('upload-midias/:' + id);
