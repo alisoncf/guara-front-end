@@ -6,8 +6,11 @@ import apiConfig from '../apiConfig';
 import { ObjetoFisico } from '../pages/objetos/manter-objeto'
 import { useRouter } from 'vue-router';
 import { Notify } from 'quasar';
-import { ClassQueryResult, RepoQueryResult, Repositorio } from 'src/pages/tipos';
+import { ClasseComum, ClassQueryResult, RepoQueryResult, Repositorio } from 'src/pages/tipos';
 import { ref } from 'vue';
+import { textoAposUltimoChar } from 'src/pages/funcoes';
+import { useDadosRepositorio } from 'src/stores/repositorio-store';
+const repoStore = useDadosRepositorio();
 const router = useRouter();
 const api = axios.create({
   baseURL: apiConfig.baseURL
@@ -61,27 +64,66 @@ export async function listarRepositorios(){
 
   try {
     const response = await axios.post<RepoQueryResult>(
-      'http://localhost:5000/classapi/listar_classes'
+      'http://localhost:5000/repositorios/listar_repositorios',
 
     );
 
     listaRepo.value = [];
     response.data.results.bindings.forEach((item) => {
-      const repoItem: Repositorio = {
+      const classItem: Repositorio = {
         uri: item.uri.value,
+        descricao: item.descricao ? item.descricao.value : '',
         contato: item.contato ? item.contato.value : '',
-        descricao: item.descricao? item.descricao.value : '',
-        responsavel: item.responsavel ? item.responsavel.value : '-',
-        nome: item.nome ? item.nome.value : '-',
+        nome: item.nome ? item.nome.value : '',
+
+        responsavel: item.responsavel ? item.responsavel.value : '',
       };
-      listaRepo.value.push(repoItem);
+      listaRepo.value.push(classItem);
     });
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
   }
 
 
-  return listaRepo;
+  return listaRepo.value;
 }
+
+
+export async function listarClasses(keyword: string ){
+  const listaClasses = ref<ClasseComum[]>([]);
+  try {
+    const response = await axios.post<ClassQueryResult>(
+      'http://localhost:5000/classapi/listar_classes',
+      {
+        keyword: keyword,
+        repository: repoStore.get.uri
+      }
+    );
+
+    listaClasses.value = [];
+    response.data.results.bindings.forEach((item) => {
+      const classItem: ClasseComum = {
+        uri: item.class.value,
+        label: item.label ? item.label.value : '',
+        description: item.description ? item.description.value : '',
+        subclassof: item.subclassof ? item.subclassof.value : '-',
+        mae_curta: textoAposUltimoChar(
+          item.subclassof ? item.subclassof.value : '-',
+          '#'
+        ),
+        nome_curto: textoAposUltimoChar(item.class.value, '#'),
+      };
+      listaClasses.value.push(classItem);
+    });
+  } catch (error) {
+    console.error('Erro ao buscar dados:', error);
+  }
+
+
+  return listaClasses.value;
+}
+
+
+
 
 export default api;

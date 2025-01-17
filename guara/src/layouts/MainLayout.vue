@@ -45,7 +45,7 @@
           <q-avatar>
             <img src="../assets/guara.png" alt =""  />
           </q-avatar>
-          Guará
+          Guará - Repositório selecionado: {{ repositorioSelecionado.nome  }}
         </q-toolbar-title>
       </q-toolbar>
     </q-footer>
@@ -59,11 +59,13 @@ import { ref } from 'vue';
 import EssentialLink, {
   EssentialLinkProps,
 } from 'components/EssentialLink.vue';
+import { useDadosRepositorio } from 'src/stores/repositorio-store';
 
 defineOptions({
   name: 'MainLayout',
 });
-
+const repoStore = useDadosRepositorio();
+const repositorioSelecionado = repoStore.get;
 const linksList: EssentialLinkProps[] = [
   {
     title: 'Início',

@@ -6,10 +6,11 @@ import { useQuasar } from 'quasar';
 import { textoAposUltimoChar } from './funcoes';
 import { listarRepositorios  } from 'src/services/api';
 import { Repositorio } from './tipos'
+import { useDadosRepositorio } from 'src/stores/repositorio-store';
 
 const dialogOpen = ref<boolean>(false);
 const editMode = ref<boolean>(false);
-
+const repoStore = useDadosRepositorio();
 
 const listaRepositorios = ref<Repositorio[]>([]);
 const novoRepo = reactive<Repositorio>({
@@ -81,8 +82,11 @@ async function saveRepo() {
     showNotif(`Erro ao tentar gravar: ${error.message}`);
   }
 }
-
-async function search() {
+async function search(){
+  listaRepositorios.value = [];
+  listaRepositorios.value = await listarRepositorios();
+}
+async function search1() {
   try {
     const response = await axios.post<RepoQueryResult>(
       'http://localhost:5000/repositorios/listar_repositorios',
@@ -117,6 +121,11 @@ async function editClass(row: Repositorio) {
 
   dialogOpen.value = true;
 }
+async function selecionarRepo(row: Repositorio) {
+  repoStore.set(row);
+}
+
+
 function openCreateClassDialog() {
   editMode.value = false;
 
@@ -155,6 +164,7 @@ onBeforeMount(() => {
       </q-card-section>
       <q-card-section >
 
+        Repositório selecionado: {{ repoStore.get.nome }} - {{ repoStore.get.uri }}
         <q-table
           :rows="listaRepositorios"
           :columns="columns"
@@ -169,15 +179,16 @@ onBeforeMount(() => {
                 dense
                 color="primary"
                 icon="check"
-                @click="editClass(props.row)"
                 title="selecionar este repositório"
+                @click="selecionarRepo(props.row)"
               />
               <q-btn
                 dense
-                color="blue-9"
+                color="secondary"
                 icon="edit"
                 @click="editClass(props.row)"
                 title="alterar o repositório"
+                v-if="false"
               />
 
 

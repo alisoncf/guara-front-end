@@ -1,125 +1,18 @@
-<template>
-  <q-page class="q-pa-md q-my-lg">
-    <q-card class="q-pa-md q-mb-lg">
-      <div class=""></div>
-      <q-card-section title="Estrutura do Centro de Memória">
-        <q-input outlined dense v-model="keyword" @keyup.enter="search" />
-        <q-btn
-          @click="search"
-          color="teal"
-          label="Pesquisar"
-          icon="search"
-          class="q-ml-md"
-        />
-        <q-btn
-          @click="openCreateClassDialog"
-          color="primary"
-          label="Nova Classe"
-        />
-      </q-card-section>
-      <q-card-section >
-
-        <q-table
-          :rows="listaClasses"
-          :columns="columns"
-          row-key="id"
-          class="tabela-classes"
-          striped
-          title="Classes do acervo"
-        >
-          <template v-slot:body-cell-acoes="props">
-            <q-td :props="props">
-              <q-btn
-                dense
-                color="blue-9"
-                icon="edit"
-                @click="editClass(props.row)"
-                title="alterar a classe"
-              />
-              <q-btn
-                dense
-                color="purple-6 "
-                icon="format_list_bulleted"
-                @click="editClass(props.row)"
-                title="ir para os objetos desta coleção"
-              />
-              <q-btn
-                dense
-                color="red-7"
-                icon="delete"
-                @click="excluir_classe(props.row)"
-                title="excluir definitivamente essa classe"
-              />
-            </q-td>
-          </template>
-        </q-table>
-      </q-card-section>
-    </q-card>
-    <q-dialog v-model="dialogOpen">
-      <q-card>
-        <q-toolbar>
-          <q-toolbar-title>{{
-            editMode ? 'Editar Classe' : 'Adicionar nova classe'
-          }}</q-toolbar-title>
-          <q-btn icon="close" flat round dense @click="closeDialog" />
-        </q-toolbar>
-        <q-card-section>
-          <q-input
-            v-model="novaClasse.label"
-            outlined
-            dense
-            label="Nome da Classe"
-          />
-        </q-card-section>
-        <q-card-section>
-          <q-input
-            v-model="novaClasse.description"
-            outlined
-            dense
-            label="Descrição da Classe"
-          />
-        </q-card-section>
-        <q-card-section>
-          <q-input
-            v-model="selectedClassUri"
-            readonly
-            outlined
-            dense
-            label="Classe mãe selecionada"
-          />
-          <q-tree
-            :nodes="arvoreClasses"
-            node-key="label"
-            v-model:selected="selectedNode"
-            @update:selected="onNodeSelect"
-          />
-        </q-card-section>
-        <q-separator></q-separator>
-        <q-card-actions align="right">
-          <q-btn label="Cancelar" color="negative" @click="closeDialog" />
-          <q-btn label="Salvar" color="primary" @click="saveClass" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-    <!-- Tabela de classes existentes -->
-    <q-card class="full-width">
-      <!-- Restante do seu código para a tabela de classes -->
-    </q-card>
-  </q-page>
-</template>
-
 <script setup lang="ts">
 import { onBeforeMount, reactive, ref, computed } from 'vue';
 import axios from 'axios';
 import { Coluna, ClasseComum, ClassQueryResult, TreeNode } from './tipos';
 import { useQuasar } from 'quasar';
 import { textoAposUltimoChar } from './funcoes';
-import { getClassData } from 'src/services/api';
+
+import { useDadosRepositorio } from 'src/stores/repositorio-store';
+import { listarClasses } from 'src/services/api';
 
 
 const dialogOpen = ref<boolean>(false);
 const editMode = ref<boolean>(false);
-
+const repoStore = useDadosRepositorio();
+const repositorioSelecionado = repoStore.get;
 const novaClasse = reactive<ClasseComum>({
   label: '',
   description: '',
@@ -245,13 +138,14 @@ function findParentNode(nodes: TreeNode[], parentLabel: string): any {
   }
   return null;
 }
-async function loadParentClasses() {
+async function listarClasseMae() {
   try {
     const response = await axios.post<ClassQueryResult>(
       'http://localhost:5000/classapi/listar_classes',
       {
         keyword: keyword.value,
         orderby: 'subclassof',
+        repository: repoStore.get.uri
       }
     );
     arvoreClasses.value = [];
@@ -290,21 +184,15 @@ function closeDialog() {
 
 async function excluir_classe(row: ClasseComum) {
   try {
-    // Confirmar se o usuário realmente deseja excluir a classe
     const confirmDelete = window.confirm(
       `Você realmente deseja excluir a classe ${row.label}?`
     );
-
     if (!confirmDelete) {
-      return; // Se o usuário cancelar, simplesmente retorna
+      return;
     }
-
-    // Configurar os dados para enviar na requisição DELETE
     const data = {
       label: row.uri,
     };
-
-    // Enviar a requisição DELETE para a API
     const response = await axios.delete(
       'http://localhost:5000/classapi/excluir_classe',
       { data }
@@ -317,7 +205,7 @@ async function excluir_classe(row: ClasseComum) {
     }
 
     await search();
-    await loadParentClasses();
+    await listarClasseMae();
     closeDialog();
   } catch (error: any) {
     showNotif(`Erro ao tentar excluir: ${error.message}`);
@@ -358,8 +246,10 @@ async function saveClass() {
     showNotif(`Erro ao tentar gravar: ${error.message}`);
   }
 }
-
 async function search() {
+  listaClasses.value = await listarClasses(keyword.value);
+}
+async function search1() {
   try {
     const response = await axios.post<ClassQueryResult>(
       'http://localhost:5000/classapi/listar_classes',
@@ -401,9 +291,13 @@ async function editClass(row: ClasseComum) {
 
   dialogOpen.value = true;
 }
-function openCreateClassDialog() {
+function abrirDialogoNovaClasse() {
   editMode.value = false;
-
+  novaClasse.label = '';
+  novaClasse.description = '';
+  novaClasse.nome_curto = '';
+  novaClasse.subclassof = '';
+  novaClasse.mae_curta = '';
   dialogOpen.value = true;
 }
 const $q = useQuasar();
@@ -414,7 +308,122 @@ const showNotif = (mensagem: any) => {
   });
 };
 onBeforeMount(() => {
-  loadParentClasses();
+  listarClasseMae();
+
 });
 </script>
 <style src="./Estilo.css"></style>
+
+<template>
+  <q-page class="q-pa-md q-my-lg">
+    <q-card class="q-pa-md q-mb-lg">
+
+      <q-card-section >
+        Repositório selecionado: {{repoStore.get.nome  }}
+        <q-input label="palavra-chave" outlined dense v-model="keyword" @keyup.enter="search" />
+
+
+        <q-btn
+          @click="search"
+          color="teal"
+          label="Pesquisar"
+          icon="search"
+
+        />
+        <q-btn
+          @click="abrirDialogoNovaClasse"
+          color="primary"
+          label="Nova Classe"
+        />
+      </q-card-section>
+      <q-card-section >
+
+        <q-table
+          :rows="listaClasses"
+          :columns="columns"
+          row-key="id"
+          class="tabela-classes"
+          striped
+          title="Classes do acervo"
+        >
+          <template v-slot:body-cell-acoes="props">
+            <q-td :props="props">
+              <q-btn
+                dense
+                color="blue-9"
+                icon="edit"
+                @click="editClass(props.row)"
+                title="alterar a classe"
+              />
+              <q-btn
+                dense
+                color="purple-6 "
+                icon="format_list_bulleted"
+                @click="editClass(props.row)"
+                title="ir para os objetos desta coleção"
+              />
+              <q-btn
+                dense
+                color="red-7"
+                icon="delete"
+                @click="excluir_classe(props.row)"
+                title="excluir definitivamente essa classe"
+              />
+            </q-td>
+          </template>
+        </q-table>
+      </q-card-section>
+    </q-card>
+    <q-dialog v-model="dialogOpen">
+      <q-card>
+        <q-toolbar>
+          <q-toolbar-title>{{
+            editMode ? 'Editar Classe' : 'Adicionar nova classe'
+          }}</q-toolbar-title>
+          <q-btn icon="close" flat round dense @click="closeDialog" />
+        </q-toolbar>
+        <q-card-section>
+          <q-input
+            v-model="novaClasse.label"
+            outlined
+            dense
+            label="Nome da Classe"
+          />
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model="novaClasse.description"
+            outlined
+            dense
+            label="Descrição da Classe"
+          />
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model="selectedClassUri"
+            readonly
+            outlined
+            dense
+            label="Classe mãe selecionada"
+          />
+          <q-tree
+            :nodes="arvoreClasses"
+            node-key="label"
+            v-model:selected="selectedNode"
+            @update:selected="onNodeSelect"
+          />
+        </q-card-section>
+        <q-separator></q-separator>
+        <q-card-actions align="right">
+          <q-btn label="Cancelar" color="negative" @click="closeDialog" />
+          <q-btn label="Salvar" color="primary" @click="saveClass" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    <!-- Tabela de classes existentes -->
+    <q-card class="full-width">
+      <!-- Restante do seu código para a tabela de classes -->
+    </q-card>
+  </q-page>
+</template>
+
