@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md q-my-lg">
-    <q-card class="full-width">
+    <q-card class="q-pa-md q-mb-lg">
       <div class=""></div>
       <q-card-section title="Estrutura do Centro de Memória">
         <q-input outlined dense v-model="keyword" @keyup.enter="search" />
@@ -17,14 +17,15 @@
           label="Nova Classe"
         />
       </q-card-section>
-      <q-card-section class="q-pa-none">
+      <q-card-section >
+
         <q-table
           :rows="listaClasses"
           :columns="columns"
           row-key="id"
           class="tabela-classes"
           striped
-          title="Classes do acervo que agrupam objetos digitais"
+          title="Classes do acervo"
         >
           <template v-slot:body-cell-acoes="props">
             <q-td :props="props">
@@ -113,6 +114,9 @@ import axios from 'axios';
 import { Coluna, ClasseComum, ClassQueryResult, TreeNode } from './tipos';
 import { useQuasar } from 'quasar';
 import { textoAposUltimoChar } from './funcoes';
+import { getClassData } from 'src/services/api';
+
+
 const dialogOpen = ref<boolean>(false);
 const editMode = ref<boolean>(false);
 
@@ -244,7 +248,7 @@ function findParentNode(nodes: TreeNode[], parentLabel: string): any {
 async function loadParentClasses() {
   try {
     const response = await axios.post<ClassQueryResult>(
-      'https://localhost:5000/classapi/listar_classes',
+      'http://localhost:5000/classapi/listar_classes',
       {
         keyword: keyword.value,
         orderby: 'subclassof',
@@ -302,7 +306,7 @@ async function excluir_classe(row: ClasseComum) {
 
     // Enviar a requisição DELETE para a API
     const response = await axios.delete(
-      'https://localhost:5000/classapi/excluir_classe',
+      'http://localhost:5000/classapi/excluir_classe',
       { data }
     );
 
@@ -334,8 +338,8 @@ async function saveClass() {
     };
 
     const url = editMode.value
-      ? 'https://localhost:5000/classapi/alterar_classe'
-      : 'https://localhost:5000/classapi/adicionar_classe';
+      ? 'http://localhost:5000/classapi/alterar_classe'
+      : 'http://localhost:5000/classapi/adicionar_classe';
     const response = await axios.post(url, data);
 
     if (response.status === 200) {
@@ -358,7 +362,7 @@ async function saveClass() {
 async function search() {
   try {
     const response = await axios.post<ClassQueryResult>(
-      'https://localhost:5000/classapi/listar_classes',
+      'http://localhost:5000/classapi/listar_classes',
       {
         keyword: keyword.value,
       }

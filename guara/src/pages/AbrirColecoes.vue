@@ -1,5 +1,5 @@
 <template>
-  <q-page class="flex flex-center q-pa-md q-my-lg">
+  <q-page class="flex flex-top q-pa-md q-my-lg">
     <q-card class="full-width">
       <q-tabs
         v-model="activeTab"
@@ -32,13 +32,14 @@
         <q-btn @click="irParaNovo" color="primary" label="Criar novo objeto" />
       </q-card-section>
 
-      <q-card-section class="q-pa-none">
+      <q-card-section >
         <q-table
           :rows="listaObj"
           :columns="columns"
           row-key="id"
           striped
           title="Objetos digitais do Acervo"
+          class="tabela-classes"
         >
           <template v-slot:body-cell-#="{ rowIndex }">
             <q-td>{{ rowIndex + 1 }}</q-td>
@@ -119,7 +120,7 @@ const activeTabLabel = computed(() => {
 async function search() {
   try {
     const response = await axios.post(
-      'https://localhost:5000/objectapi/listar_objetos',
+      'http://localhost:5000/objectapi/listar_objetos',
       {
         keyword: keyword.value,
         type: activeTab.value,

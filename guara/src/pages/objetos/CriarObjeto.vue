@@ -12,7 +12,7 @@
               <q-checkbox
                 v-for="tipo in tipos"
                 :key="tipo.value"
-                v-model="objeto.tipo"
+                v-model="objeto.tipoFisico"
                 :label="tipo.label"
                 :val="tipo.value"
               />
@@ -26,37 +26,32 @@
             <q-input v-model="uri" label="Classe do Acervo" />
             <q-input v-model="objeto.titulo" label="Título/nome do objeto" />
             <q-input
+              v-model="objeto.resumo"
+              label="Resumo"
+              title="um texto resumido com informações importantes sobre o objeto"
+              type="textarea"
+            />
+            <q-input
               v-model="objeto.descricao"
               label="Descrição"
               type="textarea"
-              title="uma descrição sucinta do objeto digital"
-            />
-            <q-input
-              v-model="objeto.resumo"
-              label="Resumo"
-              title="um resumo com detalhes e informações importantes sobre o objeto"
-              type="textarea"
+              title="uma descrição detalhada do objeto digital"
             />
 
-            <q-toggle
-              v-model="mostrarCamposOpcionais"
-              label="Mostrar campos opcionais"
-            />
+
+            <q-toggle v-model="mostrarCamposOpcionais" label="Mostrar campos opcionais" />
 
             <div v-if="mostrarCamposOpcionais">
               <q-input v-model="objeto.altura" label="Altura" type="number" />
               <q-input v-model="objeto.largura" label="Largura" type="number" />
-              <q-input
-                v-model="objeto.profundidade"
-                label="Profundidade"
-                type="number"
-              />
+              <q-input v-model="objeto.profundidade" label="Profundidade" type="number" />
               <q-input v-model="objeto.peso" label="Peso" type="number" />
               <q-input v-model="objeto.material" label="Material" />
             </div>
 
             <q-btn type="submit" label="Salvar Objeto" color="primary" />
           </q-form>
+          <div>{{ objeto }}</div>
         </q-card-section>
       </q-card>
     </div>
@@ -66,7 +61,7 @@
 <script setup lang="ts">
 import axios from 'axios';
 import { ref, onBeforeMount } from 'vue';
-import { useRouter } from 'vue-router';
+import { gravarObjetoFisico } from 'src/services/api';
 import { ObjetoFisico } from './manter-objeto';
 import {
   textoAposUltimoChar,
@@ -75,33 +70,33 @@ import {
 } from '../funcoes';
 import { ClasseComum, ClassQueryResult, TreeNode } from '../tipos';
 
+
 const listaClasses = ref<ClasseComum[]>([]);
 const ClasseSelecionada = ref<ClasseComum>();
 const arvoreClasses = ref<TreeNode[]>([]);
 const keyword = ref<string>('');
 const uri = ref<string>('');
-const router = useRouter();
+
 const selectedNode = ref<string>('');
 const objeto = ref<ObjetoFisico>({
   id: '',
   obj: '',
   resumo: '',
-  tipo: [],
-  tipo_id: '',
   titulo: '',
-  contentUrl: [],
+  descricao: '',
+  tipoFisico: [],
   altura: 0,
   dataCriacao: '',
   dataModificacao: '',
-  descricao: '',
-  classe: '',
   largura: 0,
   material: '',
   profundidade: 0,
   peso: 0,
-  pertence: '',
-  type: [],
-});
+  assunto: '',
+  temRelacao: [],
+  colecao:'',
+  associatedMedia: []
+  });
 
 const tipos = [
   { label: 'Bibliotecário', value: 'Bibliotecario' },
@@ -119,30 +114,18 @@ function onNodeSelect() {
     listaClasses.value
   );
   uri.value = ClasseSelecionada.value.uri;
+  objeto.value.colecao= ClasseSelecionada.value.uri;
 }
 
 function submitForm() {
-  fetch('https://sua-api-endpoint/objetos', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(objeto.value),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log('Objeto criado com sucesso:', data);
-      router.push(`/objetos/${data.id}/midias`); // Redireciona para a página de mídias do objeto
-    })
-    .catch((error) => {
-      console.error('Erro ao criar objeto:', error);
-    });
+
+  gravarObjetoFisico(objeto.value);
 }
 
 async function PesquisarClasses() {
   try {
     const response = await axios.post<ClassQueryResult>(
-      'https://localhost:5000/classapi/listar_classes',
+      'http://localhost:5000/classapi/listar_classes',
       {
         keyword: keyword.value,
         orderby: 'subclassof',
@@ -153,14 +136,14 @@ async function PesquisarClasses() {
     response.data.results.bindings.forEach((item) => {
       const classItem: ClasseComum = {
         uri: item.class.value,
-        label: item.label ? item.label.value : '',
-        description: item.description ? item.description.value : '',
-        subclassof: item.subclassof ? item.subclassof.value : '-',
+        label: item.label ? item.label.value : "",
+        description: item.description ? item.description.value : "",
+        subclassof: item.subclassof ? item.subclassof.value : "-",
         mae_curta: textoAposUltimoChar(
-          item.subclassof ? item.subclassof.value : '-',
-          '#'
+          item.subclassof ? item.subclassof.value : "-",
+          "#"
         ),
-        nome_curto: textoAposUltimoChar(item.class.value, '#'),
+        nome_curto: textoAposUltimoChar(item.class.value, "#"),
       };
       listaClasses.value.push(classItem);
     });
@@ -168,7 +151,7 @@ async function PesquisarClasses() {
     ClasseSelecionada.value = listaClasses.value[0];
     arvoreClasses.value = organiza_arvore(listaClasses.value);
   } catch (error) {
-    console.error('Erro ao buscar dados:', error);
+    console.error("Erro ao buscar dados:", error);
   }
 }
 

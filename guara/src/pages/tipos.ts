@@ -26,6 +26,14 @@ export interface TreeNode {
   classData: ClasseComum;
 }
 
+export interface Repositorio{
+  uri: string;
+  nome: string;
+  contato: string;
+  descricao: string;
+  responsavel: string
+}
+
 
 export interface ClassQueryResult {
   head: {
@@ -35,6 +43,17 @@ export interface ClassQueryResult {
     bindings: ClasseQuery[];
   };
 }
+
+export interface RepoQueryResult {
+  head: {
+    vars: string[];
+  };
+  results: {
+    bindings: RepoQuery[];
+  };
+}
+
+
 
 export interface ClasseQuery {
   class: {
@@ -54,6 +73,29 @@ export interface ClasseQuery {
     value: string;
   };
 }
+export interface RepoQuery {
+  uri: {
+    type: string;
+    value: string;
+  };
+  nome: {
+    type: string;
+    value: string;
+  };
+  descricao?: {
+    type: string;
+    value: string;
+  };
+  contato?: {
+    type: string;
+    value: string;
+  };
+  responsavel?: {
+    type: string;
+    value: string;
+  };
+}
+
 
 export interface Head {
   vars: string[];

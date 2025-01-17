@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh LpR fFf">
-    <q-header elevated class="bg-primary text-white" height-hint="98">
+    <q-header elevated class="bg-primary text-white" >
       <q-toolbar>
         <q-btn
           flat
@@ -43,9 +43,9 @@
       <q-toolbar>
         <q-toolbar-title>
           <q-avatar>
-            <img src="../assets/guara.png" style="width: 50px" />
+            <img src="../assets/guara.png" alt =""  />
           </q-avatar>
-          <div>Guará</div>
+          Guará
         </q-toolbar-title>
       </q-toolbar>
     </q-footer>

@@ -55,6 +55,6 @@
 }
 
 .tabela-classes {
-  height: calc(100vh - 230px); /* Ajuste a altura da tabela conforme necessário */
+
   overflow-y: auto; /* Adicionar scroll vertical se necessário */
 }

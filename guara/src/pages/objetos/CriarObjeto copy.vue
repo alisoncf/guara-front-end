@@ -181,7 +181,7 @@ function onNodeSelect() {
 }
 
 function submitForm() {
-  fetch('https://sua-api-endpoint/objetos', {
+  fetch('http://sua-api-endpoint/objetos', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -201,7 +201,7 @@ function submitForm() {
 async function PesquisarClasses() {
   try {
     const response = await axios.post<ClassQueryResult>(
-      'https://localhost:5000/classapi/listar_classes',
+      'http://localhost:5000/classapi/listar_classes',
       {
         keyword: keyword.value,
         orderby: 'subclassof',
