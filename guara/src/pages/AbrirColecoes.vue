@@ -1,3 +1,59 @@
+<script setup lang="ts">
+import { ref, computed, onBeforeMount } from 'vue';
+import axios from 'axios';
+import { ObjetoFisico } from './objetos/manter-objeto';
+import { Coluna } from './tipos';
+import { useRouter } from 'vue-router';
+import { useDadosObjetoFisico } from '../stores/objeto-fisico';
+import { pesquisarObjetosFisicos } from 'src/services/api';
+
+const router = useRouter();
+
+const keyword = ref<string>('');
+
+const listaObj = ref([] as ObjetoFisico[]);
+const useObjetoStore = useDadosObjetoFisico();
+
+const activeTab = ref<string>('fisicos');
+const columns = [
+  { name: '#', label: 'Objeto', align: 'left' },
+  { name: 'titulo', label: 'Título', align: 'left', field: 'titulo' },
+  { name: 'tipo de coleção', label: 'Tipo', align: 'left', field: row => row.tipoFisicoAbreviado.join(", ") },
+  { name: 'resumo', label: 'Resumo', align: 'left', field: 'resumo' },
+  { name: 'acoes', label: 'Ações', align: 'center' },
+] as Coluna[];
+
+const activeTabLabel = computed(() => {
+  switch (activeTab.value) {
+    case 'fisicos':
+      return 'Palavra-chave (Objetos físicos)';
+    case 'dimensionais':
+      return 'Palavra-chave (Objetos dimensionais)';
+    default:
+      return 'Palavra-chave';
+  }
+});
+
+async function search() {
+  const obj = ref({} as ObjetoFisico);
+  obj.value.descricao=keyword.value;
+  listaObj.value = await pesquisarObjetosFisicos(obj.value);
+}
+
+
+
+function irParaNovo() {
+  router.push('/criar-objeto');
+}
+function irParaMidias(obj: ObjetoFisico) {
+  useObjetoStore.set(obj);
+  router.push(`/objetos/${obj.id}/midias`);
+}
+function Upload(id: string) {
+  router.push('upload-midias/:' + id);
+}
+</script>
+
 <template>
   <q-page class="flex flex-top q-pa-md q-my-lg">
     <q-card class="full-width">
@@ -82,81 +138,3 @@
   </q-page>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, onBeforeMount } from 'vue';
-import axios from 'axios';
-import { ObjetoFisico } from './objetos/manter-objeto';
-import { Coluna } from './tipos';
-import { useRouter } from 'vue-router';
-import { useDadosObjetoFisico } from '../stores/objeto-fisico';
-
-const router = useRouter();
-
-const keyword = ref<string>('');
-
-const listaObj = ref<ObjetoFisico[]>([]);
-const useObjetoStore = useDadosObjetoFisico();
-
-const activeTab = ref<string>('fisicos');
-const columns = [
-  { name: '#', label: 'Objeto', align: 'left' },
-  { name: 'titulo', label: 'Título', align: 'left', field: 'titulo' },
-  { name: 'tipo', label: 'Tipo', align: 'left', field: 'tipo_id' },
-  { name: 'resumo', label: 'Resumo', align: 'left', field: 'resumo' },
-  { name: 'acoes', label: 'Ações', align: 'center' },
-] as Coluna[];
-
-const activeTabLabel = computed(() => {
-  switch (activeTab.value) {
-    case 'fisicos':
-      return 'Palavra-chave (Objetos físicos)';
-    case 'dimensionais':
-      return 'Palavra-chave (Objetos dimensionais)';
-    default:
-      return 'Palavra-chave';
-  }
-});
-
-async function search() {
-  try {
-    const response = await axios.post(
-      'http://localhost:5000/objectapi/listar_objetos',
-      {
-        keyword: keyword.value,
-        type: activeTab.value,
-      }
-    );
-
-    listaObj.value = response.data.results.bindings.map((item: any) => ({
-      obj: item.obj.value,
-      titulo: item.titulo.value,
-      resumo: item.resumo.value,
-      tipo: item.tipo.value,
-      id: textoAposUltimoChar(item.obj.value, '/'),
-      tipo_id: textoAposUltimoChar(item.tipo.value, '#'),
-    })) as ObjetoFisico[];
-
-    console.log(listaObj.value);
-  } catch (error) {
-    console.error('Erro ao buscar dados:', error);
-  }
-}
-onBeforeMount;
-function textoAposUltimoChar(texto: string, char: string) {
-  const ultimaBarraIndex = texto.lastIndexOf(char);
-  if (ultimaBarraIndex === -1) {
-    return texto;
-  }
-  return texto.substring(ultimaBarraIndex + 1);
-}
-function irParaNovo() {
-  router.push('/criar-objeto');
-}
-function irParaMidias(obj: ObjetoFisico) {
-  useObjetoStore.set(obj);
-  router.push(`/objetos/${obj.id}/midias`);
-}
-function Upload(id: string) {
-  router.push('upload-midias/:' + id);
-}
-</script>

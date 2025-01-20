@@ -1,19 +1,23 @@
-
 // src/services/api.js
 
 import axios from 'axios';
 import apiConfig from '../apiConfig';
-import { ObjetoFisico } from '../pages/objetos/manter-objeto'
+import { ObjetoFisico } from '../pages/objetos/manter-objeto';
 import { useRouter } from 'vue-router';
 import { Notify } from 'quasar';
-import { ClasseComum, ClassQueryResult, RepoQueryResult, Repositorio } from 'src/pages/tipos';
+import {
+  ClasseComum,
+  ClassQueryResult,
+  RepoQueryResult,
+  Repositorio,
+} from 'src/pages/tipos';
 import { ref } from 'vue';
 import { textoAposUltimoChar } from 'src/pages/funcoes';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 const repoStore = useDadosRepositorio();
 const router = useRouter();
 const api = axios.create({
-  baseURL: apiConfig.baseURL
+  baseURL: apiConfig.baseURL,
 });
 
 // Exemplo de chamada a um endpoint específico
@@ -26,18 +30,26 @@ export const getSparqData = () => {
 };
 
 export function gravarObjetoFisico(objeto: ObjetoFisico) {
-  fetch(apiConfig.baseURL + apiConfig.endpoints.objectapi + '/adicionar_objeto_fisico', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(objeto),
-  })
+  fetch(
+    apiConfig.baseURL +
+      apiConfig.endpoints.objectapi +
+      '/adicionar_objeto_fisico',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ...objeto, repository: repoStore.get.uri }),
+    }
+  )
     .then(async (response) => {
       if (!response.ok) {
-
         const errorMessage = await response.text(); // Lê o corpo da resposta para detalhes do erro
-        throw new Error(`Erro ${response.status}: ${errorMessage || 'Não foi possível gravar o objeto.'}`);
+        throw new Error(
+          `Erro ${response.status}: ${
+            errorMessage || 'Não foi possível gravar o objeto.'
+          }`
+        );
       }
       return response.json(); // Se tudo estiver OK, parseia o JSON
     })
@@ -59,13 +71,12 @@ export function gravarObjetoFisico(objeto: ObjetoFisico) {
     });
 }
 
-export async function listarRepositorios(){
+export async function listarRepositorios() {
   const listaRepo = ref<Repositorio[]>([]);
 
   try {
     const response = await axios.post<RepoQueryResult>(
-      'http://localhost:5000/repositorios/listar_repositorios',
-
+      'http://localhost:5000/repositorios/listar_repositorios'
     );
 
     listaRepo.value = [];
@@ -84,19 +95,18 @@ export async function listarRepositorios(){
     console.error('Erro ao buscar dados:', error);
   }
 
-
   return listaRepo.value;
 }
 
-
-export async function listarClasses(keyword: string ){
+export async function listarClasses(keyword: string) {
   const listaClasses = ref<ClasseComum[]>([]);
   try {
     const response = await axios.post<ClassQueryResult>(
       'http://localhost:5000/classapi/listar_classes',
       {
         keyword: keyword,
-        repository: repoStore.get.uri
+        repository: repoStore.get.uri,
+        orderby: 'subclassof',
       }
     );
 
@@ -119,11 +129,39 @@ export async function listarClasses(keyword: string ){
     console.error('Erro ao buscar dados:', error);
   }
 
-
   return listaClasses.value;
 }
 
+export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
+  const listaObj = ref([] as ObjetoFisico[]);
+  try {
+    const response = await axios.post(
+      apiConfig.baseURL + apiConfig.endpoints.objectapi + '/listar_objetos',
+      {
+        keyword: obj.descricao,
+        type: 'fisico',
+        repository: repoStore.get.uri,
+      }
+    );
 
-
+    listaObj.value = response.data.results.bindings.map((item: any) => ({
+      obj: item.obj.value,
+      titulo: item.titulo.value,
+      resumo: item.resumo.value,
+      colecao: item.colecao.value,
+      tipoFisico: item.tipos?.value ? item.tipos.value.split(', ') : [],
+      tipoFisicoAbreviado: item.tipos?.value
+        ? item.tipos.value
+            .split(', ')
+            .map((tipo: string) => textoAposUltimoChar(tipo, '#'))
+        : [],
+      id: textoAposUltimoChar(item.obj.value, '/'),
+    })) as ObjetoFisico[];
+    return listaObj.value;
+  } catch (error) {
+    console.error('Erro ao buscar dados:', error);
+    return [];
+  }
+}
 
 export default api;

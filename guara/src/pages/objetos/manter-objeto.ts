@@ -3,6 +3,7 @@ export interface ObjetoFisico {
   id: string; // ID do objeto (final da URI)
   titulo: string;
   tipoFisico: string[];
+  tipoFisicoAbreviado: string[];
   resumo: string;
   descricao: string;
   assunto: string;

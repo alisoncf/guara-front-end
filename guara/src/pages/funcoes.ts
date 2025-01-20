@@ -9,6 +9,9 @@ export function textoAposUltimoChar(texto: any, char:any): string {
 export function organiza_arvore(lista: ClasseComum[]):TreeNode[] {
 
   const arvoreClasses = ref<TreeNode[]>([]);
+
+  lista.sort((a, b) => a.subclassof.localeCompare(b.subclassof));
+
   lista.forEach((classItem) => {
     if (classItem.subclassof == '-') {
       arvoreClasses.value.push({
@@ -23,6 +26,7 @@ export function organiza_arvore(lista: ClasseComum[]):TreeNode[] {
 
   lista.forEach((classItem) => {
     if (classItem.subclassof !== '-') {
+      console.log('encontrar em ',arvoreClasses.value,' -> ',classItem.mae_curta);
       const parent = findParentNode(arvoreClasses.value, classItem.mae_curta);
       if (parent) {
         parent.children.push({

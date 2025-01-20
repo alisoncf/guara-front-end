@@ -212,7 +212,7 @@ async function excluir_classe(row: ClasseComum) {
   }
 }
 
-async function saveClass() {
+async function gravarClasse() {
   try {
     const subClassOfValue = textoAposUltimoChar(
       classeMaeSelecionada.value?.uri,
@@ -223,6 +223,7 @@ async function saveClass() {
       label: novaClasse.label,
       comment: novaClasse.description,
       subclassof: subClassOfValue,
+      repository: repoStore.get.uri
     };
 
     const url = editMode.value
@@ -416,7 +417,7 @@ onBeforeMount(() => {
         <q-separator></q-separator>
         <q-card-actions align="right">
           <q-btn label="Cancelar" color="negative" @click="closeDialog" />
-          <q-btn label="Salvar" color="primary" @click="saveClass" />
+          <q-btn label="Salvar" color="primary" @click="gravarClasse" />
         </q-card-actions>
       </q-card>
     </q-dialog>
