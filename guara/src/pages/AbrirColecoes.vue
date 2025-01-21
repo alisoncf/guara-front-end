@@ -1,56 +1,74 @@
 <script setup lang="ts">
-import { ref, computed, onBeforeMount } from 'vue';
-import axios from 'axios';
-import { ObjetoFisico } from './objetos/manter-objeto';
-import { Coluna } from './tipos';
-import { useRouter } from 'vue-router';
-import { useDadosObjetoFisico } from '../stores/objeto-fisico';
-import { pesquisarObjetosFisicos } from 'src/services/api';
+import { ref, computed } from "vue";
+
+import { ObjetoFisico } from "./objetos/manter-objeto";
+import { Coluna } from "./tipos";
+import { useRouter } from "vue-router";
+import { useDadosObjetoFisico } from "../stores/objeto-fisico";
+import {
+  deletarObjetoFisico,
+  pesquisarObjetosFisicos,
+} from "src/services/objeto-fisico-api";
 
 const router = useRouter();
 
-const keyword = ref<string>('');
-
-const listaObj = ref([] as ObjetoFisico[]);
 const useObjetoStore = useDadosObjetoFisico();
+const keyword = ref(useObjetoStore.getKeyword); // Carrega a última pesquisa
+const listaObj = ref(useObjetoStore.getLista); // Mantém a lista carregada
 
-const activeTab = ref<string>('fisicos');
+const activeTab = ref<string>("fisicos");
 const columns = [
-  { name: '#', label: 'Objeto', align: 'left' },
-  { name: 'titulo', label: 'Título', align: 'left', field: 'titulo' },
-  { name: 'tipo de coleção', label: 'Tipo', align: 'left', field: row => row.tipoFisicoAbreviado.join(", ") },
-  { name: 'resumo', label: 'Resumo', align: 'left', field: 'resumo' },
-  { name: 'acoes', label: 'Ações', align: 'center' },
+  { name: "#", label: "Objeto", align: "left" },
+  { name: "id", label: "Objeto", align: "left", field: "id" },
+  { name: "titulo", label: "Título", align: "left", field: "titulo" },
+  {
+    name: "tipo de coleção",
+    label: "Tipo",
+    align: "left",
+    field: (row) => row.tipoFisicoAbreviado.join(", "),
+  },
+  { name: "resumo", label: "Resumo", align: "left", field: "resumo" },
+  { name: "acoes", label: "Ações", align: "center" },
 ] as Coluna[];
 
 const activeTabLabel = computed(() => {
   switch (activeTab.value) {
-    case 'fisicos':
-      return 'Palavra-chave (Objetos físicos)';
-    case 'dimensionais':
-      return 'Palavra-chave (Objetos dimensionais)';
+    case "fisicos":
+      return "Palavra-chave (Objetos físicos)";
+    case "dimensionais":
+      return "Palavra-chave (Objetos dimensionais)";
     default:
-      return 'Palavra-chave';
+      return "Palavra-chave";
   }
 });
 
 async function search() {
   const obj = ref({} as ObjetoFisico);
-  obj.value.descricao=keyword.value;
+  obj.value.descricao = keyword.value;
   listaObj.value = await pesquisarObjetosFisicos(obj.value);
+  useObjetoStore.setLista(listaObj); // Salva no store
+  useObjetoStore.setKeyword(keyword.value); // Salva a palavra-chave
 }
 
-
-
 function irParaNovo() {
-  router.push('/criar-objeto');
+  const obj = ref({ id: "", titulo: "" } as ObjetoFisico);
+  useObjetoStore.setObjeto(obj);
+  router.push("/criar-objeto");
+}
+function irParaEditar(obj: ObjetoFisico) {
+  useObjetoStore.setObjeto(obj);
+  router.push("/editar-objeto/" + obj.id);
+}
+function deletarObjeto(obj: ObjetoFisico) {
+  deletarObjetoFisico(obj);
+  search();
 }
 function irParaMidias(obj: ObjetoFisico) {
   useObjetoStore.set(obj);
   router.push(`/objetos/${obj.id}/midias`);
 }
 function Upload(id: string) {
-  router.push('upload-midias/:' + id);
+  router.push("upload-midias/:" + id);
 }
 </script>
 
@@ -85,10 +103,9 @@ function Upload(id: string) {
           icon="search"
           class="q-ml-md"
         />
-        <q-btn @click="irParaNovo" color="primary" label="Criar novo objeto" />
       </q-card-section>
 
-      <q-card-section >
+      <q-card-section>
         <q-table
           :rows="listaObj"
           :columns="columns"
@@ -107,7 +124,8 @@ function Upload(id: string) {
                 dense
                 color="blue-9"
                 icon="edit"
-                title="alterar a classe"
+                title="Editar o objeto digital"
+                @click="irParaEditar(props.row)"
               />
               <q-btn
                 dense
@@ -128,13 +146,24 @@ function Upload(id: string) {
                 dense
                 color="red-7"
                 icon="delete"
-                title="excluir definitivamente essa classe"
+                title="excluir definitivamente este objeto"
+                @click="deletarObjeto(props.row)"
               />
             </q-td>
           </template>
         </q-table>
       </q-card-section>
+      <q-card-section>
+        <q-btn-group flat push  >
+          <q-btn @click="irParaNovo" color="primary" label="Novo objeto" />
+          <q-btn
+                  @click=router.go(-1)
+                  label="Voltar"
+                  color="secondary"
+
+                />
+        </q-btn-group>
+      </q-card-section>
     </q-card>
   </q-page>
 </template>
-

@@ -3,36 +3,35 @@ import { SessionStorage } from 'quasar';
 import { StorageKey } from 'src/constants/StorageKey';
 import { ObjetoFisico } from '../pages/objetos/manter-objeto';
 
-const defaultState: ObjetoFisico = {
-  id: '',
-  obj: '',
-  resumo: '',
-  tipoFisico: [],
-  titulo: '',
-  altura: 0,
-  dataCriacao:'',
-  dataModificacao:'',
-  descricao:'',
-  largura: 0,
-  material: '',
-  profundidade: 0,
-  peso: 0,
-  associatedMedia: [],
-  assunto: '',
-  colecao: '',
-  temRelacao:[]
-
+const defaultState = {
+  objetoSelecionado: {} as ObjetoFisico, // Objeto individual
+  listaObj: [] as ObjetoFisico[], // Lista de objetos
+  keyword: '', // Palavra-chave usada na pesquisa
 };
 
 export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {
-  state: () => ({
-    ...defaultState,
-    ...JSON.parse(SessionStorage.getItem(StorageKey.objetoFisico) || '{}'),
-  }),
-
+  state: () => {
+    // Obtenha dados do SessionStorage e mescle com o defaultState de forma cuidadosa
+    const sessionData = JSON.parse(
+      SessionStorage.getItem(StorageKey.objetoFisico) || '{}'
+    );
+    return {
+      ...defaultState, // Defina o estado padrão
+      ...sessionData, // Mescle os dados da sessão
+    };
+  },
   getters: {
     get(): ObjetoFisico {
       return this.$state;
+    },
+    getObjeto(): ObjetoFisico {
+      return this.$state.objetoSelecionado;
+    },
+    getLista(): ObjetoFisico[] {
+      return this.$state.listaObj;
+    },
+    getKeyword(): string {
+      return this.$state.keyword;
     },
   },
 
@@ -40,6 +39,22 @@ export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {
     set(objeto: ObjetoFisico) {
       SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(objeto));
       this.$state = { ...objeto };
+    },
+    setObjeto(objeto: ObjetoFisico) {
+      this.$state.objetoSelecionado = objeto;
+      SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
+    },
+    setLista(lista: ObjetoFisico[]) {
+      this.$state.listaObj = lista;
+      SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
+    },
+    setKeyword(keyword: string) {
+      this.$state.keyword = keyword;
+      SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
+    },
+    limparObjeto() {
+      this.$state.objetoSelecionado = { } as ObjetoFisico;
+      SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
     },
   },
 });

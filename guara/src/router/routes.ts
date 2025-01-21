@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'repositorios-amigos', component: () => import('pages/AbrirRepositorios.vue') } ,
       { path: 'organizacao-estrutura', component: () => import('pages/AbrirEstrutura.vue') },
       { path: 'criar-objeto', component: () => import('pages/objetos/CriarObjeto.vue') },
+      { path: 'editar-objeto/:id', component: () => import('pages/objetos/CriarObjeto.vue') },
       {
         path: 'objetos/:id/midias',
         component: () => import('pages/objetos/GerenciarMidias.vue'),

@@ -4,7 +4,7 @@ import axios from 'axios';
 import apiConfig from '../apiConfig';
 import { ObjetoFisico } from '../pages/objetos/manter-objeto';
 import { useRouter } from 'vue-router';
-import { Notify } from 'quasar';
+import { Dialog, Notify } from 'quasar';
 import {
   ClasseComum,
   ClassQueryResult,
@@ -29,47 +29,7 @@ export const getSparqData = () => {
   return api.get(apiConfig.endpoints.sparqapi);
 };
 
-export function gravarObjetoFisico(objeto: ObjetoFisico) {
-  fetch(
-    apiConfig.baseURL +
-      apiConfig.endpoints.objectapi +
-      '/adicionar_objeto_fisico',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ...objeto, repository: repoStore.get.uri }),
-    }
-  )
-    .then(async (response) => {
-      if (!response.ok) {
-        const errorMessage = await response.text(); // Lê o corpo da resposta para detalhes do erro
-        throw new Error(
-          `Erro ${response.status}: ${
-            errorMessage || 'Não foi possível gravar o objeto.'
-          }`
-        );
-      }
-      return response.json(); // Se tudo estiver OK, parseia o JSON
-    })
-    .then((data) => {
-      Notify.create({
-        type: 'positive',
-        message: 'Objeto criado com sucesso!',
-        timeout: 3000,
-      }); // Mostra notificação de sucesso
-      router.push(`/objetos/${data.id}/midias`); // Redireciona para a página de mídias do objeto
-    })
-    .catch((error) => {
-      console.error('Erro ao criar objeto:', error);
-      Notify.create({
-        type: 'negative',
-        message: `Erro ao criar objeto: ${error.message}`,
-        timeout: 5000,
-      }); // Mostra notificação de erro
-    });
-}
+
 
 export async function listarRepositorios() {
   const listaRepo = ref<Repositorio[]>([]);
@@ -101,6 +61,14 @@ export async function listarRepositorios() {
 export async function listarClasses(keyword: string) {
   const listaClasses = ref<ClasseComum[]>([]);
   try {
+    if (repoStore.get.uri == '') {
+      Notify.create({
+        type: 'negative',
+        message: 'selecione o repositório',
+        timeout: 5000,
+      });
+      return [];
+    }
     const response = await axios.post<ClassQueryResult>(
       'http://localhost:5000/classapi/listar_classes',
       {
@@ -126,42 +94,50 @@ export async function listarClasses(keyword: string) {
       listaClasses.value.push(classItem);
     });
   } catch (error) {
-    console.error('Erro ao buscar dados:', error);
+    console.log('erro', error);
+    Notify.create({
+      type: 'negative',
+      message: 'Erro ao buscar classes',
+      timeout: 5000,
+    }); // Mostra notificação de erro
   }
 
   return listaClasses.value;
 }
+export async function listarClassesFetch(keyword: string) {
+  console.log('Iniciando requisição com Fetch...');
 
-export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
-  const listaObj = ref([] as ObjetoFisico[]);
   try {
-    const response = await axios.post(
-      apiConfig.baseURL + apiConfig.endpoints.objectapi + '/listar_objetos',
+    const response = await fetch(
+      'http://localhost:5000/classapi/listar_classes',
       {
-        keyword: obj.descricao,
-        type: 'fisico',
-        repository: repoStore.get.uri,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          keyword: keyword,
+          repository: repoStore.get.uri,
+          orderby: 'subclassof',
+        }),
       }
     );
 
-    listaObj.value = response.data.results.bindings.map((item: any) => ({
-      obj: item.obj.value,
-      titulo: item.titulo.value,
-      resumo: item.resumo.value,
-      colecao: item.colecao.value,
-      tipoFisico: item.tipos?.value ? item.tipos.value.split(', ') : [],
-      tipoFisicoAbreviado: item.tipos?.value
-        ? item.tipos.value
-            .split(', ')
-            .map((tipo: string) => textoAposUltimoChar(tipo, '#'))
-        : [],
-      id: textoAposUltimoChar(item.obj.value, '/'),
-    })) as ObjetoFisico[];
-    return listaObj.value;
+    if (!response.ok) {
+      const errorMessage = await response.text();
+      throw new Error(
+        `Erro ${response.status}: ${errorMessage || 'Falha ao buscar classes'}`
+      );
+    }
+
+    const data = await response.json();
+    console.log('Resposta recebida:', data);
   } catch (error) {
-    console.error('Erro ao buscar dados:', error);
-    return [];
+    console.error('Erro capturado pelo catch:', error);
   }
 }
+
+
+
 
 export default api;

@@ -33,7 +33,7 @@ module.exports = configure(function (ctx) {
       config: {},
       lang: 'pt-br',
       iconSet: 'material-icons',
-      plugins: ['Notify']
+      plugins: ['Dialog','Notify']
     },
 
     extras: [

@@ -26,7 +26,7 @@ export function organiza_arvore(lista: ClasseComum[]):TreeNode[] {
 
   lista.forEach((classItem) => {
     if (classItem.subclassof !== '-') {
-      console.log('encontrar em ',arvoreClasses.value,' -> ',classItem.mae_curta);
+
       const parent = findParentNode(arvoreClasses.value, classItem.mae_curta);
       if (parent) {
         parent.children.push({
