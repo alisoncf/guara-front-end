@@ -1,3 +1,4 @@
+import { Repositorio } from 'src/pages/tipos';
 import { QTableProps } from 'quasar';
 
 type ArrElement<ArrType> = ArrType extends readonly (infer ElementType)[]
@@ -32,6 +33,16 @@ export interface Repositorio{
   contato: string;
   descricao: string;
   responsavel: string
+}
+
+export interface Auth{
+  email: string;
+  permissao: string;
+  token: string;
+  user: string;
+  validade: string
+  repositorio: string;
+  repositorio_conectado:Repositorio[]
 }
 
 

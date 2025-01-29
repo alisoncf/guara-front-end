@@ -1,71 +1,17 @@
-<template>
-  <q-layout view="lHh LpR fFf">
-    <q-header elevated class="bg-primary text-white" >
-      <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-          color="black"
-        />
-        <q-toolbar-title>
-          <div style="color: black">
-            Guará: Repositório Digital do Patrimônio Cultural do Estado de Goiás
-          </div>
-        </q-toolbar-title>
-        <div><img src="../assets/cmg.gif" width="100" alt="" /></div>
-      </q-toolbar>
-      <q-tabs align="left">
-        <q-route-tab to="/organizacao-estrutura" label="Catálogo" />
-        <q-route-tab to="/abrir-colecoes" label="Explorar coleções" />
-        <q-route-tab to="/" label="O Espaço" />
-      </q-tabs>
-    </q-header>
-
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
-        <q-item-label header></q-item-label>
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
-      </q-list>
-    </q-drawer>
-
-    <q-page-container>
-      <router-view />
-    </q-page-container>
-    <q-footer elevated class="bg-grey-8 text-white">
-      <q-toolbar>
-        <q-toolbar-title>
-          <q-avatar>
-            <img src="../assets/guara.png" alt =""  />
-          </q-avatar>
-          Guará - Repositório selecionado: {{ repositorioSelecionado.nome  }}
-        </q-toolbar-title>
-      </q-toolbar>
-    </q-footer>
-
-    <q-notifications />
-  </q-layout>
-</template>
-
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, onBeforeMount, ref } from 'vue';
 import EssentialLink, {
   EssentialLinkProps,
 } from 'components/EssentialLink.vue';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
+import { useAuthStore } from 'src/stores/auth-store';
 
 defineOptions({
   name: 'MainLayout',
 });
 const repoStore = useDadosRepositorio();
-const repositorioSelecionado = repoStore.get;
+const authStore = useAuthStore();
+
 const linksList: EssentialLinkProps[] = [
   {
     title: 'Início',
@@ -122,4 +68,67 @@ const leftDrawerOpen = ref(false);
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
+onBeforeMount(() => {
+  const repositorioSelecionado = computed(() => repoStore.get || { nome: 'Nenhum' });
+  const usuarioLogado = computed(() => authStore.get || { nome: 'Nenhum' });
+
+
+})
 </script>
+
+<template>
+  <q-layout view="lHh LpR fFf">
+    <q-header elevated class="bg-primary text-white" >
+      <q-toolbar>
+        <q-btn
+          flat
+          dense
+          round
+          icon="menu"
+          aria-label="Menu"
+          @click="toggleLeftDrawer"
+          color="black"
+        />
+        <q-toolbar-title>
+          <div style="color: black">
+            Guará: Repositório Digital do Patrimônio Cultural do Estado de Goiás
+          </div>
+        </q-toolbar-title>
+        <div><img src="../assets/cmg.gif" width="100" alt="" /></div>
+      </q-toolbar>
+      <q-tabs align="left">
+        <q-route-tab to="/organizacao-estrutura" label="Catálogo" />
+        <q-route-tab to="/abrir-colecoes" label="Explorar coleções" />
+        <q-route-tab to="/" label="O Espaço" />
+      </q-tabs>
+    </q-header>
+
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
+      <q-list>
+        <q-item-label header></q-item-label>
+        <EssentialLink
+          v-for="link in linksList"
+          :key="link.title"
+          v-bind="link"
+        />
+      </q-list>
+    </q-drawer>
+
+    <q-page-container>
+      <router-view />
+    </q-page-container>
+    <q-footer elevated class="bg-grey-8 text-white">
+      <q-toolbar>
+        <q-toolbar-title>
+          <q-avatar>
+            <img src="../assets/guara.png" alt =""  />
+          </q-avatar>
+          Guará - {{ authStore.get.email}} conectado em #{{ authStore.get.repositorio }}
+        </q-toolbar-title>
+      </q-toolbar>
+    </q-footer>
+
+    <q-notifications />
+  </q-layout>
+</template>
+

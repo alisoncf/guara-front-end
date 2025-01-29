@@ -84,30 +84,7 @@ async function saveRepo() {
 }
 async function search(){
   listaRepositorios.value = [];
-  listaRepositorios.value = await listarRepositorios();
-}
-async function search1() {
-  try {
-    const response = await axios.post<RepoQueryResult>(
-      'http://localhost:5000/repositorios/listar_repositorios',
-
-    );
-
-    listaRepositorios.value = [];
-    response.data.results.bindings.forEach((item) => {
-      const classItem: Repositorio = {
-        uri: item.uri.value,
-        descricao: item.descricao ? item.descricao.value : '',
-        contato: item.contato ? item.contato.value : '',
-        nome: item.nome ? item.nome.value : '',
-
-        responsavel: item.responsavel ? item.responsavel.value : '',
-      };
-      listaRepositorios.value.push(classItem);
-    });
-  } catch (error) {
-    console.error('Erro ao buscar dados:', error);
-  }
+  listaRepositorios.value = await listarRepositorios('');
 }
 
 async function editClass(row: Repositorio) {

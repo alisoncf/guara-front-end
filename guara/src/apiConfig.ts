@@ -7,8 +7,12 @@ const apiConfig = {
   endpoints: {
     classapi: '/classapi',
     sparqapi: '/sparqapi',
-    objectapi: '/objectapi'
+    objectapi: '/objectapi',
+    listar_repo:  '/repositorios/listar_repositorios',
+    login: '/acesso/login'
+
   }
 };
+
 
 export default apiConfig;

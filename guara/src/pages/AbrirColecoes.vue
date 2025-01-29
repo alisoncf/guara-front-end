@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed } from 'vue';
 
-import { ObjetoFisico } from "./objetos/manter-objeto";
-import { Coluna } from "./tipos";
-import { useRouter } from "vue-router";
-import { useDadosObjetoFisico } from "../stores/objeto-fisico";
+import { ObjetoFisico } from './objetos/manter-objeto';
+import { Coluna } from './tipos';
+import { useRouter } from 'vue-router';
+import { useDadosObjetoFisico } from '../stores/objeto-fisico';
 import {
   deletarObjetoFisico,
   pesquisarObjetosFisicos,
-} from "src/services/objeto-fisico-api";
+} from 'src/services/objeto-fisico-api';
 
 const router = useRouter();
 
@@ -16,29 +16,29 @@ const useObjetoStore = useDadosObjetoFisico();
 const keyword = ref(useObjetoStore.getKeyword); // Carrega a última pesquisa
 const listaObj = ref(useObjetoStore.getLista); // Mantém a lista carregada
 
-const activeTab = ref<string>("fisicos");
+const activeTab = ref<string>('fisicos');
 const columns = [
-  { name: "#", label: "Objeto", align: "left" },
-  { name: "id", label: "Objeto", align: "left", field: "id" },
-  { name: "titulo", label: "Título", align: "left", field: "titulo" },
+  { name: '#', label: 'Objeto', align: 'left' },
+  { name: 'id', label: 'Objeto', align: 'left', field: 'id' },
+  { name: 'titulo', label: 'Título', align: 'left', field: 'titulo' },
   {
-    name: "tipo de coleção",
-    label: "Tipo",
-    align: "left",
-    field: (row) => row.tipoFisicoAbreviado.join(", "),
+    name: 'tipo de coleção',
+    label: 'Tipo',
+    align: 'left',
+    field: (row) => row.tipoFisicoAbreviado.join(', '),
   },
-  { name: "resumo", label: "Resumo", align: "left", field: "resumo" },
-  { name: "acoes", label: "Ações", align: "center" },
+  { name: 'resumo', label: 'Resumo', align: 'left', field: 'resumo' },
+  { name: 'acoes', label: 'Ações', align: 'center' },
 ] as Coluna[];
 
 const activeTabLabel = computed(() => {
   switch (activeTab.value) {
-    case "fisicos":
-      return "Palavra-chave (Objetos físicos)";
-    case "dimensionais":
-      return "Palavra-chave (Objetos dimensionais)";
+    case 'fisicos':
+      return 'Palavra-chave (Objetos físicos)';
+    case 'dimensionais':
+      return 'Palavra-chave (Objetos dimensionais)';
     default:
-      return "Palavra-chave";
+      return 'Palavra-chave';
   }
 });
 
@@ -51,13 +51,13 @@ async function search() {
 }
 
 function irParaNovo() {
-  const obj = ref({ id: "", titulo: "" } as ObjetoFisico);
+  const obj = ref({ id: '', titulo: '' } as ObjetoFisico);
   useObjetoStore.setObjeto(obj);
-  router.push("/criar-objeto");
+  router.push('/criar-objeto');
 }
 function irParaEditar(obj: ObjetoFisico) {
   useObjetoStore.setObjeto(obj);
-  router.push("/editar-objeto/" + obj.id);
+  router.push('/editar-objeto/' + obj.id);
 }
 function deletarObjeto(obj: ObjetoFisico) {
   deletarObjetoFisico(obj);
@@ -68,7 +68,7 @@ function irParaMidias(obj: ObjetoFisico) {
   router.push(`/objetos/${obj.id}/midias`);
 }
 function Upload(id: string) {
-  router.push("upload-midias/:" + id);
+  router.push('upload-midias/:' + id);
 }
 </script>
 

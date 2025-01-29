@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { onBeforeMount, reactive, ref, computed } from 'vue';
+import { onBeforeMount, watch, reactive, ref, computed } from 'vue';
 import axios from 'axios';
-import { Coluna, ClasseComum, ClassQueryResult, TreeNode } from './tipos';
+import { Coluna, ClasseComum, ClassQueryResult, TreeNode, Auth } from './tipos';
 import { useQuasar } from 'quasar';
 import { textoAposUltimoChar } from './funcoes';
 
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 import { listarClasses } from 'src/services/api';
+import { useAuthStore } from 'src/stores/auth-store';
+
 
 
 const dialogOpen = ref<boolean>(false);
 const editMode = ref<boolean>(false);
+
+const authStore = useAuthStore();
 const repoStore = useDadosRepositorio();
-const repositorioSelecionado = repoStore.get;
+const usuarioLogado = ref({} as Auth )
 const novaClasse = reactive<ClasseComum>({
   label: '',
   description: '',
@@ -140,12 +144,27 @@ function findParentNode(nodes: TreeNode[], parentLabel: string): any {
 }
 async function listarClasseMae() {
   try {
+
+    const repositorioConectado = authStore && authStore.get && authStore.get.repositorio_conectado;
+
+    if (!repositorioConectado || !repositorioConectado.uri) {
+      console.error('A URI ou repositorio_conectado não estão definidos.');
+      return; // Interrompe a execução caso não tenha URI
+    }
+
+    const uri = await authStore.get.repositorio_conectado.uri;
+    if (!uri) {
+      console.error('A URI não está preenchida.');
+      return; // Interrompe a execução se a uri não estiver preenchida
+    }
+
+
     const response = await axios.post<ClassQueryResult>(
       'http://localhost:5000/classapi/listar_classes',
       {
         keyword: keyword.value,
         orderby: 'subclassof',
-        repository: repoStore.get.uri
+        repository: uri
       }
     );
     arvoreClasses.value = [];
@@ -166,7 +185,7 @@ async function listarClasseMae() {
     });
     classeMaeSelecionada.value = listaClassesMae.value[0];
     organiza_arvore(listaClassesMae.value);
-    console.log('aqui', listaClassesMae);
+
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
   }
@@ -223,7 +242,7 @@ async function gravarClasse() {
       label: novaClasse.label,
       comment: novaClasse.description,
       subclassof: subClassOfValue,
-      repository: repoStore.get.uri
+      repository: authStore.get.repositorio_conectado.uri
     };
 
     const url = editMode.value
@@ -308,10 +327,24 @@ const showNotif = (mensagem: any) => {
     color: 'purple',
   });
 };
+function load_repositorio(){
+  console.log('repositório',repoStore.get)
+}
 onBeforeMount(() => {
   listarClasseMae();
 
+
 });
+
+
+watch(() => authStore.repositorio_conectado, (newVal) => {
+  if (newVal && newVal.uri) {
+    listarClasseMae();
+  }
+}, { immediate: true });
+
+
+
 </script>
 <style src="./Estilo.css"></style>
 
@@ -320,7 +353,7 @@ onBeforeMount(() => {
     <q-card class="q-pa-md q-mb-lg">
 
       <q-card-section >
-        Repositório selecionado: {{repoStore.get.nome  }}
+        Repositório selecionado: {{}}
         <q-input label="palavra-chave" outlined dense v-model="keyword" @keyup.enter="search" />
 
 

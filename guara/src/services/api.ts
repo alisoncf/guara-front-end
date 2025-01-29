@@ -13,7 +13,10 @@ import {
 } from 'src/pages/tipos';
 import { ref } from 'vue';
 import { textoAposUltimoChar } from 'src/pages/funcoes';
+
+import { useAuthStore } from 'src/stores/auth-store';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
+const authStore = useAuthStore();
 const repoStore = useDadosRepositorio();
 const router = useRouter();
 const api = axios.create({
@@ -31,12 +34,12 @@ export const getSparqData = () => {
 
 
 
-export async function listarRepositorios() {
+export async function listarRepositorios(nome: string|null) {
   const listaRepo = ref<Repositorio[]>([]);
-
+  console.log('repositório:', repoStore.get.nome)
   try {
-    const response = await axios.post<RepoQueryResult>(
-      'http://localhost:5000/repositorios/listar_repositorios'
+    const response = await axios.get<RepoQueryResult>(
+      'http://localhost:5000/repositorios/listar_repositorios?name='+nome
     );
 
     listaRepo.value = [];
@@ -59,9 +62,63 @@ export async function listarRepositorios() {
 }
 
 export async function listarClasses(keyword: string) {
+  // Aguarda o authStore ser inicializado corretamente
+  const uri = authStore.repositorio_conectado?.uri;
+
+  if (!uri) {
+    Notify.create({
+      type: 'negative',
+      message: 'Selecione o repositório antes de buscar classes',
+      timeout: 5000,
+    });
+    return [];
+  }
+
+  const listaClasses = ref<ClasseComum[]>([]);
+
+  try {
+    const response = await axios.post<ClassQueryResult>(
+      'http://localhost:5000/classapi/listar_classes',
+      {
+        keyword: keyword,
+        repository: uri,
+        orderby: 'subclassof',
+      }
+    );
+
+    listaClasses.value = [];
+    response.data.results.bindings.forEach((item) => {
+      const classItem: ClasseComum = {
+        uri: item.class.value,
+        label: item.label ? item.label.value : '',
+        description: item.description ? item.description.value : '',
+        subclassof: item.subclassof ? item.subclassof.value : '-',
+        mae_curta: textoAposUltimoChar(
+          item.subclassof ? item.subclassof.value : '-',
+          '#'
+        ),
+        nome_curto: textoAposUltimoChar(item.class.value, '#'),
+      };
+      listaClasses.value.push(classItem);
+    });
+  } catch (error) {
+    console.error('Erro ao buscar classes:', error);
+    Notify.create({
+      type: 'negative',
+      message: 'Erro ao buscar classes',
+      timeout: 5000,
+    });
+  }
+
+  return listaClasses.value;
+}
+
+
+export async function listarClasses2(keyword: string) {
+  const uri = authStore.get.repositorio_conectado.uri ;
   const listaClasses = ref<ClasseComum[]>([]);
   try {
-    if (repoStore.get.uri == '') {
+    if (uri == '') {
       Notify.create({
         type: 'negative',
         message: 'selecione o repositório',
@@ -69,11 +126,12 @@ export async function listarClasses(keyword: string) {
       });
       return [];
     }
+
     const response = await axios.post<ClassQueryResult>(
       'http://localhost:5000/classapi/listar_classes',
       {
         keyword: keyword,
-        repository: repoStore.get.uri,
+        repository: uri,
         orderby: 'subclassof',
       }
     );

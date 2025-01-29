@@ -1,3 +1,4 @@
+import { useAuthStore  } from 'src/stores/auth-store';
 // src/services/api.js
 
 import axios from 'axios';
@@ -8,8 +9,9 @@ import { Dialog, Notify } from 'quasar';
 
 import { ref } from 'vue';
 import { textoAposUltimoChar } from 'src/pages/funcoes';
-import { useDadosRepositorio } from 'src/stores/repositorio-store';
-const repoStore = useDadosRepositorio();
+
+
+const authStore = useAuthStore();
 const router = useRouter();
 
 
@@ -23,7 +25,7 @@ export function gravarObjetoFisico(objeto: ObjetoFisico) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...objeto, repository: repoStore.get.uri }),
+      body: JSON.stringify({ ...objeto, repository: authStore.get.repositorio_conectado('uri') }),
     }
   )
     .then(async (response) => {
@@ -57,7 +59,7 @@ export function gravarObjetoFisico(objeto: ObjetoFisico) {
 
 export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
   const listaObj = ref([] as ObjetoFisico[]);
-  if(!repoStore.get.uri){
+  if(!authStore.get.repositorio_conectado){
     Notify.create({
       type: 'negative',
       message: 'selecione um repositório',
@@ -71,7 +73,7 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
       {
         keyword: obj.descricao,
         type: 'fisico',
-        repository: repoStore.get.uri,
+        repository: authStore.get.repositorio_conectado.uri,
       }
     );
 

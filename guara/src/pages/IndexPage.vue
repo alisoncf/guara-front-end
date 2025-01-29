@@ -3,6 +3,7 @@
     <div class="project-section">
       <div class="info">
         <div class="vertical-line"></div>
+
         <div class="content">
           <h2>Projeto Guará</h2>
           <p>O Guará é um sistema de informação baseado em RDF projetado para centros de memória. Ele permite a organização e a exploração de coleções de patrimônio cultural de maneira eficiente e integrada.</p>

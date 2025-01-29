@@ -27,7 +27,7 @@ export const useDadosRepositorio = defineStore('useDadosRepositorio', {
 
   actions: {
     set(objeto: Repositorio) {
-      SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(objeto));
+      SessionStorage.set(StorageKey.repositorio, JSON.stringify(objeto));
       this.$state = { ...objeto };
     },
   },
