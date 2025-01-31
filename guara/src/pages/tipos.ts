@@ -42,7 +42,7 @@ export interface Auth{
   user: string;
   validade: string
   repositorio: string;
-  repositorio_conectado:Repositorio[]
+  repositorio_conectado:Repositorio
 }
 
 

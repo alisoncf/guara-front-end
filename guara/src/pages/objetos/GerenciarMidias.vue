@@ -1,3 +1,102 @@
+<script setup lang="ts">
+import { ref, onMounted, onBeforeMount } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
+import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
+import { ObjetoFisico } from './manter-objeto';
+
+
+const objetoId = {}; // Ajuste conforme necessário
+const objetoStore = useDadosObjetoFisico();
+
+const objetoSelecionado = ref({} as ObjetoFisico);
+const midias = ref([]);
+const useFileUpload = ref([]);
+const thumbnails = ref([]);
+const router = useRouter();
+function adicionarMidia() {
+  midias.value.push({ url: '' });
+  useFileUpload.value.push(false);
+  thumbnails.value.push(null);
+}
+
+function removerMidia(index) {
+  midias.value.splice(index, 1);
+  useFileUpload.value.splice(index, 1);
+  thumbnails.value.splice(index, 1);
+}
+
+function handleFileUpload(event, index) {
+  const input = event.target;
+  if (input && input.files && input.files.length > 0) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result) {
+        midias.value[index].url = reader.result;
+        thumbnails.value[index] = reader.result;
+      }
+    };
+    reader.readAsDataURL(file);
+  } else {
+    console.error('Nenhum arquivo selecionado.');
+  }
+}
+
+function handleToggleChange(index) {
+  if (useFileUpload.value[index]) {
+    midias.value[index].url = '';
+    thumbnails.value[index] = null;
+  }
+}
+
+function handleUrlInput(index) {
+  // Validação simples para verificar se a URL é uma imagem
+  if (isImage(midias.value[index].url)) {
+    thumbnails.value[index] = midias.value[index].url;
+  } else {
+    thumbnails.value[index] = null;
+  }
+}
+
+function isImage(url) {
+  return url.startsWith('data:image/') && url.includes('base64');
+}
+
+function submitMidias() {
+  axios
+    .post(`http://localhost:5000/objetos/${objetoId}/midias`, midias.value)
+    .then((response) => {
+      console.log('Mídias salvas com sucesso:', response.data);
+      alert('Mídias salvas com sucesso!');
+    })
+    .catch((error) => {
+      console.error('Erro ao salvar mídias:', error);
+      alert('Erro ao salvar mídias.');
+    });
+}
+
+onMounted(() => {
+  axios
+    .get(`https://sua-api-endpoint/objetos/${objetoId}/midias`)
+    .then((response) => {
+      midias.value = response.data;
+      useFileUpload.value = midias.value.map(() => false);
+      thumbnails.value = midias.value.map((midia) =>
+        isImage(midia.url) ? midia.url : null
+      );
+    })
+    .catch((error) => {
+      console.error('Erro ao carregar mídias:', error);
+    });
+});
+onBeforeMount(() => {
+  console.log('montando gerenciar midias')
+  objetoId.value = router.currentRoute.value.params.id;
+  objetoSelecionado.value = objetoStore.get;
+  console.log('objeto', router.currentRoute.value.params.id);
+});
+</script>
 <template>
   <q-page>
     <q-toolbar class="bg-secondary text-white">
@@ -60,103 +159,7 @@
   </q-page>
 </template>
 
-<script setup>
-import { ref, onMounted, onBeforeMount } from 'vue';
-import axios from 'axios';
-import { useRouter } from 'vue-router';
-import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
-import { ObjetoFisico } from './manter-objeto';
 
-const objetoId = {}; // Ajuste conforme necessário
-const objetoStore = useDadosObjetoFisico();
-
-const objetoSelecionado = ref < ObjetoFisico > {};
-const midias = ref([]);
-const useFileUpload = ref([]);
-const thumbnails = ref([]);
-const router = useRouter();
-function adicionarMidia() {
-  midias.value.push({ url: '' });
-  useFileUpload.value.push(false);
-  thumbnails.value.push(null);
-}
-
-function removerMidia(index) {
-  midias.value.splice(index, 1);
-  useFileUpload.value.splice(index, 1);
-  thumbnails.value.splice(index, 1);
-}
-
-function handleFileUpload(event, index) {
-  const input = event.target;
-  if (input && input.files && input.files.length > 0) {
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (reader.result) {
-        midias.value[index].url = reader.result;
-        thumbnails.value[index] = reader.result;
-      }
-    };
-    reader.readAsDataURL(file);
-  } else {
-    console.error('Nenhum arquivo selecionado.');
-  }
-}
-
-function handleToggleChange(index) {
-  if (useFileUpload.value[index]) {
-    midias.value[index].url = '';
-    thumbnails.value[index] = null;
-  }
-}
-
-function handleUrlInput(index) {
-  // Validação simples para verificar se a URL é uma imagem
-  if (isImage(midias.value[index].url)) {
-    thumbnails.value[index] = midias.value[index].url;
-  } else {
-    thumbnails.value[index] = null;
-  }
-}
-
-function isImage(url) {
-  return url.startsWith('data:image/') && url.includes('base64');
-}
-
-function submitMidias() {
-  axios
-    .post(`https://sua-api-endpoint/objetos/${objetoId}/midias`, midias.value)
-    .then((response) => {
-      console.log('Mídias salvas com sucesso:', response.data);
-      alert('Mídias salvas com sucesso!');
-    })
-    .catch((error) => {
-      console.error('Erro ao salvar mídias:', error);
-      alert('Erro ao salvar mídias.');
-    });
-}
-
-onMounted(() => {
-  axios
-    .get(`https://sua-api-endpoint/objetos/${objetoId}/midias`)
-    .then((response) => {
-      midias.value = response.data;
-      useFileUpload.value = midias.value.map(() => false);
-      thumbnails.value = midias.value.map((midia) =>
-        isImage(midia.url) ? midia.url : null
-      );
-    })
-    .catch((error) => {
-      console.error('Erro ao carregar mídias:', error);
-    });
-});
-onBeforeMount(() => {
-  objetoId.value = router.currentRoute.value.params.id;
-  objetoSelecionado.value = objetoStore.get;
-  console.log('objeto', router.currentRoute.value.params.id);
-});
-</script>
 
 <style scoped>
 .gerenciar-midias-container {

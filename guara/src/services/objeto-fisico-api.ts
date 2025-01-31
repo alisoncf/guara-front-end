@@ -1,9 +1,10 @@
+import { ObjetoFisico } from './../pages/objetos/manter-objeto';
 import { useAuthStore  } from 'src/stores/auth-store';
 // src/services/api.js
 
 import axios from 'axios';
 import apiConfig from '../apiConfig';
-import { ObjetoFisico } from '../pages/objetos/manter-objeto';
+
 import { useRouter } from 'vue-router';
 import { Dialog, Notify } from 'quasar';
 
@@ -25,7 +26,7 @@ export function gravarObjetoFisico(objeto: ObjetoFisico) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...objeto, repository: authStore.get.repositorio_conectado('uri') }),
+      body: JSON.stringify({ ...objeto, repository: authStore.get.repositorio_conectado.uri }),
     }
   )
     .then(async (response) => {
