@@ -95,7 +95,7 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
         : [],
       id: textoAposUltimoChar(item.obj.value, '#'),
     })) as ObjetoFisico[];
-
+    console.log('->',listaObj.value)
     return listaObj.value;
   } catch (error) {
     Notify.create({
