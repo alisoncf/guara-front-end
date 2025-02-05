@@ -17,5 +17,6 @@ export interface ObjetoFisico {
   dataModificacao: string; // Data de modificação do objeto
   colecao: string;
   associatedMedia:  string[];
+  repositorio: string;
 
 }

@@ -64,10 +64,7 @@ function deletarObjeto(obj: ObjetoFisico) {
   search();
 }
 function irParaMidias(obj: ObjetoFisico) {
-
-
-
-
+  useObjetoStore.setObjeto(obj);
   router.push(`/objetos/${obj.id}/midias`);
 }
 function Upload(id: string) {

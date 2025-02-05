@@ -87,6 +87,7 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
       colecao: item.colecao && item.colecao.value ? item.colecao.value : '',
       descricao: item.descricao.value,
       tipoFisico: item.tipos?.value ? item.tipos.value.split(', ') : [],
+      repositorio: authStore.get.repositorio_conectado.uri,
       tipoFisicoAbreviado: item.tipos?.value
         ? item.tipos.value
             .split(', ')
