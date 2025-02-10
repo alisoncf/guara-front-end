@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
 import { ObjetoFisico } from './manter-objeto';
+import apiConfig from 'src/apiConfig';
 
 const objetoId = ref({}); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
@@ -88,7 +89,7 @@ function submitMidias() {
   });
 
   axios
-    .post('http://localhost:5000/uploadapp/upload', formData, {
+    .post(apiConfig.baseURL+apiConfig.endpoints.upload, formData, {
       headers: {
         'Content-Type': 'multipart/form-data', // Define o cabeçalho correto
       },
