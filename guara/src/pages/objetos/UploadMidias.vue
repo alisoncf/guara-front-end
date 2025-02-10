@@ -72,8 +72,8 @@ console.log('Objeto ID:', id);
 }
 
 .thumbnail {
-  max-width: 200px;
-  max-height: 200px;
+  max-width: 300px;
+  max-height: 300px;
   margin: 0 10px;
 }
 </style>

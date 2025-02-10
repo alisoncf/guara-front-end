@@ -30,7 +30,7 @@ function handleFileUpload(event, index) {
   const input = event.target;
   if (input && input.files && input.files.length > 0) {
     const file = input.files[0];
-    midias.value[index].file = file; // Armazena o arquivo diretamente
+    midias.value[index].file = file;
 
     // Gera uma URL temporária para exibir o preview
     const reader = new FileReader();
@@ -43,6 +43,9 @@ function handleFileUpload(event, index) {
   } else {
     console.error('Nenhum arquivo selecionado.');
   }
+}
+function isPDF(url) {
+  return url.endsWith('.pdf') || url.startsWith('data:application/pdf');
 }
 
 function handleToggleChange(index) {
@@ -73,7 +76,7 @@ function submitMidias() {
 
   // Adiciona o objetoId ao FormData
   formData.append('objetoId', objetoId.value);
-  formData.append('repository', objetoSelecionado.value.repositorio);
+  formData.append('repositorio', objetoSelecionado.value.repositorio);
   console.log('selecionado',objetoSelecionado.value.repositorio)
   // Adiciona cada mídia ao FormData
   midias.value.forEach((midia, index) => {
@@ -128,7 +131,7 @@ onBeforeMount(() => {
     <q-toolbar class="bg-secondary text-white">
       <q-toolbar-title>Gerenciar Mídias</q-toolbar-title>
     </q-toolbar>
-    <div class="gerenciar-midias-container">
+    <div class="q-pa-md">
       <q-card class="q-pa-md">
         <q-card-section>
           <q-list>
@@ -155,29 +158,36 @@ onBeforeMount(() => {
                     v-if="isImage(thumbnails[index])"
                     :src="thumbnails[index]"
                     alt="Thumbnail"
-                    style="max-width: 100px; max-height: 100px"
+                    style="max-width: 200px; max-height: 200px"
                   />
                   <video
                     v-else
                     controls
-                    style="max-width: 100px; max-height: 100px"
+                    style="max-width: 200px; max-height: 200px"
                   >
                     <source :src="thumbnails[index]" />
                   </video>
+
+
+
+
                 </div>
                 <q-btn
                   label="Remover"
                   color="negative"
                   @click="removerMidia(index)"
+                  style="max-width: 200px; max-height: 200px"
                 />
               </q-item-section>
             </q-item>
+            <div>
             <q-btn label="Adicionar Mídia" @click="adicionarMidia" />
             <q-btn
               label="Salvar Mídias"
               @click="submitMidias"
               color="primary"
             />
+          </div>
           </q-list>
         </q-card-section>
       </q-card>
@@ -185,9 +195,4 @@ onBeforeMount(() => {
   </q-page>
 </template>
 
-<style scoped>
-.gerenciar-midias-container {
-  max-width: 600px;
-  margin: auto;
-}
-</style>
+
