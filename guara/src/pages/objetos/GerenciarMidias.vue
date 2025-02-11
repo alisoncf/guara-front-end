@@ -5,12 +5,14 @@ import { useRouter } from 'vue-router';
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
 import { ObjetoFisico } from './manter-objeto';
 import apiConfig from 'src/apiConfig';
+import { Notify } from 'quasar';
 
-const objetoId = ref({}); // Ajuste conforme necessário
+const objetoId = ref({} as string ); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
 
 const objetoSelecionado = ref({} as ObjetoFisico);
 const midias = ref([]);
+const midiasEncontradas = ref([]);
 const useFileUpload = ref([]);
 const thumbnails = ref([]);
 const router = useRouter();
@@ -71,14 +73,17 @@ function handleUrlInput(index) {
 function isImage(url) {
   return url.startsWith('data:image/') && url.includes('base64');
 }
-
+function isVideo(url: string) {
+  return /\.(mp4|webm|ogg)$/i.test(url);
+}
 function submitMidias() {
   const formData = new FormData();
 
   // Adiciona o objetoId ao FormData
   formData.append('objetoId', objetoId.value);
   formData.append('repositorio', objetoSelecionado.value.repositorio);
-  console.log('selecionado',objetoSelecionado.value.repositorio)
+  formData.append('repository', objetoSelecionado.value.repositorio);
+  console.log('selecionado', objetoSelecionado.value.repositorio);
   // Adiciona cada mídia ao FormData
   midias.value.forEach((midia, index) => {
     if (midia.file) {
@@ -89,7 +94,7 @@ function submitMidias() {
   });
 
   axios
-    .post(apiConfig.baseURL+apiConfig.endpoints.upload, formData, {
+    .post(apiConfig.baseURL + apiConfig.endpoints.upload, formData, {
       headers: {
         'Content-Type': 'multipart/form-data', // Define o cabeçalho correto
       },
@@ -97,33 +102,67 @@ function submitMidias() {
     .then((response) => {
       console.log('Mídias salvas com sucesso:', response.data);
       alert('Mídias salvas com sucesso!');
+      buscarMidias();
     })
     .catch((error) => {
-      console.error('Erro ao salvar mídias:', error);
-      alert('Erro ao salvar mídias.');
+      Notify.create({
+        type: 'negative',
+        message: 'erro ao salvar midia ' + error,
+        timeout: 5000,
+      });
+    });
+}
+function buscarMidias() {
+  axios
+    .get(`${apiConfig.baseURL}${apiConfig.endpoints.listar_arquivos}`, {
+      params: {
+        objetoId: objetoId.value,
+        repositorio: objetoSelecionado.value.repositorio
+      }
+    })
+    .then((response) => {
+
+      console.log('Resposta da API:', response.data);
+
+      const midiasLocais = response.data.arquivos_locais || [];
+      const midiasSparql = response.data.arquivos_sparql?.results?.bindings || [];
+
+      // Processar arquivos locais
+      const midiasLocaisFormatadas = midiasLocais.map((nome: string) => ({
+        url: `${apiConfig.baseURL}/caminho_dos_arquivos/${nome}`, // Ajuste conforme necessário
+        nome: nome
+      }));
+
+      // Processar arquivos retornados pelo SPARQL
+      const midiasSparqlFormatadas = midiasSparql.map((item: any) => ({
+        url: item.s.value,
+        nome: item.s.value.split('/').pop()
+      }));
+
+      // Armazenar as mídias encontradas separadamente
+      midiasEncontradas.value = [...midiasLocaisFormatadas, ...midiasSparqlFormatadas];
+      Notify.create({
+        type: 'positive',
+        message: 'mídias encontradas: ' ,
+        timeout: 5000,
+      });
+    })
+    .catch((error) => {
+      Notify.create({
+        type: 'negative',
+        message: 'Erro ao buscar mídias: ' + error,
+        timeout: 5000,
+      });
     });
 }
 
 onMounted(() => {
-  axios
-    .get(`http://localhost:5000/objetos/${objetoId}/midias`)
-    .then((response) => {
-      midias.value = response.data;
-      useFileUpload.value = midias.value.map(() => false);
-      thumbnails.value = midias.value.map((midia) =>
-        isImage(midia.url) ? midia.url : null
-      );
-    })
-    .catch((error) => {
-      console.error('Erro ao carregar mídias:', error);
-    });
+  buscarMidias();
 });
 
 onBeforeMount(() => {
-  console.log('montando gerenciar midias');
   objetoId.value = router.currentRoute.value.params.id;
   objetoSelecionado.value = objetoStore.getObjeto;
-  console.log('objeto', objetoSelecionado.value);
 });
 </script>
 
@@ -134,6 +173,40 @@ onBeforeMount(() => {
     </q-toolbar>
     <div class="q-pa-md">
       <q-card class="q-pa-md">
+        <q-card-section>
+          <q-table
+            title="Arquivos"
+            :rows="midiasEncontradas"
+            :columns="[
+              { name: 'nome', label: 'Nome', align: 'left', field: 'nome' },
+              {
+                name: 'preview', label: 'Pré-visualização', align: 'center',
+                field: ''
+              },
+              {
+                name: 'acao', label: 'Ação', align: 'right',
+                field: ''
+              }
+            ]"
+            row-key="nome"
+          >
+            <template v-slot:body="props">
+              <q-tr :props="props">
+                <q-td key="nome">{{ props.row.nome }}</q-td>
+                <q-td key="preview">
+                  <img v-if="isImage(props.row.url)" :src="props.row.url" style="max-width: 100px; max-height: 100px;" />
+                  <video v-else-if="isVideo(props.row.url)" controls style="max-width: 100px; max-height: 100px;">
+                    <source :src="props.row.url" />
+                  </video>
+                  <q-btn v-else-if="isPDF(props.row.url)" icon="picture_as_pdf" flat dense :href="props.row.url" target="_blank" />
+                </q-td>
+                <q-td key="acao">
+                  <q-btn label="Abrir" color="primary" :href="props.row.url" target="_blank" />
+                </q-td>
+              </q-tr>
+            </template>
+          </q-table>
+        </q-card-section>
         <q-card-section>
           <q-list>
             <q-item v-for="(midia, index) in midias" :key="index">
@@ -161,17 +234,9 @@ onBeforeMount(() => {
                     alt="Thumbnail"
                     style="max-width: 200px; max-height: 200px"
                   />
-                  <video
-                    v-else
-                    controls
-                    style="max-width: 200px; max-height: 200px"
-                  >
+                  <video v-else controls style="max-width: 200px; max-height: 200px">
                     <source :src="thumbnails[index]" />
                   </video>
-
-
-
-
                 </div>
                 <q-btn
                   label="Remover"
@@ -182,18 +247,12 @@ onBeforeMount(() => {
               </q-item-section>
             </q-item>
             <div>
-            <q-btn label="Adicionar Mídia" @click="adicionarMidia" />
-            <q-btn
-              label="Salvar Mídias"
-              @click="submitMidias"
-              color="primary"
-            />
-          </div>
+              <q-btn label="Adicionar Mídia" @click="adicionarMidia" />
+              <q-btn label="Salvar Mídias" @click="submitMidias" color="primary" />
+            </div>
           </q-list>
         </q-card-section>
       </q-card>
     </div>
   </q-page>
 </template>
-
-

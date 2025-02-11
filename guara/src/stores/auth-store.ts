@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('useAuthStore', {
     } catch (error) {
       console.error('Erro ao carregar dados do SessionStorage:', error);
     }
-    console.log('Dados carregados do SessionStorage:', sessionData);
+
     return {
       ...defaultState,
       ...sessionData,

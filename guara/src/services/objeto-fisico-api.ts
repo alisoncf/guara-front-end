@@ -1,5 +1,5 @@
 import { ObjetoFisico } from './../pages/objetos/manter-objeto';
-import { useAuthStore  } from 'src/stores/auth-store';
+import { useAuthStore } from 'src/stores/auth-store';
 // src/services/api.js
 
 import axios from 'axios';
@@ -11,10 +11,8 @@ import { Dialog, Notify } from 'quasar';
 import { ref } from 'vue';
 import { textoAposUltimoChar } from 'src/pages/funcoes';
 
-
 const authStore = useAuthStore();
 const router = useRouter();
-
 
 export function gravarObjetoFisico(objeto: ObjetoFisico) {
   fetch(
@@ -26,7 +24,10 @@ export function gravarObjetoFisico(objeto: ObjetoFisico) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ ...objeto, repository: authStore.get.repositorio_conectado.uri }),
+      body: JSON.stringify({
+        ...objeto,
+        repository: authStore.get.repositorio_conectado.uri,
+      }),
     }
   )
     .then(async (response) => {
@@ -60,7 +61,12 @@ export function gravarObjetoFisico(objeto: ObjetoFisico) {
 
 export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
   const listaObj = ref([] as ObjetoFisico[]);
-  if(!authStore.get.repositorio_conectado){
+
+  if (
+    !authStore.get.repositorio_conectado ||
+    authStore.get.repositorio_conectado.uri == '' ||
+    authStore.get.repositorio_conectado.uri == undefined
+  ) {
     Notify.create({
       type: 'negative',
       message: 'selecione um repositório',
@@ -78,8 +84,6 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
       }
     );
 
-
-
     listaObj.value = response.data.results.bindings.map((item: any) => ({
       obj: item.obj.value,
       titulo: item.titulo.value,
@@ -95,7 +99,7 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
         : [],
       id: textoAposUltimoChar(item.obj.value, '#'),
     })) as ObjetoFisico[];
-    console.log('->',listaObj.value)
+    console.log('->', listaObj.value);
     return listaObj.value;
   } catch (error) {
     Notify.create({
@@ -108,7 +112,6 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
 }
 
 export function deletarObjetoFisico(objeto: ObjetoFisico) {
-
   Dialog.create({
     title: 'Confirmação',
     message:
@@ -120,8 +123,8 @@ export function deletarObjetoFisico(objeto: ObjetoFisico) {
     cancel: true,
     persistent: true,
   }).onOk(() => {
-     const id = textoAposUltimoChar(objeto.id,'#');
-     console.log('id-',id);
+    const id = textoAposUltimoChar(objeto.id, '#');
+    console.log('id-', id);
     fetch(
       `${apiConfig.baseURL}${apiConfig.endpoints.objectapi}/excluir_objeto_fisico`,
       {
@@ -149,7 +152,6 @@ export function deletarObjetoFisico(objeto: ObjetoFisico) {
           message: 'Objeto excluído com sucesso!',
           timeout: 3000,
         });
-
       })
       .catch((error) => {
         console.error('Erro ao excluir objeto:', error);
@@ -167,10 +169,10 @@ export function atualizarObjetoFisico(objeto: ObjetoFisico) {
     title: 'Confirmação',
     message: 'Tem certeza que deseja atualizar este objeto?',
     cancel: true,
-    persistent: true
+    persistent: true,
   })
     .onOk(() => {
-      objeto.id=textoAposUltimoChar(objeto.id,'#');
+      objeto.id = textoAposUltimoChar(objeto.id, '#');
       fetch(
         apiConfig.baseURL +
           apiConfig.endpoints.objectapi +
@@ -217,4 +219,3 @@ export function atualizarObjetoFisico(objeto: ObjetoFisico) {
       });
     });
 }
-
