@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeMount } from "vue";
-import axios from "axios";
-import { useRouter } from "vue-router";
-import { useDadosObjetoFisico } from "../../stores/objeto-fisico";
-import { ObjetoFisico } from "./manter-objeto";
-import apiConfig from "src/apiConfig";
-import { Dialog, Notify } from "quasar";
+import { ref, onMounted, onBeforeMount } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
+import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
+import { ObjetoFisico } from './manter-objeto';
+import apiConfig from 'src/apiConfig';
+import { Dialog, Notify } from 'quasar';
 
 const objetoId = ref({} as string); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
@@ -24,7 +24,7 @@ const thumbnails = ref([]);
 const router = useRouter();
 
 function adicionarMidia() {
-  midias.value.push({ file: "", url: "", uri: "" });
+  midias.value.push({ file: '', url: '', uri: '' });
   useFileUpload.value.push();
   thumbnails.value.push();
 }
@@ -50,16 +50,16 @@ function handleFileUpload(event, index) {
     };
     reader.readAsDataURL(file);
   } else {
-    console.error("Nenhum arquivo selecionado.");
+    console.error('Nenhum arquivo selecionado.');
   }
 }
 function isPDF(url) {
-  return url.endsWith(".pdf") || url.startsWith("data:application/pdf");
+  return url.endsWith('.pdf') || url.startsWith('data:application/pdf');
 }
 
 function handleToggleChange(index) {
   if (useFileUpload.value[index]) {
-    midias.value[index].url = "";
+    midias.value[index].url = '';
     thumbnails.value[index] = null;
   } else {
     midias.value[index].file = null;
@@ -69,8 +69,8 @@ function handleToggleChange(index) {
 function excluir(arquivo: string ) {
 
   Dialog.create({
-    title: "Exclusão",
-    message: "Tem certeza que deseja excluir essa mídia e sua relação com o objeto?",
+    title: 'Exclusão',
+    message: 'Tem certeza que deseja excluir essa mídia e sua relação com o objeto?',
     cancel: true,
     persistent: true,
   })
@@ -83,22 +83,22 @@ function excluir(arquivo: string ) {
       })
         .then((response) => {
           Notify.create({
-            type: "positives",
-            message: "arquivos enviados ",
+            type: 'warning',
+            message: 'arquivo excluído ',
             timeout: 5000,
           });
           buscarMidias();
         })
         .catch((error) => {
           Notify.create({
-            type: "negative",
-            message: "erro ao salvar midia " + error,
+            type: 'negative',
+            message: 'erro ao salvar midia ' + error,
             timeout: 5000,
           });
         });
     })
     .onCancel(() => {
-      console.log("Usuário cancelou a saída");
+      console.log('Usuário cancelou a saída');
     });
 }
 function handleUrlInput(index) {
@@ -111,7 +111,7 @@ function handleUrlInput(index) {
 }
 
 function isImage(url) {
-  return url.startsWith("data:image/") && url.includes("base64");
+  return url.startsWith('data:image/') && url.includes('base64');
 }
 function isVideo(url: string) {
   return /\.(mp4|webm|ogg)$/i.test(url);
@@ -120,37 +120,37 @@ function submitMidias() {
   const formData = new FormData();
 
   // Adiciona o objetoId ao FormData
-  formData.append("objetoId", objetoId.value);
-  formData.append("repositorio", objetoSelecionado.value.repositorio);
-  formData.append("repository", objetoSelecionado.value.repositorio);
-  console.log("selecionado", objetoSelecionado.value.repositorio);
+  formData.append('objetoId', objetoId.value);
+  formData.append('repositorio', objetoSelecionado.value.repositorio);
+  formData.append('repository', objetoSelecionado.value.repositorio);
+  console.log('selecionado', objetoSelecionado.value.repositorio);
   // Adiciona cada mídia ao FormData
   midias.value.forEach((midia, index) => {
     if (midia.file) {
-      formData.append("midias", midia.file); // Envia o arquivo diretamente
+      formData.append('midias', midia.file); // Envia o arquivo diretamente
     } else if (midia.url) {
-      formData.append("midias", midia.url); // Envia a URL como string
+      formData.append('midias', midia.url); // Envia a URL como string
     }
   });
 
   axios
     .post(apiConfig.baseURL + apiConfig.endpoints.upload, formData, {
       headers: {
-        "Content-Type": "multipart/form-data", // Define o cabeçalho correto
+        'Content-Type': 'multipart/form-data', // Define o cabeçalho correto
       },
     })
     .then((response) => {
       Notify.create({
-        type: "positives",
-        message: "arquivos enviados ",
+        type: 'positives',
+        message: 'arquivos enviados ',
         timeout: 5000,
       });
       buscarMidias();
     })
     .catch((error) => {
       Notify.create({
-        type: "negative",
-        message: "erro ao salvar midia " + error,
+        type: 'negative',
+        message: 'erro ao salvar midia ' + error,
         timeout: 5000,
       });
     });
@@ -164,7 +164,7 @@ function buscarMidias() {
       },
     })
     .then((response) => {
-      console.log("Resposta da API:", response.data);
+      console.log('Resposta da API:', response.data);
 
       const midiasLocais = response.data.arquivos_locais || [];
       const midiasSparql = response.data.arquivos_sparql?.results?.bindings || [];
@@ -178,21 +178,17 @@ function buscarMidias() {
       // Processar arquivos retornados pelo SPARQL
       const midiasSparqlFormatadas = midiasSparql.map((item: any) => ({
         url: item.s.value,
-        nome: item.s.value.split("/").pop(),
+        nome: item.s.value.split('/').pop(),
       }));
 
       // Armazenar as mídias encontradas separadamente
       midiasEncontradas.value = [...midiasLocaisFormatadas];
-      Notify.create({
-        type: "positive",
-        message: "mídias encontradas: ",
-        timeout: 5000,
-      });
+
     })
     .catch((error) => {
       Notify.create({
-        type: "negative",
-        message: "Erro ao buscar mídias: " + error,
+        type: 'negative',
+        message: 'Erro ao buscar mídias: ' + error,
         timeout: 5000,
       });
     });
