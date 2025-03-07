@@ -7,6 +7,7 @@ const apiConfig = {
   endpoints: {
     classapi: '/classapi',
     upload: '/uploadapi/upload',
+    remove_file: '/uploadapi/remove',
     sparqapi: '/sparqapi',
     objectapi: '/objectapi',
     listar_arquivos: '/objectapi/listar_arquivos',

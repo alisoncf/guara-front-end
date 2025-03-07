@@ -18,30 +18,29 @@ interface Midia {
 
 const objetoSelecionado = ref({} as ObjetoFisico);
 const midias = ref([] as Midia[]);
-const midiasEncontradas = ref([]);
-const useFileUpload = ref([]);
-const thumbnails = ref([]);
+const midiasEncontradas = ref([] as Midia[]);
+const useFileUpload = ref([true] as any);
+const thumbnails = ref([] as any);
 const router = useRouter();
-
+const mostrar_excluidos = ref(false);
 function adicionarMidia() {
-  midias.value.push({ file: "", url: "", uri: "" });
-  useFileUpload.value.push();
+  midias.value.push({ file: '', url: '', uri: '' });
+  useFileUpload.value.push(true );
   thumbnails.value.push();
 }
 
-function removerMidia(index) {
+function removerMidia(index: number) {
   midias.value.splice(index, 1);
   useFileUpload.value.splice(index, 1);
   thumbnails.value.splice(index, 1);
 }
 
-function handleFileUpload(event, index) {
+function handleFileUpload(event: { target: any }, index: string | number | any | never) {
   const input = event.target;
   if (input && input.files && input.files.length > 0) {
     const file = input.files[0];
     midias.value[index].file = file;
 
-    // Gera uma URL temporária para exibir o preview
     const reader = new FileReader();
     reader.onload = () => {
       if (reader.result) {
@@ -50,14 +49,14 @@ function handleFileUpload(event, index) {
     };
     reader.readAsDataURL(file);
   } else {
-    console.error("Nenhum arquivo selecionado.");
+    console.error('Nenhum arquivo selecionado.');
   }
 }
-function isPDF(url) {
+function isPDF(url: string) {
   return url.endsWith(".pdf") || url.startsWith("data:application/pdf");
 }
 
-function handleToggleChange(index) {
+function handleToggleChange(index: string | number) {
   if (useFileUpload.value[index]) {
     midias.value[index].url = "";
     thumbnails.value[index] = null;
@@ -66,8 +65,7 @@ function handleToggleChange(index) {
     thumbnails.value[index] = null;
   }
 }
-function excluir(arquivo: string ) {
-
+function excluir(arquivo: string) {
   Dialog.create({
     title: "Exclusão",
     message: "Tem certeza que deseja excluir essa mídia e sua relação com o objeto?",
@@ -77,14 +75,14 @@ function excluir(arquivo: string ) {
     .onOk(() => {
       axios
         .post(apiConfig.baseURL + apiConfig.endpoints.remove_file, {
-        objetoId: objetoId.value,
-        repositorio: objetoSelecionado.value.repositorio,
-        file: arquivo,
-      })
+          objetoId: objetoId.value,
+          repositorio: objetoSelecionado.value.repositorio,
+          file: arquivo,
+        })
         .then((response) => {
           Notify.create({
-            type: "positives",
-            message: "arquivos enviados ",
+            type: "warning",
+            message: "arquivo excluído ",
             timeout: 5000,
           });
           buscarMidias();
@@ -101,7 +99,7 @@ function excluir(arquivo: string ) {
       console.log("Usuário cancelou a saída");
     });
 }
-function handleUrlInput(index) {
+function handleUrlInput(index: string | number) {
   // Validação simples para verificar se a URL é uma imagem
   if (isImage(midias.value[index].url)) {
     thumbnails.value[index] = midias.value[index].url;
@@ -110,7 +108,7 @@ function handleUrlInput(index) {
   }
 }
 
-function isImage(url) {
+function isImage(url: string) {
   return url.startsWith("data:image/") && url.includes("base64");
 }
 function isVideo(url: string) {
@@ -118,20 +116,30 @@ function isVideo(url: string) {
 }
 function submitMidias() {
   const formData = new FormData();
-
+  if (midias.value.length == 0) {
+    Notify.create({
+      type: "negative",
+      message:
+        "Não foram adicionadas mídias. Clique em adicionar mídias para escolher um arquivo ",
+      timeout: 5000,
+    });
+    return;
+  }
   // Adiciona o objetoId ao FormData
   formData.append("objetoId", objetoId.value);
   formData.append("repositorio", objetoSelecionado.value.repositorio);
   formData.append("repository", objetoSelecionado.value.repositorio);
   console.log("selecionado", objetoSelecionado.value.repositorio);
   // Adiciona cada mídia ao FormData
-  midias.value.forEach((midia, index) => {
-    if (midia.file) {
-      formData.append("midias", midia.file); // Envia o arquivo diretamente
-    } else if (midia.url) {
-      formData.append("midias", midia.url); // Envia a URL como string
+  midias.value.forEach(
+    (midia: { file: string | Blob; url: string | Blob }, index: any) => {
+      if (midia.file) {
+        formData.append("midias", midia.file); // Envia o arquivo diretamente
+      } else if (midia.url) {
+        formData.append("midias", midia.url); // Envia a URL como string
+      }
     }
-  });
+  );
 
   axios
     .post(apiConfig.baseURL + apiConfig.endpoints.upload, formData, {
@@ -146,6 +154,7 @@ function submitMidias() {
         timeout: 5000,
       });
       buscarMidias();
+      midias.value = [];
     })
     .catch((error) => {
       Notify.create({
@@ -164,30 +173,17 @@ function buscarMidias() {
       },
     })
     .then((response) => {
-      console.log("Resposta da API:", response.data);
-
+      const midiasCombinadas = ref([] as Midia[]);
       const midiasLocais = response.data.arquivos_locais || [];
+      midiasCombinadas.value = response.data.arquivos_combinados || [];
       const midiasSparql = response.data.arquivos_sparql?.results?.bindings || [];
 
-      // Processar arquivos locais
-      const midiasLocaisFormatadas = midiasLocais.map((nome: string) => ({
-        url: `${apiConfig.baseURL}/caminho_dos_arquivos/${nome}`, // Ajuste conforme necessário
-        nome: nome,
-      }));
-
-      // Processar arquivos retornados pelo SPARQL
-      const midiasSparqlFormatadas = midiasSparql.map((item: any) => ({
-        url: item.s.value,
-        nome: item.s.value.split("/").pop(),
-      }));
-
-      // Armazenar as mídias encontradas separadamente
-      midiasEncontradas.value = [...midiasLocaisFormatadas];
-      Notify.create({
-        type: "positive",
-        message: "mídias encontradas: ",
-        timeout: 5000,
+      midiasCombinadas.value.forEach((midia) => {
+        midia.url = "http://localhost/" + midia.uri; // Define .url como .uri
       });
+
+      midiasEncontradas.value = midiasCombinadas.value;
+      console.log(midiasEncontradas.value);
     })
     .catch((error) => {
       Notify.create({
@@ -215,10 +211,31 @@ onBeforeMount(() => {
     </q-toolbar>
     <div class="q-pa-md">
       <q-card class="q-pa-md">
+        <div class="q-pa-md">
+          <div class="row">
+            <div class="col-6">
+              <q-item>
+                <q-item-section>
+                  <q-item-label class="text-bold">Objeto Id:</q-item-label>
+                  <q-item-label>{{ objetoSelecionado.id }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </div>
+            <div class="col-6">
+              <q-item>
+                <q-item-section>
+                  <q-item-label class="text-bold">Título:</q-item-label>
+                  <q-item-label>{{ objetoSelecionado.titulo }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </div>
+          </div>
+        </div>
+
         <q-card-section>
           <q-table
-            title="Arquivos"
-            :rows="midiasEncontradas"
+            title="Arquivos de Mídia"
+            :rows="midiasEncontradas.filter((row) => row.nome !== 'excluidos')"
             :columns="[
               { name: 'nome', label: 'Nome', align: 'left', field: 'nome' },
               {
@@ -285,25 +302,29 @@ onBeforeMount(() => {
               </q-tr>
             </template>
           </q-table>
+          <q-btn label="Adicionar Mídia" @click="adicionarMidia" color="primary" />
         </q-card-section>
         <q-card-section>
+
           <q-list>
             <q-item v-for="(midia, index) in midias" :key="index">
-              <q-item-section>
+              <q-item-section >
                 <q-toggle
                   v-model="useFileUpload[index]"
-                  label="Usar Upload de Arquivo"
+                  label="Upload de Arquivo"
                   @update:model-value="() => handleToggleChange(index)"
                 />
                 <input
                   v-if="useFileUpload[index]"
                   type="file"
+
                   @change="(e) => handleFileUpload(e, index)"
                 />
+
                 <q-input
                   v-else
                   v-model="midias[index].url"
-                  label="URL da mídia"
+                  label="Ou cole aqui a URL da mídia"
                   @input="() => handleUrlInput(index)"
                 />
                 <div v-if="thumbnails[index]">
@@ -313,23 +334,20 @@ onBeforeMount(() => {
                     alt="Thumbnail"
                     style="max-width: 200px; max-height: 200px"
                   />
-                  <video v-else controls style="max-width: 200px; max-height: 200px">
-                    <source :src="thumbnails[index]" />
-                  </video>
+
                 </div>
-                <q-btn
-                  label="Remover"
-                  color="negative"
-                  @click="removerMidia(index)"
-                  style="max-width: 200px; max-height: 200px"
-                />
+                <q-btn-group flat push>
+                  <q-btn label="Remover" color="negative" @click="removerMidia(index)" />
+                </q-btn-group>
               </q-item-section>
             </q-item>
-            <div>
-              <q-btn label="Adicionar Mídia" @click="adicionarMidia" />
-              <q-btn label="Salvar Mídias" @click="submitMidias" color="primary" />
-            </div>
           </q-list>
+        </q-card-section>
+        <q-card-section>
+          <q-btn-group flat push>
+            <q-btn label="Salvar Mídias" @click="submitMidias" color="green-8" />
+            <q-btn @click="router.go(-1)" label="Voltar" color="secondary" />
+          </q-btn-group>
         </q-card-section>
       </q-card>
     </div>

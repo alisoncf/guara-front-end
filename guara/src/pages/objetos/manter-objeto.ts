@@ -18,5 +18,14 @@ export interface ObjetoFisico {
   colecao: string;
   associatedMedia:  string[];
   repositorio: string;
-
+  dimensao: string;
 }
+
+
+
+
+export interface Arquivo{
+  nome: string;
+  uri: string;
+}
+

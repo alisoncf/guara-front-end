@@ -154,14 +154,9 @@ function Upload(id: string) {
         </q-table>
       </q-card-section>
       <q-card-section>
-        <q-btn-group flat push  >
+        <q-btn-group flat push>
           <q-btn @click="irParaNovo" color="primary" label="Novo objeto" />
-          <q-btn
-                  @click=router.go(-1)
-                  label="Voltar"
-                  color="secondary"
-
-                />
+          <q-btn @click="router.go(-1)" label="Voltar" color="secondary" />
         </q-btn-group>
       </q-card-section>
     </q-card>
