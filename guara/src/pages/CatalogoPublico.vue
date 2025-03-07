@@ -88,6 +88,16 @@
                 Tipo: {{ item.tipoFisicoAbreviado.join(', ') }}
               </div>
               <div class="text-body2 q-mt-sm">{{ item.resumo || item.descricao || 'Sem descrição' }}</div>
+              
+              <!-- Informações adicionais -->
+              <div v-if="temDimensoes(item)" class="text-caption q-mt-sm text-grey-8">
+                <q-icon name="straighten" size="xs" class="q-mr-xs" />
+                {{ formatarDimensoes(item) }}
+              </div>
+              <div v-if="item.material" class="text-caption text-grey-8">
+                <q-icon name="category" size="xs" class="q-mr-xs" />
+                {{ item.material }}
+              </div>
             </q-card-section>
 
             <q-card-actions align="right">
@@ -162,7 +172,7 @@
                   </q-item-section>
                 </q-item>
 
-                <q-item v-if="temDimensoes">
+                <q-item v-if="temDimensoes(itemAtual)">
                   <q-item-section>
                     <q-item-label caption>Dimensões</q-item-label>
                     <q-item-label>{{ formatarDimensoes(itemAtual) }}</q-item-label>
@@ -185,8 +195,56 @@
                   <div class="text-h6">Mídias Associadas</div>
                   <div v-if="itemAtual.associatedMedia?.length" class="q-mt-sm">
                     <!-- Lista de mídias -->
-                    <div v-for="(media, index) in itemAtual.associatedMedia" :key="index">
-                      <!-- Implementar visualização de mídia aqui -->
+                    <div v-for="(media, index) in itemAtual.associatedMedia" :key="index" class="col-4">
+                      <q-card flat bordered>
+                        <!-- Imagem -->
+                        <q-img
+                          v-if="isImage(media)"
+                          :src="media"
+                          style="height: 200px"
+                          fit="contain"
+                        >
+                          <template v-slot:error>
+                            <div class="absolute-full flex flex-center bg-grey-3">
+                              <q-icon name="error" size="2em" />
+                            </div>
+                          </template>
+                        </q-img>
+
+                        <!-- PDF -->
+                        <div v-else-if="isPDF(media)" class="flex flex-center q-pa-md">
+                          <q-btn
+                            flat
+                            color="primary"
+                            icon="picture_as_pdf"
+                            :href="media"
+                            target="_blank"
+                            label="Abrir PDF"
+                          />
+                        </div>
+
+                        <!-- Vídeo -->
+                        <video
+                          v-else-if="isVideo(media)"
+                          controls
+                          class="full-width"
+                          style="max-height: 200px"
+                        >
+                          <source :src="media" />
+                        </video>
+
+                        <!-- Outros tipos -->
+                        <div v-else class="flex flex-center q-pa-md">
+                          <q-btn
+                            flat
+                            color="primary"
+                            icon="attachment"
+                            :href="media"
+                            target="_blank"
+                            label="Abrir arquivo"
+                          />
+                        </div>
+                      </q-card>
                     </div>
                   </div>
                   <div v-else class="text-grey-6">
@@ -379,21 +437,19 @@ function formatarData(data: string): string {
   return new Date(data).toLocaleDateString();
 }
 
-function formatarDimensoes(item: any): string {
-  const dimensoes = [];
-  if (item.altura) dimensoes.push(`Altura: ${item.altura}cm`);
-  if (item.largura) dimensoes.push(`Largura: ${item.largura}cm`);
-  if (item.profundidade) dimensoes.push(`Profundidade: ${item.profundidade}cm`);
-  if (item.peso) dimensoes.push(`Peso: ${item.peso}g`);
-  return dimensoes.join(' | ') || 'Não informadas';
+// Funções auxiliares para dimensões
+function temDimensoes(item: any): boolean {
+  return !!(item.altura || item.largura || item.profundidade || item.peso);
 }
 
-const temDimensoes = computed(() => {
-  return itemAtual.value?.altura || 
-         itemAtual.value?.largura || 
-         itemAtual.value?.profundidade || 
-         itemAtual.value?.peso;
-});
+function formatarDimensoes(item: any): string {
+  const dimensoes = [];
+  if (item.altura) dimensoes.push(`${item.altura}cm (A)`);
+  if (item.largura) dimensoes.push(`${item.largura}cm (L)`);
+  if (item.profundidade) dimensoes.push(`${item.profundidade}cm (P)`);
+  if (item.peso) dimensoes.push(`${item.peso}g`);
+  return dimensoes.join(' × ') || 'Não informadas';
+}
 
 // Funções de navegação
 async function verDetalhes(id: string) {
@@ -443,6 +499,19 @@ watch(searchTerm,
     }
   }, 500)
 );
+
+// Funções auxiliares para mídia
+function isImage(url: string): boolean {
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(url) || url.startsWith('data:image/');
+}
+
+function isPDF(url: string): boolean {
+  return url.endsWith('.pdf') || url.startsWith('data:application/pdf');
+}
+
+function isVideo(url: string): boolean {
+  return /\.(mp4|webm|ogg)$/i.test(url);
+}
 
 // Mounted hook
 onMounted(() => {
@@ -541,5 +610,13 @@ onMounted(() => {
 
 .catalogo-list {
   min-height: 200px;
+}
+
+.text-caption {
+  line-height: 1.2;
+}
+
+.q-icon {
+  vertical-align: middle;
 }
 </style> 
