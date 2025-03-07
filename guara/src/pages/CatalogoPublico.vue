@@ -126,49 +126,29 @@
       transition-show="scale"
       transition-hide="scale"
     >
-      <q-card style="width: 80vw; max-height: 90vh;" class="column rounded-borders">
-        <!-- Cabeçalho -->
-        <q-card-section class="bg-primary text-white rounded-top">
+      <q-card class="dialog-card rounded-borders">
+        <!-- Cabeçalho fixo -->
+        <q-card-section class="bg-primary text-white rounded-top header">
           <div class="row items-center">
             <div class="text-h6 col">{{ itemAtual?.titulo || 'Sem título' }}</div>
             <q-btn flat round icon="close" v-close-popup />
           </div>
         </q-card-section>
 
-        <!-- Loading -->
-        <div v-if="loading" class="text-center q-pa-xl">
-          <q-spinner-dots color="primary" size="40px" />
-          <p>Carregando detalhes do item...</p>
-        </div>
-
-        <!-- Conteúdo -->
-        <q-card-section v-else-if="itemAtual" class="q-pa-md scroll">
+        <!-- Área de conteúdo com scroll -->
+        <q-card-section class="content-area">
           <div class="row q-col-gutter-md">
-            <!-- Coluna da esquerda -->
+            <!-- Coluna principal -->
             <div class="col-12 col-md-8">
               <div class="text-h6">Descrição</div>
-              <p>{{ itemAtual.descricao || itemAtual.resumo || 'Sem descrição disponível' }}</p>
+              <p>{{ itemAtual?.descricao || itemAtual?.resumo || 'Sem descrição disponível' }}</p>
 
               <div class="text-h6 q-mt-md">Detalhes</div>
               <q-list>
-                <q-item v-if="itemAtual.tipoFisicoAbreviado?.length">
+                <q-item v-if="itemAtual?.tipoFisicoAbreviado?.length">
                   <q-item-section>
                     <q-item-label caption>Tipo</q-item-label>
                     <q-item-label>{{ itemAtual.tipoFisicoAbreviado.join(', ') }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-
-                <q-item v-if="itemAtual.colecao">
-                  <q-item-section>
-                    <q-item-label caption>Coleção</q-item-label>
-                    <q-item-label>{{ formatarNomeColecao(itemAtual.colecao) }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-
-                <q-item v-if="itemAtual.dataCriacao">
-                  <q-item-section>
-                    <q-item-label caption>Data de Criação</q-item-label>
-                    <q-item-label>{{ formatarData(itemAtual.dataCriacao) }}</q-item-label>
                   </q-item-section>
                 </q-item>
 
@@ -179,7 +159,7 @@
                   </q-item-section>
                 </q-item>
 
-                <q-item v-if="itemAtual.material">
+                <q-item v-if="itemAtual?.material">
                   <q-item-section>
                     <q-item-label caption>Material</q-item-label>
                     <q-item-label>{{ itemAtual.material }}</q-item-label>
@@ -188,75 +168,123 @@
               </q-list>
             </div>
 
-            <!-- Coluna da direita -->
+            <!-- Coluna de mídias -->
             <div class="col-12 col-md-4">
               <q-card flat bordered>
                 <q-card-section>
-                  <div class="text-h6">Mídias Associadas</div>
-                  <div v-if="itemAtual.associatedMedia?.length" class="q-mt-sm">
-                    <!-- Lista de mídias -->
-                    <div v-for="(media, index) in itemAtual.associatedMedia" :key="index" class="col-4">
-                      <q-card flat bordered>
-                        <!-- Imagem -->
-                        <q-img
-                          v-if="isImage(media)"
-                          :src="media"
-                          style="height: 200px"
-                          fit="contain"
-                        >
-                          <template v-slot:error>
-                            <div class="absolute-full flex flex-center bg-grey-3">
-                              <q-icon name="error" size="2em" />
-                            </div>
-                          </template>
-                        </q-img>
+                  <div class="text-h6">
+                    <q-icon name="photo_library" size="sm" class="q-mr-sm" />
+                    Mídias
+                  </div>
 
-                        <!-- PDF -->
-                        <div v-else-if="isPDF(media)" class="flex flex-center q-pa-md">
-                          <q-btn
-                            flat
-                            color="primary"
-                            icon="picture_as_pdf"
-                            :href="media"
-                            target="_blank"
-                            label="Abrir PDF"
-                          />
-                        </div>
+                  <!-- Com mídias -->
+                  <div v-if="itemAtual?.associatedMedia?.length" class="row q-col-gutter-sm q-mt-sm">
+                    <div 
+                      v-for="(media, index) in itemAtual.associatedMedia" 
+                      :key="index" 
+                      class="col-12"
+                    >
+                      <!-- Imagem -->
+                      <q-img
+                        v-if="isImage(media)"
+                        :src="media"
+                        style="height: 200px"
+                        fit="contain"
+                        class="rounded-borders"
+                      >
+                        <template v-slot:error>
+                          <div class="absolute-full flex flex-center bg-grey-3">
+                            <q-icon name="error" size="2em" />
+                          </div>
+                        </template>
+                      </q-img>
 
-                        <!-- Vídeo -->
-                        <video
-                          v-else-if="isVideo(media)"
-                          controls
-                          class="full-width"
-                          style="max-height: 200px"
-                        >
-                          <source :src="media" />
-                        </video>
+                      <!-- PDF -->
+                      <q-btn
+                        v-else-if="isPDF(media)"
+                        class="full-width"
+                        color="primary"
+                        icon="picture_as_pdf"
+                        :href="media"
+                        target="_blank"
+                        label="Abrir PDF"
+                      />
 
-                        <!-- Outros tipos -->
-                        <div v-else class="flex flex-center q-pa-md">
-                          <q-btn
-                            flat
-                            color="primary"
-                            icon="attachment"
-                            :href="media"
-                            target="_blank"
-                            label="Abrir arquivo"
-                          />
-                        </div>
-                      </q-card>
+                      <!-- Vídeo -->
+                      <video
+                        v-else-if="isVideo(media)"
+                        controls
+                        class="full-width rounded-borders"
+                        style="max-height: 200px"
+                      >
+                        <source :src="media" />
+                      </video>
                     </div>
                   </div>
-                  <div v-else class="text-grey-6">
-                    Nenhuma mídia associada
+
+                  <!-- Sem mídias -->
+                  <div v-else class="text-center q-pa-md text-grey-6">
+                    <q-icon name="no_photography" size="2em" />
+                    <p class="q-mt-sm">Este item não possui mídias associadas.</p>
                   </div>
                 </q-card-section>
               </q-card>
             </div>
           </div>
+
+          <!-- Separador -->
+          <q-separator class="q-my-lg" />
+
+          <!-- Itens Relacionados -->
+          <div class="items-relacionados q-mb-lg">
+            <div class="text-h6">
+              <q-icon name="link" size="sm" class="q-mr-sm" />
+              Itens Relacionados
+            </div>
+            
+            <div v-if="loading" class="text-center q-pa-md">
+              <q-spinner-dots color="primary" size="40px" />
+              <p>Carregando relações...</p>
+            </div>
+
+            <div v-else>
+              <q-list v-if="itemAtual?.temRelacao?.length" padding>
+                <q-item
+                  v-for="relacaoId in itemAtual.temRelacao"
+                  :key="relacaoId"
+                  clickable
+                  v-ripple
+                  @click="carregarItemRelacionado(relacaoId)"
+                  class="relacionado-item"
+                >
+                  <q-item-section avatar>
+                    <q-icon name="article" color="primary" />
+                  </q-item-section>
+                  
+                  <q-item-section>
+                    <q-item-label>
+                      {{ getItemRelacionado(relacaoId)?.titulo || 'Carregando...' }}
+                    </q-item-label>
+                    <q-item-label caption>
+                      {{ getItemRelacionado(relacaoId)?.tipoFisicoAbreviado?.join(', ') }}
+                    </q-item-label>
+                  </q-item-section>
+
+                  <q-item-section side>
+                    <q-icon name="chevron_right" color="grey" />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+
+              <div v-else class="text-center q-pa-md text-grey-6">
+                <q-icon name="link_off" size="2em" />
+                <p class="q-mt-sm">Este item não possui relações com outros objetos.</p>
+              </div>
+            </div>
+          </div>
         </q-card-section>
 
-        <!-- Botões de navegação -->
+        <!-- Rodapé fixo -->
         <q-card-actions align="between" class="navigation-footer rounded-bottom">
           <q-btn
             flat
@@ -264,7 +292,6 @@
             label="Anterior"
             :disable="!temItemAnterior"
             @click="verItemAnterior"
-            class="navigation-btn"
           />
           <div class="text-caption">
             Item {{ indexAtual + 1 }} de {{ catalogoItems.length }}
@@ -275,7 +302,6 @@
             label="Próximo"
             :disable="!temProximoItem"
             @click="verProximoItem"
-            class="navigation-btn"
           />
         </q-card-actions>
       </q-card>
@@ -315,6 +341,9 @@ const showSearchBar = ref(false);
 // Computed properties para navegação
 const temItemAnterior = computed(() => indexAtual.value > 0);
 const temProximoItem = computed(() => indexAtual.value < catalogoItems.value.length - 1);
+
+// Cache para itens relacionados
+const itensRelacionadosCache = ref<Map<string, ObjetoFisico>>(new Map());
 
 // Funções de notificação
 function notificarSucesso(mensagem: string) {
@@ -459,6 +488,25 @@ async function verDetalhes(id: string) {
     indexAtual.value = catalogoItems.value.findIndex(item => item.id === id);
     if (indexAtual.value !== -1) {
       itemAtual.value = catalogoItems.value[indexAtual.value];
+      
+      // Carrega os itens relacionados se houver
+      if (itemAtual.value.temRelacao?.length) {
+        await Promise.all(
+          itemAtual.value.temRelacao.map(async (relacaoId) => {
+            if (!itensRelacionadosCache.value.has(relacaoId)) {
+              const response = await pesquisarObjetosFisicos({
+                id: relacaoId,
+                repositorio: authStore.get.repositorio_conectado
+              });
+              
+              if (response && response.length > 0) {
+                itensRelacionadosCache.value.set(relacaoId, response[0]);
+              }
+            }
+          })
+        );
+      }
+      
       showDialog.value = true;
     }
   } catch (error) {
@@ -511,6 +559,42 @@ function isPDF(url: string): boolean {
 
 function isVideo(url: string): boolean {
   return /\.(mp4|webm|ogg)$/i.test(url);
+}
+
+// Função para obter item do cache
+function getItemRelacionado(id: string): ObjetoFisico | undefined {
+  return itensRelacionadosCache.value.get(id);
+}
+
+// Função para carregar item relacionado
+async function carregarItemRelacionado(id: string) {
+  try {
+    // Primeiro verifica se já está no cache
+    if (!itensRelacionadosCache.value.has(id)) {
+      const response = await pesquisarObjetosFisicos({
+        id: id,
+        repositorio: authStore.get.repositorio_conectado
+      });
+      
+      if (response && response.length > 0) {
+        itensRelacionadosCache.value.set(id, response[0]);
+      }
+    }
+
+    // Atualiza o item atual para mostrar o item relacionado
+    const itemRelacionado = itensRelacionadosCache.value.get(id);
+    if (itemRelacionado) {
+      itemAtual.value = itemRelacionado;
+      // Atualiza o índice atual se o item estiver na lista principal
+      const novoIndex = catalogoItems.value.findIndex(item => item.id === id);
+      if (novoIndex !== -1) {
+        indexAtual.value = novoIndex;
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao carregar item relacionado:', error);
+    notificarErro('Erro ao carregar item relacionado');
+  }
 }
 
 // Mounted hook
@@ -618,5 +702,93 @@ onMounted(() => {
 
 .q-icon {
   vertical-align: middle;
+}
+
+.items-relacionados {
+  margin-top: 24px;
+  padding-top: 16px;
+}
+
+.relacionado-item {
+  border-radius: 8px;
+  margin-bottom: 4px;
+  transition: background-color 0.3s;
+  border: 1px solid #e0e0e0;
+}
+
+.relacionado-item:hover {
+  background-color: #f5f5f5;
+}
+
+.text-grey-6 {
+  opacity: 0.7;
+}
+
+.midias-container {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.q-img {
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.q-btn.full-width {
+  margin: 4px 0;
+}
+
+.dialog-card {
+  width: 80vw;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.header {
+  z-index: 1;
+}
+
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.navigation-footer {
+  background-color: #f5f5f5;
+  padding: 8px 16px;
+  border-top: 1px solid #e0e0e0;
+  z-index: 1;
+}
+
+.rounded-borders {
+  border-radius: 12px;
+}
+
+.rounded-top {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.rounded-bottom {
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.items-relacionados {
+  margin-top: 24px;
+}
+
+/* Ajustes para mídias */
+.q-img {
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.q-btn.full-width {
+  margin: 4px 0;
 }
 </style> 
