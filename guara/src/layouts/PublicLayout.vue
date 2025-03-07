@@ -7,6 +7,12 @@
         <template v-if="authStore.get?.email">
           <q-btn-dropdown color="primary" :label="authStore.get.email">
             <q-list>
+              <q-item clickable v-close-popup @click="goToAdmin">
+                <q-item-section>
+                  <q-item-label>Área Administrativa</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-separator />
               <q-item clickable v-close-popup @click="logout">
                 <q-item-section>
                   <q-item-label>Sair</q-item-label>
@@ -60,8 +66,11 @@ const router = useRouter();
 const authStore = useAuthStore();
 const showLoginDialog = ref(false);
 
+function goToAdmin() {
+  router.push('/admin/abrir-colecoes'); // ou qualquer outra rota administrativa inicial
+}
+
 function logout() {
-  // Implementar logout
   authStore.clear(); // ou método equivalente para limpar a autenticação
   router.push('/');
 }
