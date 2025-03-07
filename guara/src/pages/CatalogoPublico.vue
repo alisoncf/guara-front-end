@@ -311,7 +311,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { Notify, debounce } from 'quasar';
 import { listarRepositorios } from 'src/services/api-repo';
 import { pesquisarObjetosFisicos } from 'src/services/objeto-fisico-api';
@@ -320,7 +319,6 @@ import { ObjetoFisico } from './objetos/manter-objeto';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 import { useAuthStore } from 'src/stores/auth-store';
 
-const router = useRouter();
 const loading = ref(false);
 const loadingAcervos = ref(false);
 const acervoSelecionado = ref<Repositorio | null>(null);
