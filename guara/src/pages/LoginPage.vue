@@ -26,6 +26,7 @@ async function login() {
   try {
     const usuario = ref({} as Auth)
     usuario.value = await efetuarLogin(email.value, password.value, repo.value.uri);
+    console.log('logando no repositório ', repo.value.uri)
     await router.push('/');
 
   } catch (error) {
