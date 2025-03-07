@@ -11,11 +11,9 @@ const apiConfig = {
     objectapi: '/objectapi',
     listar_arquivos: '/objectapi/listar_arquivos',
     listar_repo:  '/repositorios/listar_repositorios',
-    login: '/acesso/login'
-
+    login: '/acesso/login',
+    logout: '/acesso/logout'
   }
-
 };
-
 
 export default apiConfig;

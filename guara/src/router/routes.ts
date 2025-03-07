@@ -46,6 +46,12 @@ const routes: RouteRecordRaw[] = [
   },
 
   {
+    path: '/catalogo/:id',
+    component: () => import('pages/VisualizarItem.vue'),
+    meta: { requiresAuth: false }
+  },
+
+  {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue'),
   }

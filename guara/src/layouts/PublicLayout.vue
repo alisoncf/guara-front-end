@@ -60,19 +60,27 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'src/stores/auth-store';
+import { Notify } from 'quasar';
 import LoginDialog from 'src/components/LoginDialog.vue';
+import { efetuarLogout } from 'src/services/api-usuario';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const showLoginDialog = ref(false);
 
 function goToAdmin() {
-  router.push('/admin/abrir-colecoes'); // ou qualquer outra rota administrativa inicial
+  router.push('/admin/abrir-colecoes');
 }
 
-function logout() {
-  authStore.clear(); // ou método equivalente para limpar a autenticação
-  router.push('/');
+async function logout() {
+  console.log('Iniciando logout no layout...');
+  const success = await efetuarLogout();
+  console.log('Resultado do logout:', success);
+  
+  if (success) {
+    console.log('Redirecionando para página inicial...');
+    router.push('/');
+  }
 }
 
 function goToLogin() {

@@ -67,3 +67,39 @@ export async function efetuarLogin(
 
   return auth.value;
 }
+
+export async function efetuarLogout(): Promise<boolean> {
+  const authStore = useAuthStore();
+
+  try {
+    console.log('Iniciando processo de logout...');
+    
+    // Remove o token do localStorage
+    const token = localStorage.getItem('authToken');
+    console.log('Token antes de remover:', token);
+    localStorage.removeItem('authToken');
+    console.log('Token removido do localStorage');
+    
+    // Limpa os dados do store
+    console.log('Estado do auth antes de limpar:', authStore.get);
+    authStore.limpar();
+    console.log('Estado do auth após limpar:', authStore.get);
+
+    Notify.create({
+      type: 'positive',
+      message: 'Logout realizado com sucesso',
+      position: 'top'
+    });
+
+    return true;
+
+  } catch (error) {
+    console.error('Erro ao fazer logout:', error);
+    Notify.create({
+      type: 'negative',
+      message: 'Erro ao realizar logout',
+      position: 'top'
+    });
+    return false;
+  }
+}

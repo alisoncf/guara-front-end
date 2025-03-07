@@ -59,14 +59,14 @@ export function gravarObjetoFisico(objeto: ObjetoFisico) {
     });
 }
 
-export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
+export async function pesquisarObjetosFisicos(params: { 
+  descricao?: string; 
+  id?: string;
+  repositorio: any; 
+}) {
   const listaObj = ref([] as ObjetoFisico[]);
 
-  if (
-    !authStore.get.repositorio_conectado ||
-    authStore.get.repositorio_conectado.uri == '' ||
-    authStore.get.repositorio_conectado.uri == undefined
-  ) {
+  if (!params.repositorio || !params.repositorio.uri) {
     Notify.create({
       type: 'negative',
       message: 'selecione um repositório',
@@ -74,34 +74,69 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
     });
     return [];
   }
+
   try {
+    console.log('Enviando requisição com params:', {
+      keyword: params.descricao || '',
+      type: 'fisico',
+      repository: params.repositorio.uri,
+      id: params.id
+    });
+
     const response = await axios.post(
       apiConfig.baseURL + apiConfig.endpoints.objectapi + '/listar_objetos',
       {
-        keyword: obj.descricao,
+        keyword: params.descricao || '',
         type: 'fisico',
-        repository: authStore.get.repositorio_conectado.uri,
+        repository: params.repositorio.uri,
+        ...(params.id && { id: params.id })
       }
     );
 
-    listaObj.value = response.data.results.bindings.map((item: any) => ({
-      obj: item.obj.value,
-      titulo: item.titulo.value,
-      resumo: item.resumo.value,
-      colecao: item.colecao && item.colecao.value ? item.colecao.value : '',
-      descricao: item.descricao.value,
+    let resultados = response.data.results.bindings.map((item: any) => ({
+      obj: item.obj?.value || '',
+      titulo: item.titulo?.value || 'Sem título',
+      resumo: item.resumo?.value || '',
+      colecao: item.colecao?.value || '',
+      descricao: item.descricao?.value || '',
       tipoFisico: item.tipos?.value ? item.tipos.value.split(', ') : [],
-      repositorio: authStore.get.repositorio_conectado.uri,
+      repositorio: params.repositorio.uri,
       tipoFisicoAbreviado: item.tipos?.value
         ? item.tipos.value
             .split(', ')
             .map((tipo: string) => textoAposUltimoChar(tipo, '#'))
         : [],
-      id: textoAposUltimoChar(item.obj.value, '#'),
-    })) as ObjetoFisico[];
-    console.log('->', listaObj.value);
-    return listaObj.value;
+      id: item.obj?.value ? textoAposUltimoChar(item.obj.value, '#') : '',
+      altura: 0,
+      largura: 0,
+      profundidade: 0,
+      peso: 0,
+      material: '',
+      dataCriacao: '',
+      dataModificacao: '',
+      assunto: '',
+      temRelacao: [],
+      associatedMedia: [],
+    }));
+
+    // Filtro local se houver termo de pesquisa
+    if (params.descricao) {
+      const searchTerm = params.descricao.toLowerCase();
+      resultados = resultados.filter(item => 
+        item.titulo.toLowerCase().includes(searchTerm) ||
+        item.descricao.toLowerCase().includes(searchTerm) ||
+        item.resumo.toLowerCase().includes(searchTerm) ||
+        item.tipoFisicoAbreviado.some(tipo => 
+          tipo.toLowerCase().includes(searchTerm)
+        )
+      );
+    }
+
+    console.log('Resultados após filtro:', resultados.length);
+    return resultados;
+
   } catch (error) {
+    console.error('Erro detalhado:', error);
     Notify.create({
       type: 'negative',
       message: 'Erro ao buscar objetos: ' + error,
