@@ -3,7 +3,6 @@
 import axios from 'axios';
 import apiConfig from '../apiConfig';
 import { ObjetoFisico } from '../pages/objetos/manter-objeto';
-import { useRouter } from 'vue-router';
 import { Dialog, Notify } from 'quasar';
 import {
   RepoQueryResult,
@@ -13,7 +12,6 @@ import { ref } from 'vue';
 import { textoAposUltimoChar } from 'src/pages/funcoes';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 const repoStore = useDadosRepositorio();
-const router = useRouter();
 const api = axios.create({
   baseURL: apiConfig.baseURL,
 });

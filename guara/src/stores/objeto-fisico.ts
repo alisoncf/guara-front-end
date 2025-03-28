@@ -4,9 +4,16 @@ import { StorageKey } from 'src/constants/StorageKey';
 import { ObjetoFisico } from '../pages/objetos/manter-objeto';
 
 const defaultState = {
-  objetoSelecionado: {} as ObjetoFisico, // Objeto individual
-  listaObj: [] as ObjetoFisico[], // Lista de objetos
-  keyword: '', // Palavra-chave usada na pesquisa
+  objetoSelecionado: {
+    id: "",
+    tipoFisico: [],
+    tipoFisicoAbreviado: [],
+    temRelacao: [],
+    associatedMedia: [],
+    // ... outras propriedades padrão
+  } as ObjetoFisico,
+  listaObj: [] as ObjetoFisico[],
+  keyword: '',
 };
 
 export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {

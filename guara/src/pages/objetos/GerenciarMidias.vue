@@ -6,9 +6,11 @@ import { useDadosObjetoFisico } from "../../stores/objeto-fisico";
 import { ObjetoFisico } from "./manter-objeto";
 import apiConfig from "src/apiConfig";
 import { Dialog, Notify } from "quasar";
+import { useAuthStore } from 'src/stores/auth-store';
 
 const objetoId = ref({} as string); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
+const authStore = useAuthStore();
 
 interface Midia {
   file: string;
@@ -164,38 +166,48 @@ function submitMidias() {
       });
     });
 }
-function buscarMidias() {
-  axios
-    .get(`${apiConfig.baseURL}${apiConfig.endpoints.listar_arquivos}`, {
-      params: {
-        objetoId: objetoId.value,
-        repositorio: objetoSelecionado.value.repositorio,
-      },
-    })
-    .then((response) => {
-      const midiasCombinadas = ref([] as Midia[]);
-      const midiasLocais = response.data.arquivos_locais || [];
-      midiasCombinadas.value = response.data.arquivos_combinados || [];
-      const midiasSparql = response.data.arquivos_sparql?.results?.bindings || [];
+async function buscarMidias() {
+  try {
+    // Garantir que temos o repositório
+    if (!authStore.get?.repositorio_conectado?.uri) {
+      throw new Error('Repositório não selecionado');
+    }
 
-      midiasCombinadas.value.forEach((midia) => {
-        midia.url = "http://localhost/" + midia.uri; // Define .url como .uri
-      });
+    const response = await axios.get(
+      `${apiConfig.baseURL}${apiConfig.endpoints.objectapi}/listar_arquivos`,
+      {
+        params: {
+          objetoId: objetoStore.getObjeto.id,
+          repositorio: authStore.get.repositorio_conectado.uri // Usar o repositório do authStore
+        }
+      }
+    );
 
-      midiasEncontradas.value = midiasCombinadas.value;
-      console.log(midiasEncontradas.value);
-    })
-    .catch((error) => {
-      Notify.create({
-        type: "negative",
-        message: "Erro ao buscar mídias: " + error,
-        timeout: 5000,
-      });
+    const midiasCombinadas = ref([] as Midia[]);
+    const midiasLocais = response.data.arquivos_locais || [];
+    midiasCombinadas.value = response.data.arquivos_combinados || [];
+    const midiasSparql = response.data.arquivos_sparql?.results?.bindings || [];
+
+    midiasCombinadas.value.forEach((midia) => {
+      midia.url = "http://localhost/" + midia.uri; // Define .url como .uri
     });
+
+    midiasEncontradas.value = midiasCombinadas.value;
+    console.log(midiasEncontradas.value);
+  } catch (error) {
+    console.error('Erro ao buscar mídias:', error);
+    Notify.create({
+      type: 'negative',
+      message: 'Erro ao carregar as mídias do objeto',
+      timeout: 5000
+    });
+  }
 }
 
 onMounted(() => {
-  buscarMidias();
+  if (objetoStore.getObjeto.id) {
+    buscarMidias();
+  }
 });
 
 onBeforeMount(() => {

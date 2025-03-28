@@ -5,16 +5,20 @@ import { ObjetoFisico } from './objetos/manter-objeto';
 import { Coluna } from './tipos';
 import { useRouter } from 'vue-router';
 import { useDadosObjetoFisico } from '../stores/objeto-fisico';
+import { useAuthStore } from '../stores/auth-store';
 import {
   deletarObjetoFisico,
   pesquisarObjetosFisicos,
 } from 'src/services/objeto-fisico-api';
+import { Notify } from 'quasar';
 
 const router = useRouter();
 
 const useObjetoStore = useDadosObjetoFisico();
 const keyword = ref(useObjetoStore.getKeyword); // Carrega a última pesquisa
 const listaObj = ref(useObjetoStore.getLista); // Mantém a lista carregada
+const authStore = useAuthStore();
+const loading = ref(false);
 
 const activeTab = ref<string>('fisicos');
 const columns = [
@@ -43,17 +47,37 @@ const activeTabLabel = computed(() => {
 });
 
 async function search() {
-  const obj = ref({} as ObjetoFisico);
-  obj.value.descricao = keyword.value;
-  listaObj.value = await pesquisarObjetosFisicos(obj.value);
-  useObjetoStore.setLista(listaObj); // Salva no store
-  useObjetoStore.setKeyword(keyword.value); // Salva a palavra-chave
+  try {
+    loading.value = true;
+    const obj = ref({} as ObjetoFisico);
+    obj.value.descricao = keyword.value;
+    
+    const params = {
+      descricao: keyword.value,
+      ...(authStore.get?.repositorio_conectado && {
+        repositorio: authStore.get.repositorio_conectado
+      })
+    };
+
+    listaObj.value = await pesquisarObjetosFisicos(params);
+    useObjetoStore.setLista(listaObj); // Salva no store
+    useObjetoStore.setKeyword(keyword.value); // Salva a palavra-chave
+  } catch (error) {
+    console.error('Erro na pesquisa:', error);
+    Notify.create({
+      type: 'negative',
+      message: 'Erro ao pesquisar objetos',
+      timeout: 3000
+    });
+  } finally {
+    loading.value = false;
+  }
 }
 
 function irParaNovo() {
   const obj = ref({ id: '', titulo: '' } as ObjetoFisico);
   useObjetoStore.setObjeto(obj);
-  router.push('/criar-objeto');
+  router.push('/admin/criar-objeto');
 }
 function irParaEditar(obj: ObjetoFisico) {
   useObjetoStore.setObjeto(obj);

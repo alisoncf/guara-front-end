@@ -97,8 +97,8 @@ onBeforeMount(() => {
         <div><img src="../assets/cmg.gif" width="100" alt="" /></div>
       </q-toolbar>
       <q-tabs align="left">
-        <q-route-tab to="/organizacao-estrutura" label="Catálogo" />
-        <q-route-tab to="/abrir-colecoes" label="Explorar coleções" />
+        <q-route-tab to="/admin/catalogo" label="Catálogo" />
+        <q-route-tab to="/admin/abrir-colecoes" label="Explorar coleções" />
         <q-route-tab to="/" label="O Espaço" />
       </q-tabs>
     </q-header>

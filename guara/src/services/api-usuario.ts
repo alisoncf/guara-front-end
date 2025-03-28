@@ -1,5 +1,4 @@
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { Notify } from 'quasar';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 import apiConfig from 'src/apiConfig';
@@ -7,7 +6,6 @@ import { useAuthStore } from 'src/stores/auth-store';
 import { Auth, Repositorio } from 'src/pages/tipos';
 import { buscarRepositorio } from './api-repo';
 
-const router = useRouter();
 const repoStore = useDadosRepositorio();
 
 const authStore = useAuthStore();

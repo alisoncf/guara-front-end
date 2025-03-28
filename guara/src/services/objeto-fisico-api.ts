@@ -5,81 +5,75 @@ import { useAuthStore } from 'src/stores/auth-store';
 import axios from 'axios';
 import apiConfig from '../apiConfig';
 
-import { useRouter } from 'vue-router';
 import { Dialog, Notify } from 'quasar';
 
 import { ref } from 'vue';
 import { textoAposUltimoChar } from 'src/pages/funcoes';
 
 const authStore = useAuthStore();
-const router = useRouter();
 
-export function gravarObjetoFisico(objeto: ObjetoFisico) {
-  fetch(
-    apiConfig.baseURL +
-      apiConfig.endpoints.objectapi +
-      '/adicionar_objeto_fisico',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...objeto,
-        repository: authStore.get.repositorio_conectado.uri,
-      }),
-    }
-  )
-    .then(async (response) => {
-      if (!response.ok) {
-        const errorMessage = await response.text(); // Lê o corpo da resposta para detalhes do erro
-        throw new Error(
-          `Erro ${response.status}: ${
-            errorMessage || 'Não foi possível gravar o objeto.'
-          }`
-        );
-      }
-      return response.json(); // Se tudo estiver OK, parseia o JSON
-    })
-    .then((data) => {
-      Notify.create({
-        type: 'positive',
-        message: 'Objeto criado com sucesso!',
-        timeout: 3000,
-      }); // Mostra notificação de sucesso
-      router.push(`/objetos/${data.id}/midias`); // Redireciona para a página de mídias do objeto
-    })
-    .catch((error) => {
-      console.error('Erro ao criar objeto:', error);
-      Notify.create({
-        type: 'negative',
-        message: `Erro ao criar objeto: ${error.message}`,
-        timeout: 5000,
-      }); // Mostra notificação de erro
+export async function gravarObjetoFisico(objeto: ObjetoFisico) {
+  if (!authStore.get?.repositorio_conectado?.uri) {
+    Notify.create({
+      type: 'negative',
+      message: 'Repositório não selecionado',
+      timeout: 3000,
     });
+    throw new Error('Repositório não selecionado');
+  }
+
+  try {
+    const response = await fetch(
+      `${apiConfig.baseURL}${apiConfig.endpoints.objectapi}/adicionar_objeto_fisico`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...objeto,
+          repository: authStore.get.repositorio_conectado.uri,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorMessage = await response.text();
+      throw new Error(`Erro ${response.status}: ${errorMessage || 'Não foi possível gravar o objeto.'}`);
+    }
+
+    const data = await response.json();
+    
+    Notify.create({
+      type: 'positive',
+      message: 'Objeto criado com sucesso!',
+      timeout: 3000,
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao criar objeto:', error);
+    Notify.create({
+      type: 'negative',
+      message: `Erro ao criar objeto: ${error.message}`,
+      timeout: 5000,
+    });
+    throw error;
+  }
 }
 
 export async function pesquisarObjetosFisicos(params: { 
   descricao?: string; 
   id?: string;
-  repositorio: any; 
+  repositorio?: any; 
 }) {
   const listaObj = ref([] as ObjetoFisico[]);
-
-  if (!params.repositorio || !params.repositorio.uri) {
-    Notify.create({
-      type: 'negative',
-      message: 'selecione um repositório',
-      timeout: 5000,
-    });
-    return [];
-  }
 
   try {
     console.log('Enviando requisição com params:', {
       keyword: params.descricao || '',
       type: 'fisico',
-      repository: params.repositorio.uri,
+      repository: params.repositorio?.uri || '',
       id: params.id
     });
 
@@ -88,7 +82,7 @@ export async function pesquisarObjetosFisicos(params: {
       {
         keyword: params.descricao || '',
         type: 'fisico',
-        repository: params.repositorio.uri,
+        ...(params.repositorio?.uri && { repository: params.repositorio.uri }),
         ...(params.id && { id: params.id })
       }
     );
@@ -100,7 +94,7 @@ export async function pesquisarObjetosFisicos(params: {
       colecao: item.colecao?.value || '',
       descricao: item.descricao?.value || '',
       tipoFisico: item.tipos?.value ? item.tipos.value.split(', ') : [],
-      repositorio: params.repositorio.uri,
+      repositorio: params.repositorio?.uri || '',
       tipoFisicoAbreviado: item.tipos?.value
         ? item.tipos.value
             .split(', ')

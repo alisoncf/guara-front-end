@@ -5,6 +5,8 @@ import {
   createWebHashHistory,
   createWebHistory,
 } from 'vue-router';
+import { useAuthStore } from 'src/stores/auth-store';
+import { Notify } from 'quasar';
 
 import routes from './routes';
 
@@ -30,6 +32,25 @@ export default route(function (/* { store, ssrContext } */) {
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE),
+  });
+
+  Router.beforeEach((to, from, next) => {
+    const authStore = useAuthStore();
+    const isAuthenticated = !!authStore.get?.token;
+
+    if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated) {
+      // Mostra mensagem informativa
+      Notify.create({
+        type: 'warning',
+        message: 'Você precisa fazer login para acessar esta área',
+        timeout: 3000
+      });
+
+      // Redireciona para a página inicial ao invés da página de login
+      next('/');
+    } else {
+      next();
+    }
   });
 
   return Router;

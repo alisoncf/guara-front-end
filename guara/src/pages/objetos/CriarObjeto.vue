@@ -10,8 +10,11 @@ import { organiza_arvore, encontrarClassePorLabel } from "../funcoes";
 import { ClasseComum, TreeNode } from "../tipos";
 import { useDadosObjetoFisico } from "src/stores/objeto-fisico";
 import { useRouter } from "vue-router";
-import { Dialog } from "quasar";
+import { Dialog, Notify } from "quasar";
+import { useAuthStore } from "src/stores/auth-store";
+
 const router = useRouter();
+const authStore = useAuthStore();
 
 const listaClasses = ref<ClasseComum[]>([]);
 const ClasseSelecionada = ref<ClasseComum>();
@@ -28,6 +31,7 @@ const objeto = ref<ObjetoFisico>({
   titulo: "",
   descricao: "",
   tipoFisico: [],
+  tipoFisicoAbreviado: [],
   altura: 0,
   dataCriacao: "",
   dataModificacao: "",
@@ -39,7 +43,6 @@ const objeto = ref<ObjetoFisico>({
   temRelacao: [],
   colecao: "",
   associatedMedia: [],
-  tipoFisicoAbreviado: [],
   repositorio: "",
   dimensao: "",
 });
@@ -87,8 +90,37 @@ function cancelar() {
     router.back();
   }
 }
-function submitForm() {
-  gravarObjetoFisico(objeto.value);
+async function submitForm() {
+  try {
+    if (!authStore.get?.repositorio_conectado?.uri) {
+      Notify.create({
+        type: 'negative',
+        message: 'Selecione um repositório primeiro',
+        timeout: 3000
+      });
+      return;
+    }
+
+    // Garantir que os arrays estão inicializados
+    objeto.value = {
+      ...objeto.value,
+      tipoFisicoAbreviado: objeto.value.tipoFisicoAbreviado || [],
+      tipoFisico: objeto.value.tipoFisico || [],
+      temRelacao: objeto.value.temRelacao || [],
+      associatedMedia: objeto.value.associatedMedia || [],
+      repositorio: authStore.get.repositorio_conectado.uri
+    };
+
+    // Atualizar o store
+    useObjetoStore.setObjeto(objeto.value);
+    
+    const result = await gravarObjetoFisico(objeto.value);
+    if (result?.id) {
+      router.push(`/admin/objetos/${result.id}/midias`);
+    }
+  } catch (error) {
+    console.error('Erro ao criar objeto:', error);
+  }
 }
 function atualizarObj() {
   atualizarObjetoFisico(objeto.value);
@@ -110,6 +142,15 @@ onBeforeMount(() => {
     uri.value = objeto.value.colecao; // Atualiza o campo de URI
     objeto.value.tipoFisico = Array.isArray(objeto.value.tipoFisico)
       ? [...objeto.value.tipoFisico]
+      : [];
+    objeto.value.tipoFisicoAbreviado = Array.isArray(objeto.value.tipoFisicoAbreviado)
+      ? [...objeto.value.tipoFisicoAbreviado]
+      : [];
+    objeto.value.temRelacao = Array.isArray(objeto.value.temRelacao)
+      ? [...objeto.value.temRelacao]
+      : [];
+    objeto.value.associatedMedia = Array.isArray(objeto.value.associatedMedia)
+      ? [...objeto.value.associatedMedia]
       : [];
   }
 });

@@ -1,27 +1,29 @@
 import { RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
-  // Rotas públicas com o novo layout
+  // Rotas públicas
   {
     path: '/',
     component: () => import('layouts/PublicLayout.vue'),
     children: [
       { path: '', component: () => import('pages/IndexPage.vue') },
+      { path: 'login', component: () => import('pages/LoginPage.vue') },
       { path: 'catalogo', component: () => import('pages/CatalogoPublico.vue') },
       { path: 'sobre', component: () => import('pages/SobreNos.vue') },
-      { path: 'login', component: () => import('pages/LoginPage.vue') },
     ]
   },
 
-  // Rotas administrativas com o layout original
+  // Rotas administrativas (protegidas)
   {
     path: '/admin',
     component: () => import('layouts/MainLayout.vue'),
+    meta: { requiresAuth: true },
     children: [
-      { path: 'inicio/:repo', component: () => import('pages/IndexPage.vue') },
+      { path: 'inicio', component: () => import('pages/IndexPage.vue') },
+      { path: 'catalogo', component: () => import('pages/CatalogoPublico.vue') },
       { path: 'abrir-colecoes', component: () => import('pages/AbrirColecoes.vue') },
-      { path: 'repositorios-amigos', component: () => import('pages/AbrirRepositorios.vue') },
       { path: 'organizacao-estrutura', component: () => import('pages/AbrirEstrutura.vue') },
+      { path: 'repositorios-amigos', component: () => import('pages/AbrirRepositorios.vue') },
       { path: 'criar-objeto', component: () => import('pages/objetos/CriarObjeto.vue') },
       { path: 'editar-objeto/:id', component: () => import('pages/objetos/CriarObjeto.vue') },
       {

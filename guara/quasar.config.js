@@ -30,10 +30,16 @@ module.exports = configure(function (ctx) {
     },
 
     framework: {
-      config: {},
+      config: {
+        notify: {},
+        dialog: {}
+      },
       lang: 'pt-br',
       iconSet: 'material-icons',
-      plugins: ['Dialog','Notify']
+      plugins: [
+        'Notify',
+        'Dialog'
+      ]
     },
 
     extras: [
@@ -48,6 +54,11 @@ module.exports = configure(function (ctx) {
       'roboto-font', // optional, you are not bound to it
       'material-icons', // optional, you are not bound to it
     ],
+
+    boot: [
+      'notifications'
+    ],
+
     // Outras configurações do Quasar...
   };
 });

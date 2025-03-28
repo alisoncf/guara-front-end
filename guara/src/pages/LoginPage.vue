@@ -4,7 +4,7 @@ import { efetuarLogin } from "src/services/api-usuario";
 import { buscarRepositorio, listarRepositorios } from "src/services/api-repo";
 import { Auth, Repositorio } from "./tipos";
 import { Notify } from "quasar";
-import { useRouter } from "vue-router"; // Importando o router
+import { useRouter, useRoute } from "vue-router"; // Importando o router e o route
 import { useDadosRepositorio } from "src/stores/repositorio-store";
 
 const email = ref("");
@@ -12,6 +12,7 @@ const password = ref("");
 const repo = ref({} as Repositorio);
 const listaRepositorios = ref([] as Repositorio[]);
 const router = useRouter(); // Instanciando o router
+const route = useRoute();
 const repoStore= useDadosRepositorio();
 // Função de login
 async function login() {
@@ -27,7 +28,7 @@ async function login() {
     const usuario = ref({} as Auth)
     usuario.value = await efetuarLogin(email.value, password.value, repo.value.uri);
     console.log('logando no repositório ', repo.value.uri)
-    await router.push('/');
+    await onLoginSuccess();
 
   } catch (error) {
     console.error('Erro no login:', error);
@@ -41,6 +42,12 @@ async function login() {
 
 async function listarRepo() {
   listaRepositorios.value = await listarRepositorios();
+}
+
+async function onLoginSuccess() {
+  // Redireciona para a rota pretendida ou para o dashboard
+  const redirectPath = route.query.redirect as string || '/admin/inicio';
+  router.push(redirectPath);
 }
 
 onBeforeMount(() => {

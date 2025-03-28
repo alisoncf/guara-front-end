@@ -2,29 +2,45 @@
   <div class="catalogo-container">
     <!-- Seletor de Acervo -->
     <div class="q-pa-md">
-      <q-table
-        :rows="acervos"
-        :columns="[
-          { name: 'nome', label: 'Nome', field: 'nome', align: 'left' },
-          { name: 'descricao', label: 'Descrição', field: 'descricao', align: 'left' },
-          { name: 'ações', label: 'Ações', field: 'acoes', align: 'center' }
-        ]"
-        row-key="uri"
-        flat
-        bordered
+      <q-select
+        v-model="acervoSelecionado"
+        :options="acervos"
+        option-label="nome"
+        label="Selecione um repositório"
+        outlined
+        class="q-mb-md"
+        :loading="loadingAcervos"
+        emit-value
+        map-options
+        @update:model-value="selecionarAcervo"
       >
-        <template v-slot:body-cell-ações="props">
-          <q-td :props="props">
-            <q-btn
-              dense
-              :color="authStore.get?.repositorio_conectado?.uri === props.row.uri ? 'positive' : 'primary'"
-              :icon="authStore.get?.repositorio_conectado?.uri === props.row.uri ? 'check_circle' : 'check'"
-              @click="selecionarAcervo(props.row)"
-              :disable="authStore.get?.repositorio_conectado?.uri === props.row.uri"
-            />
-          </q-td>
+        <!-- Template personalizado para cada opção -->
+        <template v-slot:option="{ itemProps, opt, selected, toggleOption }">
+          <q-item v-bind="itemProps" @click="toggleOption(opt)">
+            <q-item-section>
+              <q-item-label>{{ opt.nome }}</q-item-label>
+              <q-item-label caption>{{ opt.descricao }}</q-item-label>
+            </q-item-section>
+            <q-item-section side v-if="authStore.get?.repositorio_conectado?.uri === opt.uri">
+              <q-icon name="check_circle" color="positive" />
+            </q-item-section>
+          </q-item>
         </template>
-      </q-table>
+
+        <!-- Exibir informações do repositório selecionado -->
+        <template v-slot:selected>
+          <template v-if="acervoSelecionado">
+            <div class="row items-center">
+              <q-icon 
+                name="account_balance"
+                color="primary"
+                class="q-mr-sm"
+              />
+              {{ acervoSelecionado.nome }}
+            </div>
+          </template>
+        </template>
+      </q-select>
 
       <!-- Barra de Pesquisa -->
       <div v-if="showSearchBar" class="search-container q-mt-md">
@@ -311,6 +327,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { Notify, debounce } from 'quasar';
 import { listarRepositorios } from 'src/services/api-repo';
 import { pesquisarObjetosFisicos } from 'src/services/objeto-fisico-api';
@@ -319,6 +336,7 @@ import { ObjetoFisico } from './objetos/manter-objeto';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 import { useAuthStore } from 'src/stores/auth-store';
 
+const router = useRouter();
 const loading = ref(false);
 const loadingAcervos = ref(false);
 const acervoSelecionado = ref<Repositorio | null>(null);
@@ -385,21 +403,30 @@ async function carregarItensIniciais() {
 
 // Função para carregar acervos
 async function carregarAcervos() {
+  loadingAcervos.value = true;
   try {
     const response = await listarRepositorios();
     acervos.value = response;
     console.log('Acervos carregados:', acervos.value);
     
-    // Carrega os itens se já houver um repositório selecionado
-    await carregarItensIniciais();
+    // Se já houver um repositório conectado, seleciona ele
+    if (authStore.get?.repositorio_conectado) {
+      acervoSelecionado.value = authStore.get.repositorio_conectado;
+      await carregarItensIniciais();
+    }
   } catch (error) {
     console.error('Erro ao carregar acervos:', error);
     notificarErro('Erro ao carregar lista de acervos');
+  } finally {
+    loadingAcervos.value = false;
   }
 }
 
 // Função para selecionar acervo
-async function selecionarAcervo(acervo: any) {
+async function selecionarAcervo(acervo: Repositorio) {
+  if (!acervo) return;
+  
+  loading.value = true;
   try {
     console.log('Selecionando acervo:', acervo);
     
@@ -420,6 +447,8 @@ async function selecionarAcervo(acervo: any) {
   } catch (error) {
     console.error('Erro ao selecionar acervo:', error);
     notificarErro('Erro ao conectar ao repositório');
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -627,7 +656,7 @@ onMounted(() => {
 }
 
 .q-select {
-  max-width: 400px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
