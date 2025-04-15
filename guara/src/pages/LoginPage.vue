@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { onBeforeMount, ref } from "vue";
-import { efetuarLogin } from "src/services/api-usuario";
-import { buscarRepositorio, listarRepositorios } from "src/services/api-repo";
-import { Auth, Repositorio } from "./tipos";
-import { Notify } from "quasar";
-import { useRouter } from "vue-router"; // Importando o router
-import { useDadosRepositorio } from "src/stores/repositorio-store";
+import { onBeforeMount, ref } from 'vue';
+import { efetuarLogin } from 'src/services/api-usuario';
+import { listarRepositorios } from 'src/services/api-repo';
+import { Auth, Repositorio } from './tipos';
+import { Notify } from 'quasar';
+import { useRouter } from 'vue-router'; // Importando o router
 
-const email = ref("");
-const password = ref("");
-const repo = ref({} as Repositorio);
+
+const email = ref('');
+const password = ref('');
+const repositorioSelecionado = ref({} as Repositorio);
 const listaRepositorios = ref([] as Repositorio[]);
 const router = useRouter(); // Instanciando o router
-const repoStore= useDadosRepositorio();
+
 // Função de login
 async function login() {
-  if (!repo.value) {
+  if (!repositorioSelecionado.value) {
     Notify.create({
       type: 'negative',
       message: 'Por favor, selecione um repositório.',
@@ -25,8 +25,8 @@ async function login() {
 
   try {
     const usuario = ref({} as Auth)
-    usuario.value = await efetuarLogin(email.value, password.value, repo.value.uri);
-    console.log('logando no repositório ', repo.value.uri)
+    console.log('logando no repositório ', repositorioSelecionado.value.nome)
+    usuario.value = await efetuarLogin(email.value, password.value, repositorioSelecionado.value.uri, repositorioSelecionado.value.nome);
     await router.push('/');
 
   } catch (error) {
@@ -41,6 +41,7 @@ async function login() {
 
 async function listarRepo() {
   listaRepositorios.value = await listarRepositorios();
+
 }
 
 onBeforeMount(() => {
@@ -72,14 +73,15 @@ onBeforeMount(() => {
           :rules="[(val) => !!val || 'Senha é obrigatória']"
         />
         <q-select
-          v-model="repo.uri"
+          v-model="repositorioSelecionado"
           label="Selecione o repositório"
-          :options="listaRepositorios.map((r) => ({ label: r.nome, value: r.uri }))"
-          option-value="value"
-          option-label="label"
-          emit-value
-          map-options
+          :options="listaRepositorios"
+          option-value="nome"
+          option-label="nome"
+
+
         />
+
       </q-card-section>
       <q-card-actions align="right">
         <q-btn label="Login" color="primary" @click="login" />

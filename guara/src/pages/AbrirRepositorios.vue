@@ -85,6 +85,7 @@ async function saveRepo() {
 async function search(){
   listaRepositorios.value = [];
   listaRepositorios.value = await listarRepositorios('');
+  console.log('lista repo',listaRepositorios.value)
 }
 
 async function editClass(row: Repositorio) {

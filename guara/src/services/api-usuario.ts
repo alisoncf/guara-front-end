@@ -14,7 +14,8 @@ const authStore = useAuthStore();
 export async function efetuarLogin(
   email: string,
   password: string,
-  repositorio: string
+  repositorio: string,
+  nome_repositorio: string
 ): Promise<Auth> {
   const url = apiConfig.baseURL + apiConfig.endpoints.login;
   if (!email || !password) {
@@ -33,7 +34,9 @@ export async function efetuarLogin(
       email: email,
       password: password,
       repository: repositorio,
+      name: nome_repositorio
     }),
+
   });
 
   if (!response.ok) {
@@ -48,15 +51,13 @@ export async function efetuarLogin(
   const data = await response.json();
   const auth = ref({} as Auth);
   const repo = ref({} as Repositorio);
+
   auth.value = data;
-  console.log('data',data)
+  console.log('auth',auth.value)
   if (data.token) {
     localStorage.setItem('authToken', data.token);
-    console.log('setar auth',auth.value)
     authStore.set(auth.value);
-    console.log('setado')
     //repo.value = await buscarRepositorio(auth.value.repositorio)
-
     //await repoStore.set(repo);
   } else {
     Notify.create({

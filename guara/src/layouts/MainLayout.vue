@@ -123,7 +123,7 @@ onBeforeMount(() => {
           <q-avatar>
             <img src="../assets/guara.png" alt =""  />
           </q-avatar>
-          Guará - {{ authStore.get.email}} conectado em #{{ authStore.get.repositorio }}
+          Guará - {{ authStore.get.email}} conectado em #{{ authStore.get.repositorio_conectado.nome }}
         </q-toolbar-title>
       </q-toolbar>
     </q-footer>

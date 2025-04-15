@@ -5,10 +5,7 @@ import apiConfig from '../apiConfig';
 import { ObjetoFisico } from '../pages/objetos/manter-objeto';
 import { useRouter } from 'vue-router';
 import { Dialog, Notify } from 'quasar';
-import {
-  RepoQueryResult,
-  Repositorio,
-} from 'src/pages/tipos';
+import { RepoQueryResult, Repositorio } from 'src/pages/tipos';
 import { ref } from 'vue';
 import { textoAposUltimoChar } from 'src/pages/funcoes';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
@@ -20,15 +17,15 @@ const api = axios.create({
 
 // Exemplo de chamada a um endpoint específico
 
-
-
-export async function listarRepositorios(name?: string): Promise<Repositorio[]> {
+export async function listarRepositorios(
+  name?: string
+): Promise<Repositorio[]> {
   const listaRepo = ref<Repositorio[]>([]);
   const url = `${apiConfig.baseURL}/${apiConfig.endpoints.listar_repo}`;
 
   try {
     const response = await axios.get<RepoQueryResult>(url, {
-      params: name ? { name } : {} // Envia name como parâmetro, se informado
+      params: name ? { name } : {}, // Envia name como parâmetro, se informado
     });
 
     listaRepo.value = response.data.results.bindings.map((item) => ({
@@ -36,24 +33,31 @@ export async function listarRepositorios(name?: string): Promise<Repositorio[]> 
       descricao: item.descricao?.value || '',
       contato: item.contato?.value || '',
       nome: item.nome?.value || '',
-      responsavel: item.responsavel?.value || ''
+      responsavel: item.responsavel?.value || '',
     }));
 
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
     Notify.create({
       type: 'negative',
-      message: 'Erro ao buscar os repositórios. Tente novamente.'
+      message: 'Erro ao buscar os repositórios. Tente novamente.',
     });
   }
 
   return listaRepo.value;
 }
 
-
-export async function buscarRepositorio(nome: string):Promise<Repositorio> {
-  const repo = ref({contato:'',descricao:'',nome:'',responsavel:'',uri:''} as Repositorio)
-  const url = `${apiConfig.baseURL}${apiConfig.endpoints.listar_repo}?name=${encodeURIComponent(nome)}`;
+export async function buscarRepositorio(nome: string): Promise<Repositorio> {
+  const repo = ref({
+    contato: '',
+    descricao: '',
+    nome: '',
+    responsavel: '',
+    uri: '',
+  } as Repositorio);
+  const url = `${apiConfig.baseURL}${
+    apiConfig.endpoints.listar_repo
+  }?name=${encodeURIComponent(nome)}`;
 
   try {
     const response = await fetch(url, {
@@ -61,7 +65,6 @@ export async function buscarRepositorio(nome: string):Promise<Repositorio> {
       headers: {
         'Content-Type': 'application/json',
       },
-
     });
 
     if (!response.ok) {
@@ -73,41 +76,45 @@ export async function buscarRepositorio(nome: string):Promise<Repositorio> {
           errorMessage = errorData.message;
         }
       } catch (jsonError) {
-        console.warn('Falha ao processar a mensagem de erro do backend', jsonError);
+        console.warn(
+          'Falha ao processar a mensagem de erro do backend',
+          jsonError
+        );
       }
 
       Notify.create({ type: 'negative', message: errorMessage });
-
     }
 
     const data = await response.json();
 
-
-    if (!data.results || !data.results.bindings || data.results.bindings.length === 0) {
-      Notify.create({ type: 'warning', message: 'Nenhum repositório encontrado.' });
-
+    if (
+      !data.results ||
+      !data.results.bindings ||
+      data.results.bindings.length === 0
+    ) {
+      Notify.create({
+        type: 'warning',
+        message: 'Nenhum repositório encontrado.',
+      });
     }
-
 
     const item = data.results.bindings[0];
 
-
     repo.value.uri = item.uri;
-    repo.value.contato = item?.contato||'';
-    repo.value.descricao = item?.descricao||'';
-    repo.value.nome = item?.nome||'';
-    repo.value.responsavel = item?.responsavel||'';
+    repo.value.contato = item?.contato || '';
+    repo.value.descricao = item?.descricao || '';
+    repo.value.nome = item?.nome || '';
+    repo.value.responsavel = item?.responsavel || '';
 
-    return(repo.value);
-
+    return repo.value;
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
-    Notify.create({ type: 'negative', message: 'Erro ao buscar os dados do repositório - ' + error});
-    return(repo.value)
+    Notify.create({
+      type: 'negative',
+      message: 'Erro ao buscar os dados do repositório - ' + error,
+    });
+    return repo.value;
   }
 }
-
-
-
 
 export default api;
