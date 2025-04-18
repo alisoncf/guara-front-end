@@ -1,4 +1,3 @@
-import { Repositorio } from 'src/pages/tipos';
 import { QTableProps } from 'quasar';
 
 type ArrElement<ArrType> = ArrType extends readonly (infer ElementType)[]
@@ -6,7 +5,6 @@ type ArrElement<ArrType> = ArrType extends readonly (infer ElementType)[]
   : never;
 
 export type Coluna = ArrElement<QTableProps['columns']>;
-
 
 export interface ClasseComum {
   uri: string; // URI completa da classe
@@ -27,24 +25,23 @@ export interface TreeNode {
   classData: ClasseComum;
 }
 
-export interface Repositorio{
+export interface Repositorio {
   uri: string;
   nome: string;
   contato: string;
   descricao: string;
-  responsavel: string
+  responsavel: string;
 }
 
-export interface Auth{
+export interface Auth {
   email: string;
   permissao: string;
   token: string;
   user: string;
-  validade: string
+  validade: string;
   repositorio: string;
-  repositorio_conectado:Repositorio
+  repositorio_conectado: Repositorio;
 }
-
 
 export interface ClassQueryResult {
   head: {
@@ -63,8 +60,6 @@ export interface RepoQueryResult {
     bindings: RepoQuery[];
   };
 }
-
-
 
 export interface ClasseQuery {
   class: {
@@ -107,7 +102,6 @@ export interface RepoQuery {
   };
 }
 
-
 export interface Head {
   vars: string[];
 }
@@ -132,5 +126,3 @@ export interface ApiResponse {
   head: Head;
   results: ClassResults;
 }
-
-

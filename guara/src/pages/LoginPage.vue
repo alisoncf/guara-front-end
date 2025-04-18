@@ -6,7 +6,6 @@ import { Auth, Repositorio } from './tipos';
 import { Notify } from 'quasar';
 import { useRouter } from 'vue-router'; // Importando o router
 
-
 const email = ref('');
 const password = ref('');
 const repositorioSelecionado = ref({} as Repositorio);
@@ -24,11 +23,15 @@ async function login() {
   }
 
   try {
-    const usuario = ref({} as Auth)
-    console.log('logando no repositório ', repositorioSelecionado.value.nome)
-    usuario.value = await efetuarLogin(email.value, password.value, repositorioSelecionado.value.uri, repositorioSelecionado.value.nome);
+    const usuario = ref({} as Auth);
+    console.log('logando no repositório ', repositorioSelecionado.value.nome);
+    usuario.value = await efetuarLogin(
+      email.value,
+      password.value,
+      repositorioSelecionado.value.uri,
+      repositorioSelecionado.value.nome
+    );
     await router.push('/');
-
   } catch (error) {
     console.error('Erro no login:', error);
     Notify.create({
@@ -38,10 +41,8 @@ async function login() {
   }
 }
 
-
 async function listarRepo() {
   listaRepositorios.value = await listarRepositorios();
-
 }
 
 onBeforeMount(() => {
@@ -78,10 +79,7 @@ onBeforeMount(() => {
           :options="listaRepositorios"
           option-value="nome"
           option-label="nome"
-
-
         />
-
       </q-card-section>
       <q-card-actions align="right">
         <q-btn label="Login" color="primary" @click="login" />

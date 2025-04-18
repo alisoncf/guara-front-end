@@ -1,9 +1,8 @@
 import {
   ObjetoDimensional,
   ObjetoFisico,
-} from './../pages/objetos/manter-objeto';
+} from '../pages/objetos/manter-objeto';
 import { useAuthStore } from 'src/stores/auth-store';
-// src/services/api.js
 
 import axios from 'axios';
 import apiConfig from '../apiConfig';
@@ -16,25 +15,20 @@ import { textoAposUltimoChar } from 'src/pages/funcoes';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 
 const authStore = useAuthStore();
-const router = useRouter();
 const repoStore = useDadosRepositorio();
+const router = useRouter();
 
-export function gravarObjetoFisico(objeto: ObjetoFisico) {
-  fetch(
-    apiConfig.baseURL +
-      apiConfig.endpoints.objectapi +
-      '/adicionar_objeto_fisico',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...objeto,
-        repository: authStore.get.repositorio_conectado.uri,
-      }),
-    }
-  )
+export function gravarObjetoDim(objeto: ObjetoDimensional) {
+  fetch(apiConfig.baseURL + apiConfig.endpoints.dimensional.create, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      ...objeto,
+      repository: authStore.get.repositorio_conectado.uri,
+    }),
+  })
     .then(async (response) => {
       if (!response.ok) {
         const errorMessage = await response.text(); // Lê o corpo da resposta para detalhes do erro
@@ -63,9 +57,8 @@ export function gravarObjetoFisico(objeto: ObjetoFisico) {
       }); // Mostra notificação de erro
     });
 }
-
-export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
-  const listaObj = ref([] as ObjetoFisico[]);
+export async function pesquisarObjetosDim(obj: ObjetoDimensional) {
+  const lista = ref([] as ObjetoDimensional[]);
 
   if (
     !authStore.get.repositorio_conectado ||
@@ -81,31 +74,26 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
   }
   try {
     const response = await axios.post(
-      apiConfig.baseURL + apiConfig.endpoints.objectapi + '/listar_objetos',
+      apiConfig.baseURL + apiConfig.endpoints.dimensional.list,
       {
         keyword: obj.descricao,
-        type: 'fisico',
+        type: obj.tipo != undefined ? obj.tipo.tipo : '',
         repository: authStore.get.repositorio_conectado.uri,
       }
     );
 
-    listaObj.value = response.data.results.bindings.map((item: any) => ({
+    lista.value = response.data.results.bindings.map((item: any) => ({
       obj: item.obj.value,
       titulo: item.titulo.value,
       resumo: item.resumo.value,
-      colecao: item.colecao && item.colecao.value ? item.colecao.value : '',
       descricao: item.descricao.value,
-      tipoFisico: item.tipos?.value ? item.tipos.value.split(', ') : [],
+      dimensao: item.dimensao.value,
+      tipo: item.dimensao.value,
       repositorio: authStore.get.repositorio_conectado.uri,
-      tipoFisicoAbreviado: item.tipos?.value
-        ? item.tipos.value
-            .split(', ')
-            .map((tipo: string) => textoAposUltimoChar(tipo, '#'))
-        : [],
       id: textoAposUltimoChar(item.obj.value, '#'),
-    })) as ObjetoFisico[];
-    console.log('->', listaObj.value);
-    return listaObj.value;
+    })) as ObjetoDimensional[];
+
+    return lista.value;
   } catch (error) {
     Notify.create({
       type: 'negative',
@@ -137,10 +125,7 @@ export function deletarObjetoFisico(objeto: ObjetoFisico) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: id,
-          repository: authStore.get.repositorio_conectado.uri,
-        }),
+        body: JSON.stringify({ id: id, repository: repoStore.get.uri }),
       }
     )
       .then(async (response) => {

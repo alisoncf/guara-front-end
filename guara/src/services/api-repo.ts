@@ -2,15 +2,11 @@
 
 import axios from 'axios';
 import apiConfig from '../apiConfig';
-import { ObjetoFisico } from '../pages/objetos/manter-objeto';
-import { useRouter } from 'vue-router';
-import { Dialog, Notify } from 'quasar';
+
 import { RepoQueryResult, Repositorio } from 'src/pages/tipos';
 import { ref } from 'vue';
-import { textoAposUltimoChar } from 'src/pages/funcoes';
-import { useDadosRepositorio } from 'src/stores/repositorio-store';
-const repoStore = useDadosRepositorio();
-const router = useRouter();
+import { Notify } from 'quasar';
+
 const api = axios.create({
   baseURL: apiConfig.baseURL,
 });
@@ -21,8 +17,8 @@ export async function listarRepositorios(
   name?: string
 ): Promise<Repositorio[]> {
   const listaRepo = ref<Repositorio[]>([]);
-  const url = `${apiConfig.baseURL}/${apiConfig.endpoints.listar_repo}`;
-
+  const url = `${apiConfig.baseURL}${apiConfig.endpoints.listar_repo}`;
+  console.log('url', url);
   try {
     const response = await axios.get<RepoQueryResult>(url, {
       params: name ? { name } : {}, // Envia name como parâmetro, se informado
@@ -35,7 +31,6 @@ export async function listarRepositorios(
       nome: item.nome?.value || '',
       responsavel: item.responsavel?.value || '',
     }));
-
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
     Notify.create({

@@ -1,22 +1,20 @@
 <script setup lang="ts">
 import { onBeforeMount, watch, reactive, ref, computed } from 'vue';
 import axios from 'axios';
-import { Coluna, ClasseComum, ClassQueryResult, TreeNode, Auth } from './tipos';
+
 import { useQuasar } from 'quasar';
-import { textoAposUltimoChar } from './funcoes';
 
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 import { listarClasses } from 'src/services/api';
 import { useAuthStore } from 'src/stores/auth-store';
-
-
+import { textoAposUltimoChar } from '../funcoes';
+import { ClasseComum, ClassQueryResult, Coluna, TreeNode } from '../tipos';
 
 const dialogOpen = ref<boolean>(false);
 const editMode = ref<boolean>(false);
 
 const authStore = useAuthStore();
-const repoStore = useDadosRepositorio();
-const usuarioLogado = ref({} as Auth )
+
 const novaClasse = reactive<ClasseComum>({
   label: '',
   description: '',
@@ -144,8 +142,8 @@ function findParentNode(nodes: TreeNode[], parentLabel: string): any {
 }
 async function listarClasseMae() {
   try {
-
-    const repositorioConectado = authStore && authStore.get && authStore.get.repositorio_conectado;
+    const repositorioConectado =
+      authStore && authStore.get && authStore.get.repositorio_conectado;
 
     if (!repositorioConectado || !repositorioConectado.uri) {
       console.error('A URI ou repositorio_conectado não estão definidos.');
@@ -158,13 +156,12 @@ async function listarClasseMae() {
       return; // Interrompe a execução se a uri não estiver preenchida
     }
 
-
     const response = await axios.post<ClassQueryResult>(
       'http://localhost:5000/classapi/listar_classes',
       {
         keyword: keyword.value,
         orderby: 'subclassof',
-        repository: uri
+        repository: uri,
       }
     );
     arvoreClasses.value = [];
@@ -185,7 +182,6 @@ async function listarClasseMae() {
     });
     classeMaeSelecionada.value = listaClassesMae.value[0];
     organiza_arvore(listaClassesMae.value);
-
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
   }
@@ -203,6 +199,7 @@ function closeDialog() {
 
 async function excluir_classe(row: ClasseComum) {
   try {
+    console.log('repo', authStore.get.repositorio_conectado.uri);
     const confirmDelete = window.confirm(
       `Você realmente deseja excluir a classe ${row.label}?`
     );
@@ -211,6 +208,7 @@ async function excluir_classe(row: ClasseComum) {
     }
     const data = {
       label: row.uri,
+      repository: authStore.get.repositorio_conectado.uri,
     };
     const response = await axios.delete(
       'http://localhost:5000/classapi/excluir_classe',
@@ -242,7 +240,7 @@ async function gravarClasse() {
       label: novaClasse.label,
       comment: novaClasse.description,
       subclassof: subClassOfValue,
-      repository: authStore.get.repositorio_conectado.uri
+      repository: authStore.get.repositorio_conectado.uri,
     };
 
     const url = editMode.value
@@ -269,35 +267,6 @@ async function gravarClasse() {
 async function search() {
   listaClasses.value = await listarClasses(keyword.value);
 }
-async function search1() {
-  try {
-    const response = await axios.post<ClassQueryResult>(
-      'http://localhost:5000/classapi/listar_classes',
-      {
-        keyword: keyword.value,
-      }
-    );
-
-    listaClasses.value = [];
-    response.data.results.bindings.forEach((item) => {
-      const classItem: ClasseComum = {
-        uri: item.class.value,
-        label: item.label ? item.label.value : '',
-        description: item.description ? item.description.value : '',
-        subclassof: item.subclassof ? item.subclassof.value : '-',
-        mae_curta: textoAposUltimoChar(
-          item.subclassof ? item.subclassof.value : '-',
-          '#'
-        ),
-        nome_curto: textoAposUltimoChar(item.class.value, '#'),
-      };
-      listaClasses.value.push(classItem);
-    });
-  } catch (error) {
-    console.error('Erro ao buscar dados:', error);
-  }
-}
-
 async function editClass(row: ClasseComum) {
   editMode.value = true;
   novaClasse.label = row.label;
@@ -308,7 +277,6 @@ async function editClass(row: ClasseComum) {
   novaClasse.mae_curta = row.mae_curta;
   selectedNode.value = row.mae_curta;
   classeMaeSelecionada.value = encontrarClassePorUri(row.subclassof);
-
   dialogOpen.value = true;
 }
 function abrirDialogoNovaClasse() {
@@ -327,137 +295,129 @@ const showNotif = (mensagem: any) => {
     color: 'purple',
   });
 };
-function load_repositorio(){
-  console.log('repositório',repoStore.get)
-}
+
 onBeforeMount(() => {
   listarClasseMae();
-
-
 });
 
-
-watch(() => authStore.repositorio_conectado, (newVal) => {
-  if (newVal && newVal.uri) {
-    listarClasseMae();
-  }
-}, { immediate: true });
-
-
-
+watch(
+  () => authStore.repositorio_conectado,
+  (newVal) => {
+    if (newVal && newVal.uri) {
+      listarClasseMae();
+    }
+  },
+  { immediate: true }
+);
 </script>
-<style src="./Estilo.css"></style>
 
 <template>
-  <q-page class="q-pa-md q-my-lg">
-    <q-card class="q-pa-md q-mb-lg">
-
-      <q-card-section >
-        Repositório selecionado: {{}}
-        <q-input label="palavra-chave" outlined dense v-model="keyword" @keyup.enter="search" />
-
-
-        <q-btn
-          @click="search"
-          color="teal"
-          label="Pesquisar"
-          icon="search"
-
+  <q-page class="q-pa-sm">
+    <div class="row q-col-gutter-sm q-mb-md">
+      <div class="col-xs-6 col-md-6 col-lg-2">
+        <q-input
+          label="palavra-chave"
+          outlined
+          dense
+          v-model="keyword"
+          @keyup.enter="search"
+          style="color: black; font-size: smaller"
         />
+      </div>
+      <div class="col-xs-6 col-md-6 col-lg-2">
+        <q-btn @click="search" color="teal" label="Pesquisar" icon="search" />
+      </div>
+    </div>
+
+    <q-card>
+      <q-table
+        :rows="listaClasses"
+        :columns="columns"
+        row-key="id"
+        striped
+        title="Classes do acervo"
+      >
+        <template v-slot:body-cell-acoes="props">
+          <q-td :props="props">
+            <q-btn
+              dense
+              color="blue-9"
+              icon="edit"
+              @click="editClass(props.row)"
+              title="alterar a classe"
+            />
+            <q-btn
+              dense
+              color="purple-6 "
+              icon="format_list_bulleted"
+              @click="editClass(props.row)"
+              title="ir para os objetos desta coleção"
+            />
+            <q-btn
+              dense
+              color="red-7"
+              icon="delete"
+              @click="excluir_classe(props.row)"
+              title="excluir definitivamente essa classe"
+            />
+          </q-td>
+        </template>
+      </q-table>
+
+      <q-dialog v-model="dialogOpen" class="q-pa-md scroll" persistent>
+        <q-card style="width: 80vw; max-width: 90vw; max-height: 90vh">
+          <q-toolbar>
+            <q-toolbar-title>{{
+              editMode ? 'Editar Classe' : 'Adicionar nova classe'
+            }}</q-toolbar-title>
+            <q-btn icon="close" flat round dense @click="closeDialog" />
+          </q-toolbar>
+          <q-card-section>
+            <q-input
+              v-model="novaClasse.label"
+              outlined
+              dense
+              label="Nome da Classe"
+            />
+          </q-card-section>
+          <q-card-section>
+            <q-input
+              v-model="novaClasse.description"
+              outlined
+              dense
+              label="Descrição da Classe"
+            />
+          </q-card-section>
+          <q-card-section>
+            <q-input
+              v-model="selectedClassUri"
+              readonly
+              outlined
+              dense
+              label="Classe mãe selecionada"
+            />
+            <q-tree
+              :nodes="arvoreClasses"
+              node-key="label"
+              v-model:selected="selectedNode"
+              @update:selected="onNodeSelect"
+            />
+          </q-card-section>
+          <q-separator></q-separator>
+          <q-card-actions align="right">
+            <q-btn label="Cancelar" color="negative" @click="closeDialog" />
+            <q-btn label="Salvar" color="primary" @click="gravarClasse" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <q-card-actions>
         <q-btn
           @click="abrirDialogoNovaClasse"
           color="primary"
           label="Nova Classe"
         />
-      </q-card-section>
-      <q-card-section >
-
-        <q-table
-          :rows="listaClasses"
-          :columns="columns"
-          row-key="id"
-          class="tabela-classes"
-          striped
-          title="Classes do acervo"
-        >
-          <template v-slot:body-cell-acoes="props">
-            <q-td :props="props">
-              <q-btn
-                dense
-                color="blue-9"
-                icon="edit"
-                @click="editClass(props.row)"
-                title="alterar a classe"
-              />
-              <q-btn
-                dense
-                color="purple-6 "
-                icon="format_list_bulleted"
-                @click="editClass(props.row)"
-                title="ir para os objetos desta coleção"
-              />
-              <q-btn
-                dense
-                color="red-7"
-                icon="delete"
-                @click="excluir_classe(props.row)"
-                title="excluir definitivamente essa classe"
-              />
-            </q-td>
-          </template>
-        </q-table>
-      </q-card-section>
-    </q-card>
-    <q-dialog v-model="dialogOpen">
-      <q-card>
-        <q-toolbar>
-          <q-toolbar-title>{{
-            editMode ? 'Editar Classe' : 'Adicionar nova classe'
-          }}</q-toolbar-title>
-          <q-btn icon="close" flat round dense @click="closeDialog" />
-        </q-toolbar>
-        <q-card-section>
-          <q-input
-            v-model="novaClasse.label"
-            outlined
-            dense
-            label="Nome da Classe"
-          />
-        </q-card-section>
-        <q-card-section>
-          <q-input
-            v-model="novaClasse.description"
-            outlined
-            dense
-            label="Descrição da Classe"
-          />
-        </q-card-section>
-        <q-card-section>
-          <q-input
-            v-model="selectedClassUri"
-            readonly
-            outlined
-            dense
-            label="Classe mãe selecionada"
-          />
-          <q-tree
-            :nodes="arvoreClasses"
-            node-key="label"
-            v-model:selected="selectedNode"
-            @update:selected="onNodeSelect"
-          />
-        </q-card-section>
-        <q-separator></q-separator>
-        <q-card-actions align="right">
-          <q-btn label="Cancelar" color="negative" @click="closeDialog" />
-          <q-btn label="Salvar" color="primary" @click="gravarClasse" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-    <!-- Tabela de classes existentes -->
-    <q-card class="full-width">
-      <!-- Restante do seu código para a tabela de classes -->
+      </q-card-actions>
     </q-card>
   </q-page>
 </template>
-

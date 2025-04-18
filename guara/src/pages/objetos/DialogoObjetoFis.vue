@@ -1,55 +1,56 @@
 <script setup lang="ts">
-import { ref, onBeforeMount } from "vue";
+import { ref, onBeforeMount, watchEffect } from 'vue';
 import {
   atualizarObjetoFisico,
   gravarObjetoFisico,
-} from "src/services/objeto-fisico-api";
-import { listarClasses } from "src/services/api";
-import { ObjetoFisico } from "./manter-objeto";
-import { organiza_arvore, encontrarClassePorLabel } from "../funcoes";
-import { ClasseComum, TreeNode } from "../tipos";
-import { useDadosObjetoFisico } from "src/stores/objeto-fisico";
-import { useRouter } from "vue-router";
-import { Dialog } from "quasar";
+} from 'src/services/objeto-fisico-api';
+import { listarClasses } from 'src/services/api';
+import { mostrarPopUpObjetoFis, ObjetoFisico } from './manter-objeto';
+import { organiza_arvore, encontrarClassePorLabel } from '../funcoes';
+import { ClasseComum, TreeNode } from '../tipos';
+import { useDadosObjetoFisico } from 'src/stores/objeto-fisico';
+import { useRouter } from 'vue-router';
+import { Dialog } from 'quasar';
+
 const router = useRouter();
 
 const listaClasses = ref<ClasseComum[]>([]);
 const ClasseSelecionada = ref<ClasseComum>();
 const arvoreClasses = ref<TreeNode[]>([]);
-const keyword = ref<string>("");
-const uri = ref<string>("");
+const keyword = ref<string>('');
+const uri = ref<string>('');
 const useObjetoStore = useDadosObjetoFisico();
-const tipoObjeto = ref("fisico" as string);
-const selectedNode = ref<string>("");
+const tipoObjeto = ref('fisico' as string);
+const selectedNode = ref<string>('');
 const objeto = ref<ObjetoFisico>({
-  id: "",
-  obj: "",
-  resumo: "",
-  titulo: "",
-  descricao: "",
+  id: '',
+  obj: '',
+  resumo: '',
+  titulo: '',
+  descricao: '',
   tipoFisico: [],
   altura: 0,
-  dataCriacao: "",
-  dataModificacao: "",
+  dataCriacao: '',
+  dataModificacao: '',
   largura: 0,
-  material: "",
+  material: '',
   profundidade: 0,
   peso: 0,
-  assunto: "",
+  assunto: '',
   temRelacao: [],
-  colecao: "",
+  colecao: '',
   associatedMedia: [],
   tipoFisicoAbreviado: [],
-  repositorio: "",
-  dimensao: "",
+  repositorio: '',
+  dimensao: '',
 });
 
 const tipos = [
-  { label: "Bibliotecário", value: "Bibliotecario" },
-  { label: "Arqueológico", value: "Arqueologico" },
-  { label: "Museológico", value: "MuseuLogico" },
-  { label: "Arquivístico-Documental", value: "Arquivistico-Documental" },
-  { label: "Imagético-Sonoro", value: "Imagetico-Sonoro" },
+  { label: 'Bibliotecário', value: 'Bibliotecario' },
+  { label: 'Arqueológico', value: 'Arqueologico' },
+  { label: 'Museológico', value: 'MuseuLogico' },
+  { label: 'Arquivístico-Documental', value: 'Arquivistico-Documental' },
+  { label: 'Imagético-Sonoro', value: 'Imagetico-Sonoro' },
 ];
 
 function irParaMidias(obj: ObjetoFisico) {
@@ -57,6 +58,11 @@ function irParaMidias(obj: ObjetoFisico) {
   router.push(`/objetos/${obj.id}/midias`);
 }
 
+watchEffect(() => {
+  if (mostrarPopUpObjetoFis.value) {
+    carregar();
+  }
+});
 function onNodeSelect() {
   ClasseSelecionada.value = encontrarClassePorLabel(
     selectedNode.value,
@@ -67,27 +73,28 @@ function onNodeSelect() {
 }
 function cancelar() {
   if (
-    objeto.value.descricao !== "" ||
-    objeto.value.titulo !== "" ||
-    objeto.value.resumo !== ""
+    objeto.value.descricao !== '' ||
+    objeto.value.titulo !== '' ||
+    objeto.value.resumo !== ''
   ) {
     Dialog.create({
-      title: "Confirmação",
-      message: "Os dados não foram gravados. Tem certeza que deseja sair do formulário?",
+      title: 'Confirmação',
+      message:
+        'Os dados não foram gravados. Tem certeza que deseja sair do formulário?',
       cancel: true,
       persistent: true,
     })
       .onOk(() => {
-        router.go(-1); // Voltar para a tela anterior
+        mostrarPopUpObjetoFis.value = false;
       })
       .onCancel(() => {
-        console.log("Usuário cancelou a saída");
+        console.log('Usuário cancelou a saída');
       });
   } else {
-    router.back();
+    mostrarPopUpObjetoFis.value = false;
   }
 }
-function submitForm() {
+function gravar() {
   gravarObjetoFisico(objeto.value);
 }
 function atualizarObj() {
@@ -101,9 +108,7 @@ async function PesquisarClasses() {
     arvoreClasses.value = organiza_arvore(listaClasses.value);
   } catch (error) {}
 }
-
-onBeforeMount(() => {
-  PesquisarClasses();
+function carregar() {
   if (useObjetoStore.getObjeto.id) {
     objeto.value = { ...useObjetoStore.getObjeto };
     selectedNode.value = objeto.value.colecao; // Define a classe selecionada
@@ -112,37 +117,28 @@ onBeforeMount(() => {
       ? [...objeto.value.tipoFisico]
       : [];
   }
+}
+onBeforeMount(() => {
+  PesquisarClasses();
 });
 </script>
-<style src="./criar-objeto.css"></style>
+
 <template>
-  <q-page>
-    <q-toolbar class="bg-secondary text-white">
-      <q-toolbar-title v-if="objeto.id == ''">Criar um novo objeto</q-toolbar-title>
-      <q-toolbar-title v-if="objeto.id != ''"
-        >Objeto Id: {{ objeto.id }}
-      </q-toolbar-title>
-    </q-toolbar>
-    <q-form @submit.prevent="submitForm" class="q-gutter-md">
-      <div class="q-pa-md">
-        <q-btn-toggle
-          v-model="tipoObjeto"
-          class="my-custom-toggle"
-          no-caps
-          rounded
-          toggle-color="blue-5"
-          color="white"
-          text-color="primary"
-          :options="[
-            { label: 'Físico', value: 'fisico' },
-            { label: 'Dimensional', value: 'dimensional' },
-          ]"
-        />
-      </div>
+  <q-dialog v-model="mostrarPopUpObjetoFis" class="q-pa-md scroll" persistent>
+    <q-card style="width: 80vw; max-width: 90vw; max-height: 90vh">
+      <q-toolbar>
+        <q-toolbar-title v-if="objeto.id == ''"
+          >Criar um novo objeto</q-toolbar-title
+        >
+        <q-toolbar-title v-if="objeto.id != ''"
+          >Objeto Id: {{ objeto.id }}
+        </q-toolbar-title>
+      </q-toolbar>
+
       <div class="criar-objeto-container">
         <q-card class="q-pa-md">
           <q-card-section>
-            <q-form @submit.prevent="submitForm">
+            <q-form @submit.prevent="gravar">
               <div class="q-gutter-x-md" v-if="tipoObjeto == 'fisico'">
                 <div>
                   <q-select
@@ -169,25 +165,31 @@ onBeforeMount(() => {
                   @update:selected="onNodeSelect"
                   hint="inform a classe a qual o objeto pertence no acervo"
                 />
-                <q-input v-model="uri" label="Classe do Acervo" />
-
+                <q-input v-model="uri" label="Classe do Acervo" outlined />
               </div>
-              <q-input v-model="objeto.titulo" label="Título/nome do objeto" />
+              <q-input
+                v-model="objeto.titulo"
+                label="Título/nome do objeto"
+                required
+                outlined
+              />
               <q-input
                 v-model="objeto.resumo"
                 label="Resumo"
                 title="um texto resumido com informações importantes sobre o objeto"
-                type="textarea"
+                autogrow
+                outlined
               />
               <q-input
                 v-model="objeto.descricao"
                 label="Descrição"
-                type="textarea"
                 title="uma descrição detalhada do objeto digital"
+                autogrow
+                outlined
               />
               <q-btn-group flat push>
                 <q-btn
-                  type="submit"
+                  @click="gravar"
                   label="Gravar Novo Objeto"
                   color="primary"
                   v-if="objeto.id == ''"
@@ -212,7 +214,7 @@ onBeforeMount(() => {
                 />
 
                 <q-btn
-                  @click="$router.go(-1)"
+                  @click="mostrarPopUpObjetoFis = false"
                   label="Voltar"
                   color="secondary"
                   v-if="objeto.id != ''"
@@ -222,6 +224,6 @@ onBeforeMount(() => {
           </q-card-section>
         </q-card>
       </div>
-    </q-form>
-  </q-page>
+    </q-card>
+  </q-dialog>
 </template>

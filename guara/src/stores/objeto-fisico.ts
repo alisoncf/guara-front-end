@@ -1,10 +1,14 @@
 import { defineStore } from 'pinia';
 import { SessionStorage } from 'quasar';
 import { StorageKey } from 'src/constants/StorageKey';
-import { ObjetoFisico } from '../pages/objetos/manter-objeto';
+import {
+  ObjetoDimensional,
+  ObjetoFisico,
+} from '../pages/objetos/manter-objeto';
 
 const defaultState = {
   objetoSelecionado: {} as ObjetoFisico, // Objeto individual
+  objetoSelecionadoDim: {} as ObjetoDimensional,
   listaObj: [] as ObjetoFisico[], // Lista de objetos
   keyword: '', // Palavra-chave usada na pesquisa
 };
@@ -27,6 +31,9 @@ export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {
     getObjeto(): ObjetoFisico {
       return this.$state.objetoSelecionado;
     },
+    getObjetoDim(): ObjetoDimensional {
+      return this.$state.objetoSelecionadoDim;
+    },
     getLista(): ObjetoFisico[] {
       return this.$state.listaObj;
     },
@@ -44,6 +51,13 @@ export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {
       this.$state.objetoSelecionado = objeto;
       SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
     },
+    setObjetoDim(objeto: ObjetoDimensional) {
+      this.$state.objetoSelecionadoDim = objeto;
+      SessionStorage.set(
+        StorageKey.objetoDimensional,
+        JSON.stringify(this.$state)
+      );
+    },
     setLista(lista: ObjetoFisico[]) {
       this.$state.listaObj = lista;
       SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
@@ -53,7 +67,7 @@ export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {
       SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
     },
     limparObjeto() {
-      this.$state.objetoSelecionado = { } as ObjetoFisico;
+      this.$state.objetoSelecionado = {} as ObjetoFisico;
       SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
     },
   },

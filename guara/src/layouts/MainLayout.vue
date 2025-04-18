@@ -68,17 +68,11 @@ const leftDrawerOpen = ref(false);
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
-onBeforeMount(() => {
-  const repositorioSelecionado = computed(() => repoStore.get || { nome: 'Nenhum' });
-  const usuarioLogado = computed(() => authStore.get || { nome: 'Nenhum' });
-
-
-})
 </script>
 
 <template>
-  <q-layout view="lHh LpR fFf">
-    <q-header elevated class="bg-primary text-white" >
+  <q-layout view="lHh lpr fff">
+    <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-btn
           flat
@@ -89,14 +83,12 @@ onBeforeMount(() => {
           @click="toggleLeftDrawer"
           color="black"
         />
-        <q-toolbar-title>
-          <div style="color: black">
-            Guará: Repositório Digital do Patrimônio Cultural do Estado de Goiás
-          </div>
+        <q-toolbar-title style="color: black; font-size: small">
+          Guará: Repositório Digital do Patrimônio Cultural do Estado de Goiás
         </q-toolbar-title>
         <div><img src="../assets/cmg.gif" width="100" alt="" /></div>
       </q-toolbar>
-      <q-tabs align="left">
+      <q-tabs align="left" style="color: black; font-size: smaller">
         <q-route-tab to="/organizacao-estrutura" label="Catálogo" />
         <q-route-tab to="/abrir-colecoes" label="Explorar coleções" />
         <q-route-tab to="/" label="O Espaço" />
@@ -117,13 +109,15 @@ onBeforeMount(() => {
     <q-page-container>
       <router-view />
     </q-page-container>
-    <q-footer elevated class="bg-grey-8 text-white">
+    <q-footer class="bg-grey-8 text-white smaller">
       <q-toolbar>
         <q-toolbar-title>
           <q-avatar>
-            <img src="../assets/guara.png" alt =""  />
+            <img src="../assets/guara.png" alt="" />
           </q-avatar>
-          Guará - {{ authStore.get.email}} conectado em #{{ authStore.get.repositorio_conectado.nome }}
+          Guará - {{ authStore.get.email }} conectado em #{{
+            authStore.get.repositorio_conectado.nome
+          }}
         </q-toolbar-title>
       </q-toolbar>
     </q-footer>
@@ -131,4 +125,3 @@ onBeforeMount(() => {
     <q-notifications />
   </q-layout>
 </template>
-
