@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { SessionStorage } from 'quasar';
 import { StorageKey } from 'src/constants/StorageKey';
-import { Auth } from 'src/pages/tipos';
+import { Auth, Repositorio } from 'src/pages/tipos';
 
 const defaultState: Auth = {
   email: '',
@@ -10,7 +10,8 @@ const defaultState: Auth = {
   token: '',
   user: '',
   validade: '',
-  repositorio_conectado: [],
+  repositorio_conectado: {} as Repositorio,
+  isLoggedIn: false,
 };
 
 export const useAuthStore = defineStore('useAuthStore', {
@@ -61,6 +62,16 @@ export const useAuthStore = defineStore('useAuthStore', {
       this.user = defaultState.user;
       this.validade = defaultState.validade;
       this.repositorio_conectado = defaultState.repositorio_conectado;
+    },
+    logout() {
+      this.email = '';
+      this.permissao = '';
+      this.repositorio = '';
+      this.token = '';
+      this.user = '';
+      this.validade = '';
+      this.repositorio_conectado = {} as Repositorio;
+      this.isLoggedIn = false;
     },
   },
 });

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 
 export const mostrarPopUpObjetoDim = ref(false);
 export const mostrarPopUpObjetoFis = ref(false);
+export const mostrarPopUpMidias = ref(false);
 export interface Dimensao {
   tipo: string;
   uri: string;

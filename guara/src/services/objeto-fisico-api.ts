@@ -20,21 +20,17 @@ const router = useRouter();
 const repoStore = useDadosRepositorio();
 
 export function gravarObjetoFisico(objeto: ObjetoFisico) {
-  fetch(
-    apiConfig.baseURL +
-      apiConfig.endpoints.objectapi +
-      '/adicionar_objeto_fisico',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...objeto,
-        repository: authStore.get.repositorio_conectado.uri,
-      }),
-    }
-  )
+  fetch(apiConfig.endpoints.fisico.create, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + authStore.token,
+    },
+    body: JSON.stringify({
+      ...objeto,
+      repository: authStore.get.repositorio_conectado.uri,
+    }),
+  })
     .then(async (response) => {
       if (!response.ok) {
         const errorMessage = await response.text(); // Lê o corpo da resposta para detalhes do erro
@@ -80,14 +76,11 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
     return [];
   }
   try {
-    const response = await axios.post(
-      apiConfig.baseURL + apiConfig.endpoints.objectapi + '/listar_objetos',
-      {
-        keyword: obj.descricao,
-        type: 'fisico',
-        repository: authStore.get.repositorio_conectado.uri,
-      }
-    );
+    const response = await axios.post(apiConfig.endpoints.fisico.list, {
+      keyword: obj.descricao,
+      type: 'fisico',
+      repository: authStore.get.repositorio_conectado.uri,
+    });
 
     listaObj.value = response.data.results.bindings.map((item: any) => ({
       obj: item.obj.value,
@@ -130,19 +123,17 @@ export function deletarObjetoFisico(objeto: ObjetoFisico) {
   }).onOk(() => {
     const id = textoAposUltimoChar(objeto.id, '#');
     console.log('id-', id);
-    fetch(
-      `${apiConfig.baseURL}${apiConfig.endpoints.objectapi}/excluir_objeto_fisico`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: id,
-          repository: authStore.get.repositorio_conectado.uri,
-        }),
-      }
-    )
+    fetch(`${apiConfig.endpoints.fisico.delete}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: 'Bearer ' + authStore.token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: id,
+        repository: authStore.get.repositorio_conectado.uri,
+      }),
+    })
       .then(async (response) => {
         if (!response.ok) {
           const errorMessage = await response.text();
@@ -181,18 +172,17 @@ export function atualizarObjetoFisico(objeto: ObjetoFisico) {
   })
     .onOk(() => {
       objeto.id = textoAposUltimoChar(objeto.id, '#');
-      fetch(
-        apiConfig.baseURL +
-          apiConfig.endpoints.objectapi +
-          '/atualizar_objeto_fisico',
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ...objeto, repository: repoStore.get.uri }),
-        }
-      )
+      fetch(apiConfig.endpoints.fisico.update, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + authStore.token,
+        },
+        body: JSON.stringify({
+          ...objeto,
+          repository: authStore.get.repositorio_conectado.uri,
+        }),
+      })
         .then(async (response) => {
           if (!response.ok) {
             const errorMessage = await response.text();

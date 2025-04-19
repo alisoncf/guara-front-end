@@ -5,12 +5,17 @@ import {
   gravarObjetoFisico,
 } from 'src/services/objeto-fisico-api';
 import { listarClasses } from 'src/services/api';
-import { mostrarPopUpObjetoFis, ObjetoFisico } from './manter-objeto';
+import {
+  mostrarPopUpMidias,
+  mostrarPopUpObjetoFis,
+  ObjetoFisico,
+} from './manter-objeto';
 import { organiza_arvore, encontrarClassePorLabel } from '../funcoes';
 import { ClasseComum, TreeNode } from '../tipos';
 import { useDadosObjetoFisico } from 'src/stores/objeto-fisico';
 import { useRouter } from 'vue-router';
 import { Dialog } from 'quasar';
+import ComponenteMidia from './ComponenteMidia.vue';
 
 const router = useRouter();
 
@@ -55,7 +60,7 @@ const tipos = [
 
 function irParaMidias(obj: ObjetoFisico) {
   useObjetoStore.setObjeto(obj);
-  router.push(`/objetos/${obj.id}/midias`);
+  mostrarPopUpMidias.value = true;
 }
 
 watchEffect(() => {

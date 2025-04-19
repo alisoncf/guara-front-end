@@ -19,7 +19,12 @@ const repoStore = useDadosRepositorio();
 const router = useRouter();
 
 export function gravarObjetoDim(objeto: ObjetoDimensional) {
-  fetch(apiConfig.baseURL + apiConfig.endpoints.dimensional.create, {
+  const url =
+    objeto.id == ''
+      ? apiConfig.endpoints.dimensional.create
+      : apiConfig.endpoints.dimensional.update;
+  console.log('url', url);
+  fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -46,7 +51,6 @@ export function gravarObjetoDim(objeto: ObjetoDimensional) {
         message: 'Objeto criado com sucesso!',
         timeout: 3000,
       }); // Mostra notificação de sucesso
-      router.push(`/objetos/${data.id}/midias`); // Redireciona para a página de mídias do objeto
     })
     .catch((error) => {
       console.error('Erro ao criar objeto:', error);
@@ -73,14 +77,11 @@ export async function pesquisarObjetosDim(obj: ObjetoDimensional) {
     return [];
   }
   try {
-    const response = await axios.post(
-      apiConfig.baseURL + apiConfig.endpoints.dimensional.list,
-      {
-        keyword: obj.descricao,
-        type: obj.tipo != undefined ? obj.tipo.tipo : '',
-        repository: authStore.get.repositorio_conectado.uri,
-      }
-    );
+    const response = await axios.post(apiConfig.endpoints.dimensional.list, {
+      keyword: obj.descricao,
+      type: obj.tipo != undefined ? obj.tipo.tipo : '',
+      repository: authStore.get.repositorio_conectado.uri,
+    });
 
     lista.value = response.data.results.bindings.map((item: any) => ({
       obj: item.obj.value,
@@ -118,16 +119,13 @@ export function deletarObjetoFisico(objeto: ObjetoFisico) {
   }).onOk(() => {
     const id = textoAposUltimoChar(objeto.id, '#');
     console.log('id-', id);
-    fetch(
-      `${apiConfig.baseURL}${apiConfig.endpoints.objectapi}/excluir_objeto_fisico`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: id, repository: repoStore.get.uri }),
-      }
-    )
+    fetch(`${apiConfig.endpoints.fisico.delete}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id: id, repository: repoStore.get.uri }),
+    })
       .then(async (response) => {
         if (!response.ok) {
           const errorMessage = await response.text();
@@ -166,18 +164,13 @@ export function atualizarObjetoFisico(objeto: ObjetoFisico) {
   })
     .onOk(() => {
       objeto.id = textoAposUltimoChar(objeto.id, '#');
-      fetch(
-        apiConfig.baseURL +
-          apiConfig.endpoints.objectapi +
-          '/atualizar_objeto_fisico',
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ...objeto, repository: repoStore.get.uri }),
-        }
-      )
+      fetch(apiConfig.endpoints.fisico.update, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...objeto, repository: repoStore.get.uri }),
+      })
         .then(async (response) => {
           if (!response.ok) {
             const errorMessage = await response.text();

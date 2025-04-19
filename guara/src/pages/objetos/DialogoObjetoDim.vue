@@ -46,7 +46,12 @@ function gravar() {
   objeto.value.tipo = tipoSelecionado.value;
   gravarObjetoDim(objeto.value);
 }
-
+function novo() {
+  objeto.value.titulo = '';
+  objeto.value.descricao = '';
+  objeto.value.resumo = '';
+  objeto.value.id = '';
+}
 onBeforeMount(() => {
   //fazer algo
 });
@@ -98,6 +103,7 @@ onBeforeMount(() => {
       <q-card-actions>
         <q-btn-group flat push>
           <q-btn @click="gravar" label="Salvar Objeto" color="green-8" />
+          <q-btn @click="novo" label="Novo objeto" color="blue-8" />
           <q-btn
             label="Voltar"
             @click="mostrarPopUpObjetoDim = false"

@@ -41,6 +41,7 @@ export interface Auth {
   validade: string;
   repositorio: string;
   repositorio_conectado: Repositorio;
+  isLoggedIn?: boolean;
 }
 
 export interface ClassQueryResult {

@@ -34,9 +34,8 @@ export async function efetuarLogin(
       email: email,
       password: password,
       repository: repositorio,
-      name: nome_repositorio
+      name: nome_repositorio,
     }),
-
   });
 
   if (!response.ok) {
@@ -47,16 +46,20 @@ export async function efetuarLogin(
     });
     return {} as Auth;
   }
-  console.log('inicio')
+  console.log('inicio');
   const data = await response.json();
   const auth = ref({} as Auth);
-  const repo = ref({} as Repositorio);
 
   auth.value = data;
-  console.log('auth',auth.value)
+  auth.value.isLoggedIn = true;
+
+  console.log('auth', auth.value.repositorio_conectado);
   if (data.token) {
     localStorage.setItem('authToken', data.token);
-    authStore.set(auth.value);
+    if (auth.value) {
+      authStore.set(auth.value);
+    }
+
     //repo.value = await buscarRepositorio(auth.value.repositorio)
     //await repoStore.set(repo);
   } else {

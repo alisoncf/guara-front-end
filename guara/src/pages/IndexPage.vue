@@ -1,94 +1,99 @@
-<template>
-  <div class="home-container">
-    <div class="project-section">
-      <div class="info">
-        <div class="vertical-line"></div>
+<script setup lang="ts">
+import { useAuthStore } from 'src/stores/auth-store';
+import { useRouter } from 'vue-router';
+import { Auth, Repositorio } from './tipos';
+import { onBeforeMount, ref } from 'vue';
+import { listarRepositorios } from 'src/services/api';
+import { Notify } from 'quasar';
 
-        <div class="content">
-          <h2>Projeto Guará</h2>
-          <p>O Guará é um sistema de informação baseado em RDF projetado para centros de memória. Ele permite a organização e a exploração de coleções de patrimônio cultural de maneira eficiente e integrada.</p>
-          <q-btn flat @click="goToMemorySpaces">Informações do Espaço de Memória</q-btn>
-        </div>
+const router = useRouter();
+const store = useAuthStore();
+
+const listaRepositorios = ref([] as Repositorio[]);
+
+async function listarRepo() {
+  listaRepositorios.value = await listarRepositorios('');
+}
+function goToLogin() {
+  router.push('/login');
+}
+function goToLogout() {
+  router.push('/logout');
+}
+function selecionarRepositorio(repo: Repositorio) {
+  const auth = ref({} as Auth);
+  auth.value.isLoggedIn = false;
+  auth.value.user = '';
+  auth.value.repositorio_conectado = repo;
+  store.set(auth.value);
+  Notify.create({
+    message: `Repositório "${repo.nome}" selecionado.`,
+    color: 'primary',
+    position: 'top',
+  });
+  router.push('/abrir-colecoes');
+}
+onBeforeMount(() => {
+  listarRepo();
+});
+</script>
+
+<template>
+  <div padding>
+    <q-btn
+      v-if="!store.user"
+      icon="login"
+      round
+      flat
+      color="primary"
+      @click="goToLogin"
+      class="q-mr-md q-mt-md"
+      size="md"
+      label="Admin"
+    />
+
+    <div class="q-pa-md q-gutter-md flex column">
+      <q-card
+        v-if="store.user"
+        class="q-pa-md"
+        style="max-width: 400px; width: 100%"
+      >
+        <q-card-section>
+          <div class="text-subtitle1">Usuário conectado: {{ store.user }}</div>
+          <div v-if="store.repositorio_conectado" class="q-mt-sm">
+            Repositório: {{ store.repositorio_conectado.nome }}
+          </div>
+          <div v-if="store.repositorio_conectado" class="q-mt-sm">
+            URI: {{ store.repositorio_conectado.uri }} token
+            {{ store.token }} validade {{ store.validade }}
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn label="Logout" color="primary" @click="goToLogout" flat />
+        </q-card-actions>
+      </q-card>
+
+      <div
+        v-if="!store.user"
+        class="row justify-left q-gutter-md"
+        style="max-width: 1000px"
+      >
+        <q-card
+          v-for="repo in listaRepositorios"
+          :key="repo.uri"
+          class="cursor-pointer"
+          style="width: 300px"
+          bordered
+          flat
+          hoverable
+          @click="selecionarRepositorio(repo)"
+        >
+          <q-card-section>
+            <div class="text-bold">{{ repo.nome }}</div>
+            <div class="text-body2 q-mt-sm">{{ repo.descricao }}</div>
+          </q-card-section>
+        </q-card>
       </div>
-    </div>
-    <div class="hero-section">
-      <q-btn color="primary" @click="goToCollections">Explorar Coleções</q-btn>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-
-function goToCollections() {
-  router.push('/abrir-colecoes');
-}
-
-function goToMemorySpaces() {
-  router.push('/informacoes-espaco');
-}
-</script>
-
-<style scoped>
-.home-container {
-  padding: 5px;
-}
-
-.project-section {
-  display: flex;
-  align-items: center;
-  margin-bottom: 5px;
-}
-
-.info {
-  display: flex;
-  align-items: center;
-}
-
-.vertical-line {
-  width: 1px;
-  background-color: #0b0a0b;
-  forced-color-adjust: auto;
-
-  margin-right: 5px;
-}
-
-.content {
-  text-align: left;
-}
-
-.content h2 {
-  font-size: 2.0rem;
-  font-weight: 800;
-  margin-bottom: 10px;
-}
-
-.content p {
-  font-size: 1.00rem;
-  margin-bottom: 20px;
-}
-
-.hero-section {
-  background: url('../assets/hero-background.jpg') no-repeat center center;
-  background-size: cover;
-  padding: 5px;
-  color: rgb(128, 119, 119);
-  text-align: left;
-}
-
-.hero-section h1 {
-  font-size: 3rem;
-  font-weight: 700;
-}
-
-.hero-section p {
-  font-size: 1.5rem;
-  margin: 20px 0;
-}
-
-.q-btn {
-  font-size: 1rem;
-}
-</style>

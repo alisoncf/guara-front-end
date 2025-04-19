@@ -2,8 +2,9 @@ import { Coluna } from '../tipos';
 
 export const colunasFisico = [
   { name: '#', label: '#', align: 'left' },
-  { name: 'id', label: 'Objeto', align: 'left', field: 'id' },
+  //{ name: 'id', label: 'Objeto', align: 'left', field: 'id' },
   { name: 'titulo', label: 'Título', align: 'left', field: 'titulo' },
+  { name: 'descricao', label: 'Descrição', align: 'left', field: 'descricao' },
   {
     name: 'tipo de coleção',
     label: 'Tipo',
@@ -16,8 +17,9 @@ export const colunasFisico = [
 
 export const colunasDim = [
   { name: '#', label: '#', align: 'left' },
-  { name: 'id', label: 'Objeto', align: 'left', field: 'id' },
+  //{ name: 'id', label: 'Objeto', align: 'left', field: 'id' },
   { name: 'titulo', label: 'Título', align: 'left', field: 'titulo' },
+  { name: 'descricao', label: 'Descrição', align: 'left', field: 'descricao' },
   {
     name: 'dimensao',
     label: 'Dimensão',

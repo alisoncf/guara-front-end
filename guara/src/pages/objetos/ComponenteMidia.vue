@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeMount } from 'vue';
+import { ref, onMounted, onBeforeMount, watchEffect } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
@@ -11,7 +11,7 @@ const objetoId = ref({} as string); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
 
 interface Midia {
-  file: string;
+  file: string | null;
   url: string;
   uri: string;
 }
@@ -59,7 +59,7 @@ function isPDF(url: string) {
   return url.endsWith('.pdf') || url.startsWith('data:application/pdf');
 }
 
-function handleToggleChange(index: string | number) {
+function handleToggleChange(index: number) {
   if (useFileUpload.value[index]) {
     midias.value[index].url = '';
     thumbnails.value[index] = null;
@@ -140,13 +140,13 @@ function submitMidias() {
       if (midia.file) {
         formData.append('midias', midia.file); // Envia o arquivo diretamente
       } else if (midia.url) {
-        formData.append('midias', midia.url); // Envia a URL como string
+        formData.append('links', midia.url); // Envia a URL como string
       }
     }
   );
 
   axios
-    .post(apiConfig.endpoints.midias.upload, formData, {
+    .post(apiConfig.baseURL + apiConfig.endpoints.upload, formData, {
       headers: {
         'Content-Type': 'multipart/form-data', // Define o cabeçalho correto
       },
@@ -169,6 +169,8 @@ function submitMidias() {
     });
 }
 function buscarMidias() {
+  objetoId.value = objetoStore.getObjeto.id;
+  objetoSelecionado.value = objetoStore.getObjeto;
   axios
     .get(`${apiConfig.endpoints.midias.list}`, {
       params: {
@@ -198,26 +200,34 @@ function buscarMidias() {
       });
     });
 }
-
+watchEffect(() => {
+  if (mostrarPopUpMidias.value) {
+    buscarMidias();
+  }
+});
 onMounted(() => {
-  buscarMidias();
+  //
 });
 
 onBeforeMount(() => {
-  objetoId.value = router.currentRoute.value.params.id;
-  objetoSelecionado.value = objetoStore.getObjeto;
+  //
 });
 </script>
 
 <template>
-  <q-page>
-    <q-toolbar class="bg-secondary text-white">
-      <q-toolbar-title>Gerenciar Mídias</q-toolbar-title>
-    </q-toolbar>
-
-    <div class="q-pa-md">
-      <q-card class="q-pa-md">
-        <div class="q-pa-md">
+  <q-dialog v-model="mostrarPopUpMidias" class="q-pa-md scroll" persistent>
+    <q-card style="width: 80vw; max-width: 90vw; max-height: 90vh">
+      <q-toolbar>
+        <q-toolbar-title>Gerenciar Mídias</q-toolbar-title>
+        <q-btn
+          icon="close"
+          label="fechar"
+          @click="mostrarPopUpMidias = false"
+          flat
+        />
+      </q-toolbar>
+      <div>
+        <q-card class="q-pa-md">
           <div class="row">
             <div class="col-6">
               <q-item>
@@ -236,135 +246,141 @@ onBeforeMount(() => {
               </q-item>
             </div>
           </div>
-        </div>
 
-        <q-card-section>
-          <q-table
-            title="Arquivos de Mídia"
-            :rows="midiasEncontradas.filter((row) => row.nome !== 'excluidos')"
-            :columns="[
-              { name: 'nome', label: 'Nome', align: 'left', field: 'nome' },
-              {
-                name: 'preview',
-                label: '',
-                align: 'left',
-                field: '',
-              },
-              {
-                name: 'acao',
-                label: '',
-                align: 'left',
-                field: '',
-              },
-            ]"
-            row-key="nome"
-          >
-            <template v-slot:body="props">
-              <q-tr :props="props">
-                <q-td key="nome">{{ props.row.nome }}</q-td>
-                <q-td key="preview">
-                  <img
-                    v-if="isImage(props.row.url)"
-                    :src="props.row.url"
-                    style="max-width: 100px; max-height: 100px"
-                  />
-                  <video
-                    v-else-if="isVideo(props.row.url)"
-                    controls
-                    style="max-width: 100px; max-height: 100px"
-                  >
-                    <source :src="props.row.url" />
-                  </video>
-                  <q-btn
-                    v-else-if="isPDF(props.row.url)"
-                    icon="picture_as_pdf"
-                    flat
-                    dense
-                    :href="props.row.url"
-                    target="_blank"
-                  />
-                </q-td>
-                <q-td key="acao">
-                  <q-btn
-                    label="Abrir"
-                    color="primary"
-                    icon="panorama"
-                    :href="props.row.url"
-                    size="sm"
-                    flat
-                    target="_blank"
-                  />
-                </q-td>
-                <q-td key="acao">
-                  <q-btn
-                    label="Excluir"
-                    color="red"
-                    icon="delete"
-                    size="sm"
-                    flat
-                    @click="excluir(props.row.nome)"
-                  />
-                </q-td>
-              </q-tr>
-            </template>
-          </q-table>
-          <q-btn
-            label="Adicionar Mídia"
-            @click="adicionarMidia"
-            color="primary"
-          />
-        </q-card-section>
-        <q-card-section>
-          <q-list>
-            <q-item v-for="(midia, index) in midias" :key="index">
-              <q-item-section>
-                <q-toggle
-                  v-model="useFileUpload[index]"
-                  label="Upload de Arquivo"
-                  @update:model-value="() => handleToggleChange(index)"
-                />
-                <input
-                  v-if="useFileUpload[index]"
-                  type="file"
-                  @change="(e) => handleFileUpload(e, index)"
-                />
-
-                <q-input
-                  v-else
-                  v-model="midias[index].url"
-                  label="Ou cole aqui a URL da mídia"
-                  @input="() => handleUrlInput(index)"
-                />
-                <div v-if="thumbnails[index]">
-                  <img
-                    v-if="isImage(thumbnails[index])"
-                    :src="thumbnails[index]"
-                    alt="Thumbnail"
-                    style="max-width: 200px; max-height: 200px"
-                  />
-                </div>
-                <q-btn-group flat push>
-                  <q-btn
-                    label="Remover"
-                    color="negative"
-                    @click="removerMidia(index)"
-                  />
-                </q-btn-group>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card-section>
-        <q-card-section>
-          <q-btn-group flat push>
+          <q-card-section>
+            <q-table
+              title="Arquivos de Mídia"
+              :rows="
+                midiasEncontradas.filter((row) => row.nome !== 'excluidos')
+              "
+              :columns="[
+                { name: 'nome', label: 'Nome', align: 'left', field: 'nome' },
+                {
+                  name: 'preview',
+                  label: '',
+                  align: 'left',
+                  field: '',
+                },
+                {
+                  name: 'acao',
+                  label: '',
+                  align: 'left',
+                  field: '',
+                },
+              ]"
+              row-key="nome"
+            >
+              <template v-slot:body="props">
+                <q-tr :props="props">
+                  <q-td key="nome">{{ props.row.nome }}</q-td>
+                  <q-td key="preview">
+                    <img
+                      v-if="isImage(props.row.url)"
+                      :src="props.row.url"
+                      style="max-width: 100px; max-height: 100px"
+                    />
+                    <video
+                      v-else-if="isVideo(props.row.url)"
+                      controls
+                      style="max-width: 100px; max-height: 100px"
+                    >
+                      <source :src="props.row.url" />
+                    </video>
+                    <q-btn
+                      v-else-if="isPDF(props.row.url)"
+                      icon="picture_as_pdf"
+                      flat
+                      dense
+                      :href="props.row.url"
+                      target="_blank"
+                    />
+                  </q-td>
+                  <q-td key="acao">
+                    <q-btn
+                      label="Abrir"
+                      color="primary"
+                      icon="panorama"
+                      :href="props.row.url"
+                      size="sm"
+                      flat
+                      target="_blank"
+                    />
+                  </q-td>
+                  <q-td key="acao">
+                    <q-btn
+                      label="Excluir"
+                      color="red"
+                      icon="delete"
+                      size="sm"
+                      flat
+                      @click="excluir(props.row.nome)"
+                    />
+                  </q-td>
+                </q-tr>
+              </template>
+            </q-table>
             <q-btn
-              label="Salvar Mídias"
-              @click="submitMidias"
-              color="green-8"
+              label="Adicionar Mídia"
+              @click="adicionarMidia"
+              color="primary"
             />
-            <q-btn @click="router.go(-1)" label="Voltar" color="secondary" />
-          </q-btn-group>
-        </q-card-section>
-      </q-card>
-    </div>
-  </q-page>
+          </q-card-section>
+          <q-card-section>
+            <q-list>
+              <q-item v-for="(midia, index) in midias" :key="index">
+                <q-item-section>
+                  <q-toggle
+                    v-model="useFileUpload[index]"
+                    label="Upload de Arquivo"
+                    @update:model-value="() => handleToggleChange(index)"
+                  />
+                  <input
+                    v-if="useFileUpload[index]"
+                    type="file"
+                    @change="(e) => handleFileUpload(e, index)"
+                  />
+
+                  <q-input
+                    v-else
+                    v-model="midias[index].url"
+                    label="Ou cole aqui a URL da mídia"
+                    @input="() => handleUrlInput(index)"
+                  />
+                  <div v-if="thumbnails[index]">
+                    <img
+                      v-if="isImage(thumbnails[index])"
+                      :src="thumbnails[index]"
+                      alt="Thumbnail"
+                      style="max-width: 200px; max-height: 200px"
+                    />
+                  </div>
+                  <q-btn-group flat push>
+                    <q-btn
+                      label="Remover"
+                      color="negative"
+                      @click="removerMidia(index)"
+                    />
+                  </q-btn-group>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-card-section>
+          <q-card-section>
+            <q-btn-group flat push>
+              <q-btn
+                label="Salvar Mídias"
+                @click="submitMidias"
+                color="green-8"
+              />
+              <q-btn
+                @click="mostrarPopUpMidias = false"
+                label="Voltar"
+                color="secondary"
+              />
+            </q-btn-group>
+          </q-card-section>
+        </q-card>
+      </div>
+    </q-card>
+  </q-dialog>
 </template>

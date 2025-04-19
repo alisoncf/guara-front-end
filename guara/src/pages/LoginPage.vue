@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { onBeforeMount, ref } from 'vue';
 import { efetuarLogin } from 'src/services/api-usuario';
-import { listarRepositorios } from 'src/services/api-repo';
+import {
+  listarRepositorios,
+  repositorioSelecionado,
+} from 'src/services/api-repo';
 import { Auth, Repositorio } from './tipos';
 import { Notify } from 'quasar';
 import { useRouter } from 'vue-router'; // Importando o router
 
 const email = ref('');
 const password = ref('');
-const repositorioSelecionado = ref({} as Repositorio);
+
 const listaRepositorios = ref([] as Repositorio[]);
 const router = useRouter(); // Instanciando o router
 

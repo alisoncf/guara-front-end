@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 
 import {
+  mostrarPopUpMidias,
   mostrarPopUpObjetoDim,
   mostrarPopUpObjetoFis,
   ObjetoDimensional,
@@ -19,6 +20,7 @@ import { colunasDim, colunasFisico } from './funcoes-funcoes';
 import DialogoObjetoDim from '../objetos/DialogoObjetoDim.vue';
 import { textoAposUltimoChar } from '../funcoes';
 import DialogoObjetoFis from '../objetos/DialogoObjetoFis.vue';
+import ComponenteMidia from '../objetos/ComponenteMidia.vue';
 
 const router = useRouter();
 
@@ -59,6 +61,7 @@ async function pesquisarFis() {
 
 function irParaNovo() {
   const obj = ref({ id: '', titulo: '' } as ObjetoFisico);
+  useObjetoStore.limparObjeto;
   useObjetoStore.setObjeto(obj);
   mostrarPopUpObjetoFis.value = true;
 }
@@ -86,7 +89,8 @@ function deletarObjeto(obj: ObjetoFisico) {
 }
 function irParaMidias(obj: ObjetoFisico) {
   useObjetoStore.setObjeto(obj);
-  router.push(`/objetos/${obj.id}/midias`);
+  console.log(obj);
+  mostrarPopUpMidias.value = true;
 }
 function Upload(id: string) {
   router.push('upload-midias/:' + id);
@@ -140,7 +144,9 @@ function Upload(id: string) {
           <template v-slot:body-cell-#="{ rowIndex }">
             <q-td>{{ rowIndex + 1 }}</q-td>
           </template>
-
+          <template v-slot:body-cell-id="props">
+            <q-td style="font-size: 10px">{{ props.row.id }}</q-td>
+          </template>
           <template v-slot:body-cell-acoes="props">
             <q-td :props="props">
               <q-btn dense flat icon="more_vert">
@@ -194,6 +200,9 @@ function Upload(id: string) {
         >
           <template v-slot:body-cell-#="{ rowIndex }">
             <q-td>{{ rowIndex + 1 }}</q-td>
+          </template>
+          <template v-slot:body-cell-id="props">
+            <q-td style="font-size: 10px">{{ props.row.id }}</q-td>
           </template>
           <template v-slot:body-cell-dimensao="props">
             <q-td :props="props">{{
@@ -257,6 +266,8 @@ function Upload(id: string) {
     <template>
       <DialogoObjetoDim />
       <DialogoObjetoFis />
+
+      <ComponenteMidia />
     </template>
   </div>
 </template>

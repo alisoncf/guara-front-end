@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, ref } from 'vue';
+import { ref } from 'vue';
 import EssentialLink, {
   EssentialLinkProps,
 } from 'components/EssentialLink.vue';
-import { useDadosRepositorio } from 'src/stores/repositorio-store';
+
 import { useAuthStore } from 'src/stores/auth-store';
 
 defineOptions({
   name: 'MainLayout',
 });
-const repoStore = useDadosRepositorio();
+
 const authStore = useAuthStore();
 
 const linksList: EssentialLinkProps[] = [
@@ -56,10 +56,10 @@ const linksList: EssentialLinkProps[] = [
     link: '/repositorios-amigos',
   },
   {
-    title: 'Contato',
-    caption: 'Informações e contato do projeto guará',
-    icon: 'favorite',
-    link: '/contato',
+    title: 'Logout',
+    caption: 'Sair do Guará',
+    icon: 'logout',
+    link: '/logout',
   },
 ];
 
@@ -71,9 +71,9 @@ function toggleLeftDrawer() {
 </script>
 
 <template>
-  <q-layout view="lHh lpr fff">
-    <q-header elevated class="bg-primary text-white">
-      <q-toolbar>
+  <q-layout view="hHh lpR fff">
+    <q-header elevated class="bg-primary text-white elevated">
+      <q-toolbar class="q-pa-xs" style="min-height: 35px; padding: 0 8px">
         <q-btn
           flat
           dense
@@ -83,19 +83,27 @@ function toggleLeftDrawer() {
           @click="toggleLeftDrawer"
           color="black"
         />
-        <q-toolbar-title style="color: black; font-size: small">
+        <q-toolbar-title style="font-size: 14px; line-height: 1">
           Guará: Repositório Digital do Patrimônio Cultural do Estado de Goiás
         </q-toolbar-title>
         <div><img src="../assets/cmg.gif" width="100" alt="" /></div>
       </q-toolbar>
-      <q-tabs align="left" style="color: black; font-size: smaller">
+      <q-tabs
+        align="left"
+        style="font-size: 13px; height: 35px; margin-top: 0px; padding: 0px"
+      >
+        <q-route-tab to="/" label="Início" />
         <q-route-tab to="/organizacao-estrutura" label="Catálogo" />
         <q-route-tab to="/abrir-colecoes" label="Explorar coleções" />
-        <q-route-tab to="/" label="O Espaço" />
       </q-tabs>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
+    <q-drawer
+      v-if="authStore.get.user != ''"
+      v-model="leftDrawerOpen"
+      show-if-above
+      bordered
+    >
       <q-list>
         <q-item-label header></q-item-label>
         <EssentialLink
@@ -109,15 +117,20 @@ function toggleLeftDrawer() {
     <q-page-container>
       <router-view />
     </q-page-container>
-    <q-footer class="bg-grey-8 text-white smaller">
-      <q-toolbar>
-        <q-toolbar-title>
-          <q-avatar>
-            <img src="../assets/guara.png" alt="" />
-          </q-avatar>
-          Guará - {{ authStore.get.email }} conectado em #{{
-            authStore.get.repositorio_conectado.nome
-          }}
+    <q-footer class="bg-head-and-foot text-black" style="height: 40px">
+      <q-toolbar class="q-pa-xs" style="min-height: 40px; padding: 0 8px">
+        <q-toolbar-title style="font-size: 13px; line-height: 1">
+          <div v-if="authStore.get.isLoggedIn">
+            <q-avatar size="24px">
+              <img src="../assets/guara.png" alt="" />
+            </q-avatar>
+            Guará - {{ authStore.get.email }} conectado em #{{
+              authStore.get.repositorio_conectado.nome
+            }}
+          </div>
+          <div v-else>
+            {{ authStore.get.repositorio_conectado.nome }}
+          </div>
         </q-toolbar-title>
       </q-toolbar>
     </q-footer>

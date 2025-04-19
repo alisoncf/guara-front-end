@@ -32,14 +32,12 @@ export const getSparqData = () => {
   return api.get(apiConfig.endpoints.sparqapi);
 };
 
-
-
-export async function listarRepositorios(nome: string|null) {
+export async function listarRepositorios(nome: string | null) {
   const listaRepo = ref<Repositorio[]>([]);
-  console.log('repositório:', repoStore.get.nome)
+
   try {
     const response = await axios.get<RepoQueryResult>(
-      'http://localhost:5000/repositorios/listar_repositorios?name='+nome
+      'http://localhost:5000/repositorios/listar_repositorios?name=' + nome
     );
 
     listaRepo.value = [];
@@ -113,9 +111,8 @@ export async function listarClasses(keyword: string) {
   return listaClasses.value;
 }
 
-
 export async function listarClasses2(keyword: string) {
-  const uri = authStore.get.repositorio_conectado.uri ;
+  const uri = authStore.get.repositorio_conectado.uri;
   const listaClasses = ref<ClasseComum[]>([]);
   try {
     if (uri == '') {
@@ -194,8 +191,5 @@ export async function listarClassesFetch(keyword: string) {
     console.error('Erro capturado pelo catch:', error);
   }
 }
-
-
-
 
 export default api;

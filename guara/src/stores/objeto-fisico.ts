@@ -48,6 +48,7 @@ export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {
       this.$state = { ...objeto };
     },
     setObjeto(objeto: ObjetoFisico) {
+      console.log('storefisico->', objeto);
       this.$state.objetoSelecionado = objeto;
       SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
     },

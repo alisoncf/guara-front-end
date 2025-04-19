@@ -10,7 +10,7 @@ import { Notify } from 'quasar';
 const api = axios.create({
   baseURL: apiConfig.baseURL,
 });
-
+export const repositorioSelecionado = ref({} as Repositorio);
 // Exemplo de chamada a um endpoint específico
 
 export async function listarRepositorios(
