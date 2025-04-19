@@ -2,6 +2,9 @@
 
 const isProduction = process.env.NODE_ENV === 'production';
 const baseOnto = 'http://guara.ueg.br/ontologias/v1/objetos#';
+const baseURL = isProduction
+  ? 'https://localhost:5000'
+  : 'http://localhost:5000';
 const apiConfig = {
   baseURL: isProduction ? 'https://localhost:5000' : 'http://localhost:5000',
   endpoints: {
@@ -11,12 +14,22 @@ const apiConfig = {
     sparqapi: '/sparqapi',
     objectapi: '/objectapi',
     dimensional: {
-      create: '/dim/create',
-      list: '/dim/list',
-      delete: '/dim/delete',
-      update: '/dim/update',
+      create: baseURL + '/dim/create',
+      list: baseURL + '/dim/list',
+      delete: baseURL + '/dim/delete',
+      update: baseURL + '/dim/update',
     },
-    listar_arquivos: '/objectapi/listar_arquivos',
+    fisico: {
+      create: baseURL + '/fis/create',
+      list: baseURL + '/fis/list',
+      delete: baseURL + '/fis/delete',
+      update: baseURL + '/fis/update',
+    },
+    midias: {
+      list: baseURL + '/midias/list',
+      upload: baseURL + '/uploadapi/upload',
+    },
+
     listar_repo: '/repositorios/listar_repositorios',
     login: '/acesso/login',
   },
