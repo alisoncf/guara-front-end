@@ -5,6 +5,7 @@ import {
   mostrarPopUpMidias,
   mostrarPopUpObjetoDim,
   mostrarPopUpObjetoFis,
+  mostrarPopUpRelacoes,
   ObjetoDimensional,
   ObjetoFisico,
 } from '../objetos/manter-objeto';
@@ -21,6 +22,8 @@ import DialogoObjetoDim from '../objetos/DialogoObjetoDim.vue';
 import { textoAposUltimoChar } from '../funcoes';
 import DialogoObjetoFis from '../objetos/DialogoObjetoFis.vue';
 import ComponenteMidia from '../objetos/ComponenteMidia.vue';
+import ComponenteRelacao from '../objetos/ComponenteRelacao.vue';
+import ComponenteAddRelacao from '../objetos/ComponenteAddRelacao.vue';
 
 const router = useRouter();
 
@@ -89,8 +92,12 @@ function deletarObjeto(obj: ObjetoFisico) {
 }
 function irParaMidias(obj: ObjetoFisico) {
   useObjetoStore.setObjeto(obj);
-  console.log(obj);
+
   mostrarPopUpMidias.value = true;
+}
+function irParaRelacoes(obj: ObjetoFisico) {
+  useObjetoStore.setObjeto(obj);
+  mostrarPopUpRelacoes.value = true;
 }
 function Upload(id: string) {
   router.push('upload-midias/:' + id);
@@ -117,7 +124,7 @@ function Upload(id: string) {
               outlined
               dense
               v-model="keyword"
-              :label="labelTipo"
+              :option-label="labelTipo"
               @keyup.enter="buscar()"
             />
           </div>
@@ -171,6 +178,16 @@ function Upload(id: string) {
                         <q-avatar icon="photo" />
                       </q-item-section>
                       <q-item-section>Mídias</q-item-section>
+                    </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaRelacoes(props.row)"
+                    >
+                      <q-item-section avatar flat>
+                        <q-avatar icon="hub" />
+                      </q-item-section>
+                      <q-item-section>Relações</q-item-section>
                     </q-item>
                     <q-separator />
                     <q-item
@@ -268,6 +285,8 @@ function Upload(id: string) {
       <DialogoObjetoFis />
 
       <ComponenteMidia />
+      <ComponenteRelacao />
+      <ComponenteAddRelacao />
     </template>
   </div>
 </template>

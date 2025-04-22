@@ -9,6 +9,7 @@ import {
   mostrarPopUpMidias,
   mostrarPopUpObjetoFis,
   ObjetoFisico,
+  tipos_fisicos,
 } from './manter-objeto';
 import { organiza_arvore, encontrarClassePorLabel } from '../funcoes';
 import { ClasseComum, TreeNode } from '../tipos';
@@ -49,14 +50,6 @@ const objeto = ref<ObjetoFisico>({
   repositorio: '',
   dimensao: '',
 });
-
-const tipos = [
-  { label: 'Bibliotecário', value: 'Bibliotecario' },
-  { label: 'Arqueológico', value: 'Arqueologico' },
-  { label: 'Museológico', value: 'MuseuLogico' },
-  { label: 'Arquivístico-Documental', value: 'Arquivistico-Documental' },
-  { label: 'Imagético-Sonoro', value: 'Imagetico-Sonoro' },
-];
 
 function irParaMidias(obj: ObjetoFisico) {
   useObjetoStore.setObjeto(obj);
@@ -148,7 +141,7 @@ onBeforeMount(() => {
                 <div>
                   <q-select
                     v-model="objeto.tipoFisicoAbreviado"
-                    :options="tipos"
+                    :options="tipos_fisicos"
                     label="Tipos de Objeto"
                     multiple
                     emit-value

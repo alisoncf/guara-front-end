@@ -23,6 +23,7 @@ const useFileUpload = ref([true] as any);
 const thumbnails = ref([] as any);
 const router = useRouter();
 const mostrar_excluidos = ref(false);
+
 function adicionarMidia() {
   midias.value.push({ file: '', url: '', uri: '' });
   useFileUpload.value.push(true);
@@ -103,7 +104,7 @@ function excluir(arquivo: string) {
       console.log('Usuário cancelou a saída');
     });
 }
-function handleUrlInput(index: string | number) {
+function handleUrlInput(index: number) {
   // Validação simples para verificar se a URL é uma imagem
   if (isImage(midias.value[index].url)) {
     thumbnails.value[index] = midias.value[index].url;
@@ -135,15 +136,13 @@ function submitMidias() {
   formData.append('repository', objetoSelecionado.value.repositorio);
   console.log('selecionado', objetoSelecionado.value.repositorio);
   // Adiciona cada mídia ao FormData
-  midias.value.forEach(
-    (midia: { file: string | Blob; url: string | Blob }, index: any) => {
-      if (midia.file) {
-        formData.append('midias', midia.file); // Envia o arquivo diretamente
-      } else if (midia.url) {
-        formData.append('links', midia.url); // Envia a URL como string
-      }
+  midias.value.forEach((midia: { file; url: string | Blob }, index) => {
+    if (midia.file) {
+      formData.append('midias', midia.file); // Envia o arquivo diretamente
+    } else if (midia.url) {
+      formData.append('links', midia.url); // Envia a URL como string
     }
-  );
+  });
 
   axios
     .post(apiConfig.baseURL + apiConfig.endpoints.upload, formData, {

@@ -1,3 +1,4 @@
+import { mapearPropriedade, textoAposUltimoChar } from '../funcoes';
 import { Coluna } from '../tipos';
 
 export const colunasFisico = [
@@ -12,6 +13,27 @@ export const colunasFisico = [
     field: (row) => row.tipoFisicoAbreviado.join(', '),
   },
 
+  { name: 'acoes', label: 'Ações', align: 'center' },
+] as Coluna[];
+
+export const colunasRelacaoFis = [
+  { name: '#', label: '#', align: 'left' },
+  {
+    name: 'propriedade',
+    label: 'Propriedade',
+    align: 'left',
+    field: (row) =>
+      textoAposUltimoChar(mapearPropriedade(row.propriedade?.value), '#') || '',
+    sortable: true,
+  },
+  {
+    name: 'valor',
+    label: 'Valor',
+    align: 'left',
+    field: (row) =>
+      row.titulo?.value || textoAposUltimoChar(row.valor?.value, '#') || '',
+    sortable: true,
+  },
   { name: 'acoes', label: 'Ações', align: 'center' },
 ] as Coluna[];
 

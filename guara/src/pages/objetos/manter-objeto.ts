@@ -4,6 +4,8 @@ import { ref } from 'vue';
 export const mostrarPopUpObjetoDim = ref(false);
 export const mostrarPopUpObjetoFis = ref(false);
 export const mostrarPopUpMidias = ref(false);
+export const mostrarPopUpRelacoes = ref(false);
+export const mostrarPopUpAddRelacao = ref(false);
 export interface Dimensao {
   tipo: string;
   uri: string;
@@ -64,6 +66,17 @@ export const tipoDimensional = {
     return { tipo: 'Evento', uri: apiConfig.dimension.Evento };
   },
 };
+export interface ObjetoDigital {
+  obj: string; // URI completa do objeto
+  id: string; // ID do objeto (final da URI)
+  titulo: string;
+  resumo: string;
+  descricao: string;
+  assunto: string;
+  tipo: string;
+  tipoFisico: string;
+}
+
 export interface ObjetoDimensional {
   obj: string; // URI completa do objeto
   id: string; // ID do objeto (final da URI)
@@ -114,4 +127,90 @@ export function ListaTipoDim(): Dimensao[] {
   dim.value.push(DimMapping('lugar'));
   dim.value.push(DimMapping('evento'));
   return dim.value;
+}
+
+export interface Relacao {
+  uri: string;
+  nome: string;
+  prefixo: string;
+  descricao: string;
+}
+export const QUEM = {
+  descricao: 'Relacionar o objeto a uma Pessoa',
+  nome: 'quem',
+  prefixo: '@prefix obj: <http://guara.ueg.br/ontologias/v1/objetos#>',
+  uri: 'http://guara.ueg.br/ontologias/v1/objetos#quem',
+} as Relacao;
+export const QUANDO = {
+  descricao: 'Relacionar o objeto a um tempo',
+  nome: 'quando',
+  prefixo: '@prefix obj: <http://guara.ueg.br/ontologias/v1/quando#>',
+  uri: 'http://guara.ueg.br/ontologias/v1/objetos#quando',
+} as Relacao;
+export const ONDE = {
+  descricao: 'Relacionar o objeto a um lugar',
+  nome: 'onde',
+  prefixo: '@prefix obj: <http://guara.ueg.br/ontologias/v1/onde#>',
+  uri: 'http://guara.ueg.br/ontologias/v1/objetos#onde',
+} as Relacao;
+export const OQUE = {
+  descricao: 'Relacionar o objeto a um evento',
+  nome: 'oque',
+  prefixo: '@prefix obj: <http://guara.ueg.br/ontologias/v1/evento#>',
+  uri: 'http://guara.ueg.br/ontologias/v1/objetos#evento',
+} as Relacao;
+
+export const FISICO = {
+  descricao: 'Relacionar o objeto a um objeto físico',
+  nome: 'fisico',
+  prefixo: '@prefix obj: <http://guara.ueg.br/ontologias/v1/fisico#>',
+  uri: 'http://guara.ueg.br/ontologias/v1/objetos#fisico',
+} as Relacao;
+
+export const MIDIA = {
+  descricao: 'Relacionar o objeto a uma mídia',
+  nome: 'associatedMedia',
+  prefixo: '@prefix schema: <http://schema.org/>',
+  uri: 'https://schema.org/associatedMedia',
+} as Relacao;
+export const LIGAR_COM = {
+  descricao: 'Relacionar o objeto a um recurso externo',
+  nome: 'relation',
+  prefixo: '@prefix dc: <http://purl.org/dc/elements/1.1/relation>',
+  uri: 'http://purl.org/dc/elements/1.1/relation',
+} as Relacao;
+
+export function listaRelacoes() {
+  const relacoes = ref([] as Relacao[]);
+  relacoes.value.push(QUEM);
+  relacoes.value.push(ONDE);
+  relacoes.value.push(QUANDO);
+  relacoes.value.push(OQUE);
+  relacoes.value.push(MIDIA);
+  relacoes.value.push(FISICO);
+  relacoes.value.push(LIGAR_COM);
+  return relacoes.value;
+}
+
+export const tipos_fisicos = [
+  { label: 'Bibliotecário', value: 'Bibliotecario' },
+  { label: 'Arqueológico', value: 'Arqueologico' },
+  { label: 'Museológico', value: 'MuseuLogico' },
+  { label: 'Arquivístico-Documental', value: 'Arquivistico-Documental' },
+  { label: 'Imagético-Sonoro', value: 'Imagetico-Sonoro' },
+];
+
+export interface LabelValue {
+  label: string;
+  value: string;
+}
+export interface Tripla {
+  prefixo: string;
+  id: string;
+  propriedade: string;
+  valor: string;
+  complemento: string;
+  tipo_recurso: string;
+  titulo: string;
+  propriedade_abreviada: string;
 }

@@ -16,8 +16,15 @@ const apiConfig = {
     dimensional: {
       create: baseURL + '/dim/create',
       list: baseURL + '/dim/list',
+      listAll: baseURL + '/dim/listall',
       delete: baseURL + '/dim/delete',
       update: baseURL + '/dim/update',
+    },
+    relacao: {
+      add: baseURL + '/relation/add',
+      remove: baseURL + '/relation/remove',
+      update: baseURL + '/relation/update',
+      list: baseURL + '/relation/list',
     },
     fisico: {
       create: baseURL + '/fis/create',
