@@ -336,6 +336,7 @@ watch(
         row-key="id"
         striped
         title="Classes do acervo"
+        wrap-cells
       >
         <template v-slot:body-cell-acoes="props">
           <q-td :props="props">
@@ -385,6 +386,7 @@ watch(
               v-model="novaClasse.description"
               outlined
               dense
+              autogrow
               label="Descrição da Classe"
             />
           </q-card-section>

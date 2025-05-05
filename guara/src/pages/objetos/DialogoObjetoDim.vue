@@ -37,6 +37,11 @@ const objeto = ref<ObjetoDimensional>({
   temRelacao: [],
   tipo: { tipo: '', uri: '' },
   titulo: '',
+  coordenadas: '',
+  lat: '',
+  lon: '',
+  fim: '',
+  inicio: '',
 });
 watchEffect(() => {
   if (mostrarPopUpObjetoDim.value) {
@@ -65,6 +70,17 @@ function gravar() {
   } else {
   }
 }
+function irParaMapa() {
+  const coordenadas = objeto.value.coordenadas; // Ex: "-16.6809,-49.2534"
+  if (coordenadas) {
+    const url = `https://www.google.com/maps?q=${encodeURIComponent(
+      coordenadas
+    )}`;
+    window.open(url, '_blank');
+  } else {
+    console.warn('Coordenadas não encontradas');
+  }
+}
 function irParaRelacoes() {
   useObjetoStore.setObjeto(objeto);
   mostrarPopUpRelacoes.value = true;
@@ -82,7 +98,9 @@ onBeforeMount(() => {
 
 <template>
   <q-dialog v-model="mostrarPopUpObjetoDim" class="q-pa-md scroll" persistent>
-    <q-card style="width: 80vw; max-width: 90vw; max-height: 90vh">
+    <q-card
+      style="width: 90vw; height: 90vw; max-width: 90vw; max-height: 90vh"
+    >
       <q-toolbar>
         <q-toolbar-title v-if="!objeto.id || objeto.id == ''"
           >Criar {{ tipoSelecionado.tipo }}
@@ -125,6 +143,31 @@ onBeforeMount(() => {
           outlined
           title="uma versão resumida para o usuário ter uma visão geral"
           autogrow
+        />
+        <q-input
+          v-if="tipoSelecionado.tipo.toLowerCase() == 'lugar'"
+          v-model="objeto.coordenadas"
+          label="Coordenadas (latitude,longitude)"
+          outlined
+          title="uma versão resumida para o usuário ter uma visão geral"
+        >
+          <template v-slot:append>
+            <q-btn icon="pin_drop" @click="irParaMapa" flat size="smaller" />
+          </template>
+        </q-input>
+        <q-input
+          v-if="tipoSelecionado.tipo.toLowerCase() == 'evento'"
+          v-model="objeto.inicio"
+          label="Data de Início"
+          outlined
+          title="uma data inicial ou um período inicial aproximado"
+        />
+        <q-input
+          v-if="tipoSelecionado.tipo.toLowerCase() == 'evento'"
+          v-model="objeto.fim"
+          label="Data de Encerramento"
+          outlined
+          title="uma data inicial ou um período final aproximado"
         />
       </q-card-section>
 

@@ -182,6 +182,10 @@ export async function pesquisarObjetosDim(obj: ObjetoDimensional) {
       descricao: item.descricao.value,
       dimensao: item.dimensao.value,
       tipo: item.dimensao.value,
+      lat: item.lat ? item.lat.value : '',
+      lon: item.lon ? item.lon.value : '',
+      coordenadas:
+        item.lat && item.lon ? item.lat.value + ', ' + item.lon.value : '',
       repositorio: authStore.get.repositorio_conectado.uri,
       id: textoAposUltimoChar(item.obj.value, '#'),
     })) as ObjetoDimensional[];
@@ -213,7 +217,7 @@ export async function pesquisarObjetos(obj: ObjetoDigital) {
   }
   try {
     const response = await axios.post(apiConfig.endpoints.dimensional.listAll, {
-      keyword: obj.titulo,
+      keyword: obj.keyword,
       type: obj.tipo != undefined ? obj.tipo : '',
       repository: authStore.get.repositorio_conectado.uri,
     });

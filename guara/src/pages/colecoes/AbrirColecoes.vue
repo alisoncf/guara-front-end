@@ -80,6 +80,7 @@ function irParaEditar(obj: ObjetoFisico) {
     useObjetoStore.setObjeto(obj);
     mostrarPopUpObjetoFis.value = true;
   } else {
+    console.log('objeto', obj);
     useObjetoStore.setObjetoDim(obj);
 
     mostrarPopUpObjetoDim.value = true;

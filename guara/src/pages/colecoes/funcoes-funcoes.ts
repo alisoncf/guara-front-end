@@ -4,8 +4,30 @@ import { Coluna } from '../tipos';
 export const colunasFisico = [
   { name: '#', label: '#', align: 'left' },
   //{ name: 'id', label: 'Objeto', align: 'left', field: 'id' },
-  { name: 'titulo', label: 'Título', align: 'left', field: 'titulo' },
-  { name: 'descricao', label: 'Descrição', align: 'left', field: 'descricao' },
+  {
+    name: 'colecao',
+    label: 'Coleção',
+    align: 'left',
+    field: (row) => textoAposUltimoChar(row.colecao, '#'),
+    sortable: true,
+  },
+  {
+    name: 'titulo',
+    label: 'Título',
+    align: 'left',
+    field: 'titulo',
+    sortable: true,
+  },
+  {
+    name: 'resumo',
+    label: 'resumo',
+    align: 'left',
+    field: (row) =>
+      row.resumo.length > 200
+        ? row.resumo.substring(0, 200) + ' (...)'
+        : row.resumo,
+  },
+
   {
     name: 'tipo de coleção',
     label: 'Tipo',
@@ -41,7 +63,7 @@ export const colunasDim = [
   { name: '#', label: '#', align: 'left' },
   //{ name: 'id', label: 'Objeto', align: 'left', field: 'id' },
   { name: 'titulo', label: 'Título', align: 'left', field: 'titulo' },
-  { name: 'descricao', label: 'Descrição', align: 'left', field: 'descricao' },
+  { name: 'resumo', label: 'Resumo', align: 'left', field: 'resumo' },
   {
     name: 'dimensao',
     label: 'Dimensão',

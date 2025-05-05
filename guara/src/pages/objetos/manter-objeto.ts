@@ -31,6 +31,11 @@ export interface ObjetoFisico {
   associatedMedia: string[];
   repositorio: string;
   dimensao: string;
+  coordenadas: string;
+  lat: string;
+  lon: string;
+  inicio: string;
+  fim: string;
 }
 export function DimMapping(tipo: string): Dimensao {
   switch (tipo.toLocaleLowerCase()) {
@@ -75,6 +80,12 @@ export interface ObjetoDigital {
   assunto: string;
   tipo: string;
   tipoFisico: string;
+  keyword: string;
+  coordenadas: string;
+  lat: string;
+  lon: string;
+  inicio: string;
+  fim: string;
 }
 
 export interface ObjetoDimensional {
@@ -94,6 +105,11 @@ export interface ObjetoDimensional {
   dataModificacao: string; // Data de modificação do objeto
   associatedMedia: string[];
   repositorio: string;
+  coordenadas: string;
+  lat: string;
+  lon: string;
+  inicio: string;
+  fim: string;
 }
 
 export interface Lugar {
@@ -114,8 +130,21 @@ export interface Lugar {
   associatedMedia: string[];
   repositorio: string;
   dimensao: string;
+  lat: string;
+  lon: string;
 }
 
+export interface Evento {
+  obj: ObjetoDimensional;
+  inicio: string;
+  fim: string;
+  periodicidade: string;
+
+}
+export const periodicidade{
+  mensal: 'Mensal',
+  
+}
 export interface Arquivo {
   nome: string;
   uri: string;

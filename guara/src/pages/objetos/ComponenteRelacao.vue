@@ -85,8 +85,8 @@ onBeforeMount(() => {
             <div class="col-6">
               <q-item>
                 <q-item-section>
-                  <q-item-label class="text-bold">Resumo:</q-item-label>
-                  <q-item-label>{{ objetoSelecionado.resumo }}</q-item-label>
+                  <q-item-label class="text-bold">Id:</q-item-label>
+                  <q-item-label>{{ objetoSelecionado.id }}</q-item-label>
                 </q-item-section>
               </q-item>
             </div>
@@ -96,6 +96,7 @@ onBeforeMount(() => {
               title="Relações"
               :rows="listaRelacoesDoObjeto"
               :columns="colunasRelacaoFis"
+              wrap-cells
             >
               <template v-slot:body-cell-#="{ rowIndex }">
                 <q-td>{{ rowIndex + 1 }}</q-td>

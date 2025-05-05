@@ -96,9 +96,10 @@ const AcoesFiltro = {
 const busque = {
   async objetos(val: string) {
     const obj = ref({} as ObjetoDigital);
-    obj.value.titulo = val;
+    obj.value.keyword = val;
     obj.value.tipo = relacaoSelecionada.value.nome;
     listaObjetos.value = await pesquisarObjetos(obj.value);
+    console.log('buscando objetos', listaObjetos.value);
   },
 };
 </script>
@@ -144,6 +145,7 @@ const busque = {
                   v-model="relacaoSelecionada"
                   label="Tipo de Relação"
                   :option-label="AcoesFiltro.rotuloRelacao"
+                  @update:model-value="busque.objetos('')"
                   outlined
                 >
                 </q-select>
