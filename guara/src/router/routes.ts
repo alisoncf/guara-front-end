@@ -1,57 +1,86 @@
 import { RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
+  // Rotas Públicas
   {
     path: '/',
+    component: () => import('layouts/PublicLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'PublicHome',
+        component: () => import('pages/HomePage/HomePage.vue'),
+      },
+      {
+        path: 'catalogo',
+        name: 'CatalogoPublico',
+        component: () => import('pages/PublicCatalog/CatalogoPublico.vue'),
+      },
+      {
+        path: 'sobre',
+        name: 'AboutPage',
+        component: () => import('pages/HomePage/HomePage.vue'), // Temporariamente usando HomePage
+      },
+    ],
+  },
+
+  // Rotas Administrativas
+  {
+    path: '/admin',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/IndexPage.vue') },
-      { path: 'inicio/:repo', component: () => import('pages/IndexPage.vue') },
+      { path: '', redirect: '/admin/inicio' },
+      {
+        path: 'inicio',
+        name: 'AdminIndex',
+        component: () => import('pages/IndexPage.vue'),
+      },
+      {
+        path: 'inicio/:repo',
+        name: 'AdminIndexRepo',
+        component: () => import('pages/IndexPage.vue'),
+      },
       {
         path: 'abrir-colecoes',
+        name: 'AdminAbrirColecoes',
         component: () => import('pages/colecoes/AbrirColecoes.vue'),
       },
       {
         path: 'repositorios-amigos',
+        name: 'AdminRepositoriosAmigos',
         component: () => import('pages/AbrirRepositorios.vue'),
       },
       {
         path: 'organizacao-estrutura',
+        name: 'AdminOrganizacaoEstrutura',
         component: () => import('pages/estrutura/AbrirEstrutura.vue'),
       },
       {
-        path: 'criar-objeto',
-        component: () => import('pages/objetos/CriarObjeto.vue'),
-      },
-      {
         path: 'criar-objeto-dim',
+        name: 'AdminCriarObjetoDim',
         component: () => import('pages/objetos/DialogoObjetoDim.vue'),
       },
       {
-        path: 'editar-objeto/:id',
-        component: () => import('pages/objetos/CriarObjeto.vue'),
-      },
-      {
         path: 'objetos/:id/midias',
+        name: 'AdminGerenciarMidias',
         component: () => import('pages/objetos/GerenciarMidias.vue'),
-        props: true, // Passa o ID como prop para o componente
+        props: true,
       },
       {
         path: 'upload-midias/:id',
+        name: 'AdminUploadMidias',
         component: () => import('pages/objetos/UploadMidias.vue'),
-        props: true, // Passa o ID como prop para o componente
+        props: true,
       },
       {
-        path: '/login',
-        component: () => import('pages/LoginPage.vue'),
-      },
-      {
-        path: '/logout',
+        path: 'logout',
+        name: 'AdminLogout',
         component: () => import('pages/LogoutPage.vue'),
       },
     ],
   },
 
+  // Rota Catch-all para erros 404
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue'),

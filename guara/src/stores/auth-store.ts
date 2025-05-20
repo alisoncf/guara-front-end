@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('useAuthStore', {
     try {
       const storedData = SessionStorage.getItem(StorageKey.auth);
       if (storedData) {
-        sessionData = JSON.parse(storedData);
+        sessionData = JSON.parse(storedData as string);
       }
     } catch (error) {
       console.error('Erro ao carregar dados do SessionStorage:', error);
@@ -34,7 +34,16 @@ export const useAuthStore = defineStore('useAuthStore', {
 
   getters: {
     get(): Auth {
-      return this.$state;
+      return {
+        email: this.email,
+        permissao: this.permissao,
+        repositorio: this.repositorio,
+        token: this.token,
+        user: this.user,
+        validade: this.validade,
+        repositorio_conectado: this.repositorio_conectado,
+        isLoggedIn: this.isLoggedIn,
+      };
     },
   },
 
@@ -49,12 +58,12 @@ export const useAuthStore = defineStore('useAuthStore', {
       this.user = objeto.user;
       this.validade = objeto.validade;
       this.repositorio_conectado = objeto.repositorio_conectado;
+      this.isLoggedIn = objeto.isLoggedIn || !!objeto.token;
     },
 
     limpar() {
-      SessionStorage.remove(StorageKey.auth); // Remove do armazenamento de sessão
+      SessionStorage.remove(StorageKey.auth);
 
-      // Reseta os valores para os padrões
       this.email = defaultState.email;
       this.permissao = defaultState.permissao;
       this.repositorio = defaultState.repositorio;
@@ -62,7 +71,9 @@ export const useAuthStore = defineStore('useAuthStore', {
       this.user = defaultState.user;
       this.validade = defaultState.validade;
       this.repositorio_conectado = defaultState.repositorio_conectado;
+      this.isLoggedIn = defaultState.isLoggedIn;
     },
+
     logout() {
       this.email = '';
       this.permissao = '';

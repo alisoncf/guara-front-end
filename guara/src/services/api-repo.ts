@@ -17,25 +17,93 @@ export async function listarRepositorios(
   name?: string
 ): Promise<Repositorio[]> {
   const listaRepo = ref<Repositorio[]>([]);
-  const url = `${apiConfig.baseURL}${apiConfig.endpoints.listar_repo}`;
-  console.log('url', url);
-  try {
-    const response = await axios.get<RepoQueryResult>(url, {
-      params: name ? { name } : {}, // Envia name como parâmetro, se informado
-    });
+  const url = `${apiConfig.baseURL}/sparqapi`;
+  console.log('Tentando acessar URL:', url);
 
-    listaRepo.value = response.data.results.bindings.map((item) => ({
-      uri: item.uri.value,
-      descricao: item.descricao?.value || '',
-      contato: item.contato?.value || '',
-      nome: item.nome?.value || '',
-      responsavel: item.responsavel?.value || '',
-    }));
+  try {
+    console.log('Iniciando requisição POST para:', url);
+    const response = await axios.post(
+      url,
+      {
+        query: `
+          PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+          PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+          SELECT DISTINCT ?s ?nome ?descricao ?contato ?responsavel
+          WHERE {
+            ?s rdf:type <http://guara.ueg.br/ontologias/v1/objetos#Repositorio> .
+            OPTIONAL { ?s rdfs:label ?nome }
+            OPTIONAL { ?s <http://guara.ueg.br/ontologias/v1/objetos#descricao> ?descricao }
+            OPTIONAL { ?s <http://guara.ueg.br/ontologias/v1/objetos#contato> ?contato }
+            OPTIONAL { ?s <http://guara.ueg.br/ontologias/v1/objetos#responsavel> ?responsavel }
+          }
+        `,
+      },
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+        validateStatus: function (status) {
+          return status < 500; // Aceita qualquer status menor que 500
+        },
+      }
+    );
+
+    console.log('Status da resposta:', response.status);
+    console.log('Headers da resposta:', response.headers);
+    console.log('Resposta da API:', response.data);
+
+    if (response.status === 500) {
+      console.error('Erro interno do servidor:', response.data);
+      throw new Error('Erro interno do servidor ao listar repositórios');
+    }
+
+    // Verifica se a resposta tem o formato esperado
+    if (response.data?.results?.bindings) {
+      listaRepo.value = response.data.results.bindings.map((item: any) => ({
+        uri: item.s?.value || '',
+        descricao: item.descricao?.value || '',
+        contato: item.contato?.value || '',
+        nome: item.nome?.value || '',
+        responsavel: item.responsavel?.value || '',
+      }));
+    } else if (Array.isArray(response.data)) {
+      // Se a resposta for um array direto
+      listaRepo.value = response.data.map((item: any) => ({
+        uri: item.uri || '',
+        descricao: item.descricao || '',
+        contato: item.contato || '',
+        nome: item.nome || '',
+        responsavel: item.responsavel || '',
+      }));
+    } else {
+      console.error('Formato de resposta inesperado:', response.data);
+      throw new Error('Formato de resposta inesperado da API');
+    }
+
+    console.log('Repositórios processados:', listaRepo.value);
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('Detalhes do erro Axios:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+        },
+      });
+    }
     Notify.create({
       type: 'negative',
-      message: 'Erro ao buscar os repositórios. Tente novamente.',
+      message:
+        'Erro ao buscar os repositórios. Por favor, verifique se o servidor está rodando.',
     });
   }
 
@@ -50,6 +118,7 @@ export async function buscarRepositorio(nome: string): Promise<Repositorio> {
     responsavel: '',
     uri: '',
   } as Repositorio);
+
   const url = `${apiConfig.baseURL}${
     apiConfig.endpoints.listar_repo
   }?name=${encodeURIComponent(nome)}`;
@@ -58,6 +127,7 @@ export async function buscarRepositorio(nome: string): Promise<Repositorio> {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
     });
@@ -78,9 +148,11 @@ export async function buscarRepositorio(nome: string): Promise<Repositorio> {
       }
 
       Notify.create({ type: 'negative', message: errorMessage });
+      return repo.value;
     }
 
     const data = await response.json();
+    console.log('Resposta da API (buscarRepositorio):', data);
 
     if (
       !data.results ||
@@ -91,15 +163,16 @@ export async function buscarRepositorio(nome: string): Promise<Repositorio> {
         type: 'warning',
         message: 'Nenhum repositório encontrado.',
       });
+      return repo.value;
     }
 
     const item = data.results.bindings[0];
 
-    repo.value.uri = item.uri;
-    repo.value.contato = item?.contato || '';
-    repo.value.descricao = item?.descricao || '';
-    repo.value.nome = item?.nome || '';
-    repo.value.responsavel = item?.responsavel || '';
+    repo.value.uri = item.uri?.value || '';
+    repo.value.contato = item.contato?.value || '';
+    repo.value.descricao = item.descricao?.value || '';
+    repo.value.nome = item.nome?.value || '';
+    repo.value.responsavel = item.responsavel?.value || '';
 
     return repo.value;
   } catch (error) {

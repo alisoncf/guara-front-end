@@ -37,7 +37,7 @@ const apiConfig = {
       upload: baseURL + '/uploadapi/upload',
     },
 
-    listar_repo: '/repositorios/listar_repositorios',
+    listar_repo: '/sparqapi',
     login: '/acesso/login',
   },
   dimension: {

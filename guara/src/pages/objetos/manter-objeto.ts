@@ -141,10 +141,11 @@ export interface Evento {
   periodicidade: string;
 
 }
+/*
 export const periodicidade{
-  mensal: 'Mensal',
+  mensal: 'Mensal';
   
-}
+}*/
 export interface Arquivo {
   nome: string;
   uri: string;
