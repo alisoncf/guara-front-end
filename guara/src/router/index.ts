@@ -20,7 +20,9 @@ import routes from './routes';
 export default route(function (/* { store, ssrContext } */) {
   const createHistory = process.env.SERVER
     ? createMemoryHistory
-    : (process.env.VUE_ROUTER_MODE === 'history' ? createWebHistory : createWebHashHistory);
+    : process.env.VUE_ROUTER_MODE === 'history'
+    ? createWebHistory
+    : createWebHashHistory;
 
   const Router = createRouter({
     scrollBehavior: () => ({ left: 0, top: 0 }),
@@ -30,6 +32,27 @@ export default route(function (/* { store, ssrContext } */) {
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE),
+  });
+
+  // Guard de autenticação para rotas admin
+  Router.beforeEach((to, from, next) => {
+    // Verifica se a rota requer autenticação
+    if (to.matched.some((record) => record.meta.requiresAuth)) {
+      // Verifica se o usuário está autenticado
+      const token = sessionStorage.getItem('guara_token');
+      console.log(
+        '[Router Guard] Rota protegida:',
+        to.fullPath,
+        '| Token:',
+        token
+      );
+      if (!token) {
+        // Redireciona para a página inicial se não estiver autenticado
+        next('/');
+        return;
+      }
+    }
+    next();
   });
 
   return Router;

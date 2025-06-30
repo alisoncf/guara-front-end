@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maned Wolf - Acervo Digital</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- D3.js library for 2D graph -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+        /* Custom styles for the application */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* gray-50 */
+        }
+        .nav-button.active {
+            color: #60a5fa; /* blue-400 */
+            border-bottom-color: #60a5fa; /* blue-400 */
+        }
+        .admin-nav-button.active {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        #graph-container {
+            width: 100%; height: 100%; min-height: 600px;
+            background-color: #e2e8f0; border-radius: 0.5rem;
+            cursor: grab;
+        }
+        #graph-container:active { cursor: grabbing; }
+        g.node { cursor: pointer; }
+        
+        /* Sidebar transitions */
+        #admin-sidebar, #admin-main-content {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Header -->
+    <header id="main-header" class="bg-slate-900 shadow-lg sticky top-0 z-30 transition-all duration-300">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-4">
+                    <button id="header-menu-toggle" class="p-2 rounded-md text-slate-300 hover:bg-slate-700 transition-colors">
+                         <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    </button>
+                    <a href="#" class="text-2xl font-bold text-white tracking-tight" onclick="goHome()">
+                        Maned <span class="text-blue-400">Wolf</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div id="public-menu-container" class="hidden md:block">
+                    <div id="desktop-menu" class="ml-10 flex items-baseline space-x-4">
+                        <button onclick="renderPage('inicio')" class="nav-button text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent transition-all">Início</button>
+                        <button onclick="renderPage('acervo')" class="nav-button text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent transition-all">Acervo</button>
+                        <button onclick="renderPage('contato')" class="nav-button text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent transition-all">Contato</button>
+                        <button onclick="renderPage('sobre')" class="nav-button text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent transition-all">Sobre</button>
+                    </div>
+                </div>
+
+                <!-- Login / User Menu -->
+                <div id="user-auth-section" class="hidden md:block">
+                    <!-- This will be populated by JS -->
+                </div>
+
+                <!-- Mobile Menu Button (Only for public view) -->
+                <div id="mobile-menu-button-container" class="-mr-2 flex md:hidden">
+                    <button id="mobile-menu-button" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-300 hover:bg-slate-800 hover:text-white">
+                       <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                       <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Mobile Menu -->
+        <div class="md:hidden hidden bg-slate-900 border-t border-slate-700" id="mobile-menu">
+            <!-- This will be populated by JS -->
+        </div>
+    </header>
+
+    <!-- Main Wrapper for Admin vs Public View -->
+    <div id="app-wrapper">
+        <!-- Public View -->
+        <main id="main-content" class="container mx-auto p-4 sm:p-6 lg:p-8 min-h-screen">
+            <!-- Public content will be rendered here -->
+        </main>
+
+        <!-- Admin Panel View -->
+        <div id="admin-panel" class="hidden">
+            <div id="admin-sidebar" class="fixed top-0 left-0 h-full bg-slate-800 text-white z-40 flex flex-col">
+                <!-- Admin sidebar content will be rendered here -->
+            </div>
+            <main id="admin-main-content" class="p-4 sm:p-6 lg:p-8">
+                 <!-- Admin panel content will be rendered here -->
+            </main>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="modal-container">
+        <!-- Login Modal -->
+        <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden items-center justify-center p-4">
+            <div id="login-modal-content" class="bg-white rounded-xl shadow-2xl w-full max-w-sm transform transition-all scale-95 opacity-0">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold">Login Simulado</h3>
+                        <button onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600">&times;</button>
+                    </div>
+                    <p class="text-slate-600 text-sm mb-4">Selecione um usuário para entrar no painel.</p>
+                    <div class="space-y-3">
+                        <select id="user-select" class="w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm p-2">
+                           <!-- Options populated by JS -->
+                        </select>
+                        <button onclick="handleLogin()" class="w-full bg-blue-600 text-white hover:bg-blue-700 font-semibold py-2 px-4 rounded-lg">Entrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot -->
+    <div id="chatbot-widget" class="fixed bottom-5 right-5 z-40">
+        <div id="chat-window" class="w-80 h-96 bg-white rounded-xl shadow-2xl flex-col hidden">
+            <div class="bg-blue-600 text-white p-3 rounded-t-xl flex justify-between items-center"><h3 class="font-semibold">Assistente Virtual</h3><button id="close-chat" class="text-white hover:text-blue-200">&times;</button></div>
+            <div class="flex-1 p-4 overflow-y-auto"><div class="flex items-start gap-2.5 mb-4"><div class="flex flex-col w-full max-w-[320px] leading-1.5 p-3 border-gray-200 bg-gray-100 rounded-e-xl rounded-es-xl"><p class="text-sm font-normal text-gray-900">Olá! Como posso ajudar?</p></div></div></div>
+            <div class="p-3 border-t"><input type="text" placeholder="Digite sua mensagem..." class="w-full border-slate-300 rounded-lg text-sm"></div>
+        </div>
+        <button id="chat-bubble" class="bg-blue-600 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg></button>
+    </div>
+
+    <!-- Footer -->
+    <footer id="main-footer" class="bg-slate-800 text-slate-300">
+       <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8"><div class="grid grid-cols-1 md:grid-cols-3 gap-8"><div><h3 class="text-lg font-semibold text-white">Maned Wolf</h3><p class="mt-2 text-sm text-slate-400">Digitalizando e conectando o conhecimento.</p></div><div><h3 class="text-lg font-semibold text-white">Links Rápidos</h3><ul class="mt-2 space-y-2"><li><a href="#" onclick="renderPage('inicio')" class="text-sm hover:text-white">Início</a></li><li><a href="#" onclick="renderPage('acervo')" class="text-sm hover:text-white">Acervo</a></li><li><a href="#" onclick="renderPage('sobre')" class="text-sm hover:text-white">Sobre</a></li></ul></div><div><h3 class="text-lg font-semibold text-white">Contato</h3><p class="mt-2 text-sm text-slate-400">contato@manedwolf.org</p></div></div><div class="mt-8 border-t border-slate-700 pt-6 text-center text-sm text-slate-400"><p>&copy; 2024 Maned Wolf. Todos os direitos reservados.</p></div></div>
+    </footer>
+
+
+    <script>
+    // --- MOCK DATA --- //
+    const mockData = {
+        users: [
+            { id: 'user01', name: 'Dr. Arnaldo Cruz', role: 'admin', email: 'arnaldo.cruz@email.com', avatar: 'https://placehold.co/100x100/2563eb/ffffff?text=AC' },
+            { id: 'user02', name: 'Beatriz Costa', role: 'curator', email: 'beatriz.costa@email.com', assignedCollection: 'col_01', avatar: 'https://placehold.co/100x100/db2777/ffffff?text=BC' },
+            { id: 'user03', name: 'Carlos Dias', role: 'curator', email: 'carlos.dias@email.com', assignedCollection: 'col_02', avatar: 'https://placehold.co/100x100/16a34a/ffffff?text=CD' },
+            { id: 'user04', name: 'Daniela Faria', role: 'curator', email: 'daniela.faria@email.com', assignedCollection: 'col_03', avatar: 'https://placehold.co/100x100/f59e0b/ffffff?text=DF' },
+        ],
+        stats: {
+            totalObjects: 15320,
+            totalCollections: 6,
+            newSubmissions: 42,
+            activeUsers: 4
+        },
+        collections: [
+            { id: 'col_01', name: 'Coleção de Arte Moderna', description: 'Obras do século XX, focadas no modernismo brasileiro.', image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Arte+Moderna' },
+            { id: 'col_02', name: 'Acervo Fotográfico Histórico', description: 'Fotografias que documentam a história de São Paulo.', image: 'https://placehold.co/600x400/1e293b/ffffff?text=Fotografia' },
+            { id: 'col_03', name: 'Manuscritos Coloniais', description: 'Documentos e cartas raras do período do Brasil Colônia.', image: 'https://placehold.co/600x400/84cc16/ffffff?text=Manuscritos' },
+            { id: 'col_04', name: 'Coleção Numismática', description: 'Moedas e cédulas que contam a história econômica do Brasil.', image: 'https://placehold.co/600x400/f97316/ffffff?text=Numismática' },
+            { id: 'col_05', name: 'Herpetologia Brasileira', description: 'Espécimes e ilustrações científicas de répteis e anfíbios.', image: null },
+            { id: 'col_06', name: 'Partituras Clássicas', description: 'Composições originais de obras de compositores brasileiros.', image: 'https://placehold.co/600x400/d946ef/ffffff?text=Música' },
+        ],
+        objects: [
+            { id: 'obj_001', collectionId: 'col_01', name: 'Abaporu', author: 'Tarsila do Amaral', date: '1928', type: 'Pintura a óleo', uri: 'manedwolf:obj/001', description: 'Um dos ícones do movimento modernista brasileiro, representando uma figura humana solitária em uma paisagem surreal.', image: 'https://placehold.co/800x1000/eab308/ffffff?text=Abaporu', relatedObjects: ['obj_002', 'obj_003'] },
+            { id: 'obj_002', collectionId: 'col_01', name: 'O Mamoeiro', author: 'Tarsila do Amaral', date: '1925', type: 'Pintura a óleo', uri: 'manedwolf:obj/002', description: 'Obra que retrata a flora brasileira com cores vibrantes e formas simplificadas, característica da fase Pau-Brasil da artista.', image: 'https://placehold.co/800x1000/16a34a/ffffff?text=O+Mamoeiro', relatedObjects: ['obj_001', 'obj_004'] },
+            { id: 'obj_003', collectionId: 'col_01', name: 'Samba', author: 'Di Cavalcanti', date: '1925', type: 'Pintura a óleo', uri: 'manedwolf:obj/003', description: 'Retrata uma cena popular e vibrante da cultura brasileira, com figuras mulatas em uma roda de samba.', image: 'https://placehold.co/1000x800/dc2626/ffffff?text=Samba', relatedObjects: ['obj_001', 'obj_004'] },
+            { id: 'obj_004', collectionId: 'col_01', name: 'O Mestiço', author: 'Candido Portinari', date: '1934', type: 'Pintura a óleo', uri: 'manedwolf:obj/004', description: 'Expressa a força e a identidade do povo brasileiro através da figura de um trabalhador rural de olhar firme e pés grandes.', image: 'https://placehold.co/800x1000/7c2d12/ffffff?text=O+Mestiço', relatedObjects: ['obj_002', 'obj_003'] },
+            { id: 'obj_101', collectionId: 'col_02', name: 'Edifício Martinelli', author: 'Anônimo', date: 'c. 1930', type: 'Fotografia P&B', uri: 'manedwolf:obj/101', description: 'Vista do primeiro arranha-céu de São Paulo, um marco da verticalização da cidade.', image: 'https://placehold.co/1000x800/475569/ffffff?text=Martinelli', relatedObjects: ['obj_102'] },
+            { id: 'obj_102', collectionId: 'col_02', name: 'Avenida Paulista', author: 'Guilherme Gaensly', date: '1902', type: 'Fotografia P&B', uri: 'manedwolf:obj/102', description: 'Registro dos casarões da elite do café, antes da avenida se tornar o centro financeiro do país.', image: 'https://placehold.co/1000x800/1e293b/ffffff?text=Avenida+Paulista', relatedObjects: ['obj_101'] },
+            { id: 'obj_201', collectionId: 'col_05', name: 'Jararaca-ilhoa', author: 'Alphonse Millot', date: 'c. 1915', type: 'Ilustração Científica', uri: 'manedwolf:obj/201', description: 'Ilustração da Bothrops insularis, espécie de serpente endêmica da Ilha da Queimada Grande.', image: null, relatedObjects: [] },
+            { id: 'obj_301', collectionId: 'col_03', name: 'Carta de Pero Vaz de Caminha', author: 'Pero Vaz de Caminha', date: '1500', type: 'Manuscrito', uri: 'manedwolf:obj/301', description: 'O primeiro documento escrito da história do Brasil.', image: 'https://placehold.co/800x1000/a16207/ffffff?text=Carta', relatedObjects: [] },
+        ]
+    };
+
+    // --- APPLICATION STATE --- //
+    const state = {
+        currentPage: 'inicio',
+        currentAdminPage: { page: 'dashboard', id: null }, // Changed default admin page
+        currentCollectionId: null,
+        currentObjectId: null, 
+        searchQuery: '',
+        currentUser: null,
+        isSidebarCollapsed: false,
+    };
+    
+    // --- UTILITY & GLOBAL VARIABLES --- //
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => document.querySelectorAll(selector);
+    let zoom; 
+
+    // --- TEMPLATES --- //
+    const templates = {
+        // Public page templates
+        inicio: () => `
+            <div class="text-center mb-12"><h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">Bem-vindo à Plataforma Maned Wolf</h1><p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">Explore as conexões entre obras, documentos e coleções de forma interativa.</p></div>
+            <div class="relative bg-white rounded-xl shadow-lg p-2 md:p-4 border border-slate-200">
+                <div id="graph-container" class="w-full h-[600px] overflow-hidden"></div>
+                <div id="graph-info-panel" class="absolute bottom-4 left-4 bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-md max-w-sm transition-all opacity-0"><p class="text-sm text-slate-500">Clique em um nó para ver suas informações.</p></div>
+                 <div class="absolute top-4 right-4 flex flex-col gap-2">
+                    <div class="bg-white/80 backdrop-blur-sm p-3 rounded-lg shadow-md text-sm"><div class="flex items-center gap-4"><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-amber-500"></div>Coleção</div><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-sky-500"></div>Objeto</div></div></div>
+                    <div class="bg-white/80 backdrop-blur-sm p-1 rounded-full shadow-md flex"><button onclick="zoomIn()" title="Zoom In" class="p-2 text-slate-700 hover:bg-slate-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg></button><button onclick="zoomOut()" title="Zoom Out" class="p-2 text-slate-700 hover:bg-slate-200 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" /></svg></button></div>
+                 </div>
+            </div>`,
+        acervo: () => `<div id="acervo-content"></div>`,
+        contato: () => `<div class="max-w-2xl mx-auto"><h1 class="text-3xl font-bold text-slate-900 mb-4">Entre em Contato</h1><p class="text-slate-600 mb-8">Tem alguma dúvida ou sugestão? Envie-nos uma mensagem.</p><form class="space-y-6"><div><label for="name" class="block text-sm font-medium text-slate-700">Nome</label><input type="text" id="name" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2"></div><div><label for="email" class="block text-sm font-medium text-slate-700">Email</label><input type="email" id="email" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2"></div><div><label for="message" class="block text-sm font-medium text-slate-700">Mensagem</label><textarea id="message" rows="4" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2"></textarea></div><div><button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Enviar</button></div></form></div>`,
+        sobre: () => `<div class="max-w-3xl mx-auto prose lg:prose-xl"><h1 class="text-3xl font-bold text-slate-900">Sobre a Maned Wolf</h1><p>A plataforma Maned Wolf é uma iniciativa para a digitalização e interconexão de acervos culturais e científicos...</p></div>`,
+        
+        objectPage: (objectId) => {
+            const object = mockData.objects.find(o => o.id === objectId);
+            const collection = mockData.collections.find(c => c.id === object.collectionId);
+            if (!object) return `<h1>Objeto não encontrado</h1>`;
+            const relatedObjectsDetails = (object.relatedObjects || []).map(relId => mockData.objects.find(o => o.id === relId)).filter(Boolean);
+            return `
+                <div class="mb-6"><button onclick="handleBackToObjectList()" class="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>Voltar para a Coleção</button></div>
+                <div>
+                    ${object.image ? `<div class="md:float-right md:w-1/3 lg:w-2/5 md:ml-8 mb-4"><div class="bg-slate-100 rounded-lg p-4 sticky top-24"><img src="${object.image}" alt="Imagem de ${object.name}" class="w-full h-auto object-contain rounded-md" onerror="this.parentElement.style.display='none';"></div></div>` : ''}
+                    <div class="max-w-full">
+                        <h2 class="text-2xl md:text-3xl font-bold text-slate-900">${object.name}</h2>
+                        <p class="text-slate-500 mt-1">de <span class="font-semibold">${object.author || 'Desconhecido'}</span>, ${object.date || 's.d.'}</p>
+                        <div class="mt-6 border-t pt-6">
+                            <h3 class="font-semibold text-lg mb-2 text-slate-800">Descrição</h3>
+                            <p class="text-slate-700 text-base leading-relaxed">${object.description}</p>
+                            <h3 class="font-semibold text-lg mt-6 mb-3 text-slate-800">Detalhes</h3>
+                            <ul class="space-y-2 text-sm"><li class="flex"><strong class="w-24 font-medium text-slate-500">Tipo:</strong> <span class="text-slate-800">${object.type}</span></li><li class="flex"><strong class="w-24 font-medium text-slate-500">Coleção:</strong> <span class="text-slate-800">${collection.name}</span></li><li class="flex items-center"><strong class="w-24 font-medium text-slate-500">URI:</strong> <code class="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">${object.uri}</code></li></ul>
+                        </div>
+                    </div>
+                </div>
+                ${relatedObjectsDetails.length > 0 ? `<div class="mt-8 border-t pt-6 clear-both"><h3 class="text-xl font-bold text-slate-800 mb-4">Objetos Relacionados</h3><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">${relatedObjectsDetails.map(relObj => `<div onclick="openObjectPage('${relObj.id}')" class="bg-white rounded-lg border border-slate-200 overflow-hidden cursor-pointer group transition-all hover:shadow-lg hover:-translate-y-1 hover:border-blue-500"><div class="w-full h-24 bg-slate-100 flex items-center justify-center"><img src="${relObj.image}" alt="Imagem de ${relObj.name}" class="w-full h-full object-cover" onerror="this.onerror=null;this.style.display='none'; this.parentElement.innerHTML='<span class=\\'text-xs p-2 text-center text-slate-500\\'>${relObj.name}</span>';"/></div><div class="p-3"><h5 class="font-semibold text-sm truncate group-hover:text-blue-600" title="${relObj.name}">${relObj.name}</h5><p class="text-xs text-slate-500">${relObj.author}</p></div></div>`).join('')}</div></div>` : ''}`;
+        },
+        // Admin panel templates
+        admin: {
+            dashboard: (pageInfo) => {
+                const user = state.currentUser;
+                const collections = user.role === 'admin' 
+                    ? mockData.collections 
+                    : mockData.collections.filter(c => c.id === user.assignedCollection);
+
+                return `
+                    <div class="space-y-8">
+                        <!-- User Info and Welcome -->
+                        <div class="bg-white p-6 rounded-lg shadow-md flex items-center gap-6">
+                            <img src="${user.avatar}" alt="Avatar de ${user.name}" class="w-20 h-20 rounded-full border-4 border-slate-200">
+                            <div>
+                                <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Bem-vindo(a), ${user.name.split(' ')[0]}!</h1>
+                                <p class="text-slate-500">Gerencie seus repositórios e objetos de forma rápida e eficiente.</p>
+                            </div>
+                        </div>
+
+                        <!-- Action Menu -->
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 mb-4">Ações Rápidas</h2>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <button onclick="renderAdminPage({ page: 'collectionsList' })" class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-lg flex flex-col items-center justify-center text-center transition hover:shadow-lg hover:-translate-y-1">
+                                    <svg class="h-8 w-8 mb-2 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M5 11v6a2 2 0 002 2h10a2 2 0 002-2v-6" /></svg>
+                                    <span>Lista de Coleções</span>
+                                </button>
+                                <button onclick="renderAdminPage({ page: 'objectsList' })" class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-lg flex flex-col items-center justify-center text-center transition hover:shadow-lg hover:-translate-y-1">
+                                    <svg class="h-8 w-8 mb-2 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7l8 5 8-5" /></svg>
+                                    <span>Lista de Objetos</span>
+                                </button>
+                                <button ${user.role !== 'admin' ? 'disabled' : ''} onclick="renderAdminPage({ page: 'editCollection', id: null })" class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-lg flex flex-col items-center justify-center text-center transition hover:shadow-lg hover:-translate-y-1 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed disabled:transform-none">
+                                    <svg class="h-8 w-8 mb-2 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
+                                    <span>Registrar Coleção</span>
+                                </button>
+                                 <button onclick="renderAdminPage({ page: 'selectCollectionForObject' })" class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-lg flex flex-col items-center justify-center text-center transition hover:shadow-lg hover:-translate-y-1">
+                                    <svg class="h-8 w-8 mb-2 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span>Registrar Objeto</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Repositories List -->
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 mb-4">Meus Repositórios</h2>
+                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                ${collections.map(col => `
+                                    <div class="bg-white rounded-lg shadow-md overflow-hidden group flex flex-col">
+                                        <img src="${col.image || 'https://placehold.co/600x400/cccccc/ffffff?text=Sem+Imagem'}" alt="Imagem da ${col.name}" class="w-full h-48 object-cover">
+                                        <div class="p-5 flex flex-col flex-grow">
+                                            <h3 class="text-xl font-bold text-slate-900">${col.name}</h3>
+                                            <p class="text-slate-600 mt-2 text-sm h-10 overflow-hidden flex-grow">${col.description}</p>
+                                            <button onclick="renderAdminPage({ page: 'manageCollection', id: '${col.id}' })" class="mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-lg">Gerenciar</button>
+                                        </div>
+                                    </div>`).join('') || `<p>Nenhuma coleção atribuída.</p>`}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+            collectionsList: (pageInfo) => {
+                 const user = state.currentUser;
+                 const collections = user.role === 'admin' ? mockData.collections : mockData.collections.filter(c => c.id === user.assignedCollection);
+                 return `<div id="admin-notification" class="hidden"></div>
+                    <div class="flex justify-between items-center mb-6"><h1 class="text-3xl font-bold text-slate-900">Todas as Coleções</h1>${user.role === 'admin' ? `<button onclick="renderAdminPage({ page: 'editCollection', id: null })" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Adicionar Coleção</button>` : ''}</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${collections.map(col => `
+                            <div class="bg-white rounded-lg shadow-md overflow-hidden group flex flex-col">
+                                <img src="${col.image || 'https://placehold.co/600x400/cccccc/ffffff?text=Sem+Imagem'}" alt="Imagem da ${col.name}" class="w-full h-48 object-cover">
+                                <div class="p-5 flex flex-col flex-grow">
+                                    <h3 class="text-xl font-bold text-slate-900">${col.name}</h3>
+                                    <p class="text-slate-600 mt-2 text-sm h-10 overflow-hidden flex-grow">${col.description}</p>
+                                    <button onclick="renderAdminPage({ page: 'manageCollection', id: '${col.id}' })" class="mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-lg">Gerenciar</button>
+                                </div>
+                            </div>`).join('') || `<p>Nenhuma coleção atribuída.</p>`}
+                    </div>`;
+            },
+            objectsList: (pageInfo) => {
+                const user = state.currentUser;
+                const collectionIds = user.role === 'admin' 
+                    ? mockData.collections.map(c => c.id)
+                    : [user.assignedCollection];
+                const objects = mockData.objects.filter(o => collectionIds.includes(o.collectionId));
+                 return `<div id="admin-notification" class="hidden"></div>
+                    <div class="flex justify-between items-center mb-6"><h1 class="text-3xl font-bold text-slate-900">Todos os Objetos</h1><button onclick="renderAdminPage({ page: 'selectCollectionForObject' })" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Adicionar Objeto</button></div>
+                    <div class="bg-white p-6 rounded-lg shadow overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="border-b"><th class="p-3">Nome do Objeto</th><th class="p-3">Coleção</th><th class="p-3">Autor</th><th class="p-3">Data</th><th class="p-3">Ações</th></tr></thead><tbody>
+                    ${objects.length > 0 ? objects.map(o => {
+                        const collection = mockData.collections.find(c => c.id === o.collectionId);
+                        return `<tr class="border-b hover:bg-slate-50"><td class="p-3 font-semibold">${o.name}</td><td class="p-3">${collection.name}</td><td class="p-3">${o.author}</td><td class="p-3">${o.date}</td><td class="p-3 space-x-2"><button onclick="renderAdminPage({ page: 'editObject', id: '${o.id}', collectionId: '${o.collectionId}' })" class="text-blue-600 hover:underline">Editar</button><button onclick="handleDeleteObject('${o.id}', '${o.collectionId}', 'objectsList')" class="text-red-600 hover:underline">Remover</button></td></tr>`
+                    }).join('') : `<tr><td colspan="5" class="text-center p-4 text-slate-500">Nenhum objeto encontrado.</td></tr>`}</tbody></table></div>
+                 `;
+            },
+             selectCollectionForObject: (pageInfo) => {
+                const user = state.currentUser;
+                const collections = user.role === 'admin' 
+                    ? mockData.collections 
+                    : mockData.collections.filter(c => c.id === user.assignedCollection);
+                return `
+                    <div class="mb-6"><button onclick="renderAdminPage({ page: 'dashboard' })" class="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>Voltar ao Painel</button></div>
+                    <h1 class="text-3xl font-bold text-slate-900 mb-4">Registrar Novo Objeto</h1>
+                    <p class="text-slate-600 mb-6">Selecione a coleção à qual este objeto pertencerá.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${collections.map(col => `
+                             <div onclick="renderAdminPage({ page: 'editObject', id: null, collectionId: '${col.id}' })" class="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer group flex flex-col items-center justify-center p-6 text-center hover:shadow-xl hover:-translate-y-1 transition-all border-2 border-transparent hover:border-blue-500">
+                                <h3 class="text-xl font-bold text-slate-900 group-hover:text-blue-600">${col.name}</h3>
+                                <p class="text-slate-500 text-sm mt-2">${col.description}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            },
+            manageCollection: ({id}) => {
+                const collection = mockData.collections.find(c => c.id === id);
+                if (!collection) return `<h2>Coleção não encontrada.</h2>`;
+                const objects = mockData.objects.filter(o => o.collectionId === id);
+                return `<div id="admin-notification" class="hidden"></div>
+                    <div class="mb-6"><button onclick="renderAdminPage({ page: 'collectionsList' })" class="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>Voltar</button></div>
+                    <div class="flex justify-between items-start mb-6"><div><h1 class="text-3xl font-bold text-slate-900">${collection.name}</h1><p class="text-slate-500">${collection.description}</p></div><button onclick="renderAdminPage({ page: 'editCollection', id: '${id}' })" class="text-blue-600 hover:underline">Editar Coleção</button></div>
+                    <div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-semibold text-slate-800">Objetos (${objects.length})</h2><button onclick="renderAdminPage({ page: 'editObject', id: null, collectionId: '${id}' })" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Adicionar Objeto</button></div>
+                    <div class="bg-white p-6 rounded-lg shadow overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="border-b"><th class="p-3">Nome do Objeto</th><th class="p-3">Autor</th><th class="p-3">Data</th><th class="p-3">Ações</th></tr></thead><tbody>
+                    ${objects.length > 0 ? objects.map(o => `<tr class="border-b hover:bg-slate-50"><td class="p-3 font-semibold">${o.name}</td><td class="p-3">${o.author}</td><td class="p-3">${o.date}</td><td class="p-3 space-x-2"><button onclick="renderAdminPage({ page: 'editObject', id: '${o.id}', collectionId: '${id}' })" class="text-blue-600 hover:underline">Editar</button><button onclick="handleDeleteObject('${o.id}', '${id}')" class="text-red-600 hover:underline">Remover</button></td></tr>`).join('') : `<tr><td colspan="4" class="text-center p-4 text-slate-500">Nenhum objeto nesta coleção.</td></tr>`}</tbody></table></div>`;
+            },
+            editCollection: ({id}) => {
+                const collection = id ? mockData.collections.find(c => c.id === id) : {};
+                const isNew = !id;
+                return `
+                    <div class="mb-6"><button onclick="renderAdminPage({ page: 'collectionsList' })" class="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>Voltar</button></div>
+                    <h1 class="text-3xl font-bold text-slate-900 mb-6">${isNew ? 'Adicionar Nova Coleção' : 'Editar Coleção'}</h1>
+                    <form id="collection-form" class="bg-white p-6 rounded-lg shadow space-y-4">
+                        <div><label class="block text-sm font-medium text-slate-700">Nome da Coleção</label><input name="name" type="text" value="${collection.name || ''}" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2" required></div>
+                        <div><label class="block text-sm font-medium text-slate-700">Descrição</label><textarea name="description" rows="4" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2" required>${collection.description || ''}</textarea></div>
+                        <div><label class="block text-sm font-medium text-slate-700">URL da Imagem</label><input name="image" type="text" value="${collection.image || ''}" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2"></div>
+                        <div class="flex justify-between items-center">
+                            <button type="button" onclick="handleSaveCollection(event, '${id}')" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Salvar Coleção</button>
+                            ${!isNew ? `<button type="button" onclick="handleDeleteCollection('${id}')" class="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700">Remover Coleção</button>` : ''}
+                        </div>
+                    </form>
+                `;
+            },
+            editObject: ({id, collectionId}) => {
+                const object = id ? mockData.objects.find(o => o.id === id) : {};
+                const isNew = !id;
+                return `
+                    <div class="mb-6"><button onclick="renderAdminPage({ page: 'manageCollection', id: '${collectionId}' })" class="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>Voltar</button></div>
+                    <h1 class="text-3xl font-bold text-slate-900 mb-6">${isNew ? 'Adicionar Novo Objeto' : 'Editar Objeto'}</h1>
+                    <form id="object-form" class="bg-white p-6 rounded-lg shadow space-y-4">
+                        <div><label class="block text-sm font-medium text-slate-700">Nome do Objeto</label><input name="name" type="text" value="${object.name || ''}" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2" required></div>
+                        <div><label class="block text-sm font-medium text-slate-700">Autor</label><input name="author" type="text" value="${object.author || ''}" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2"></div>
+                        <div><label class="block text-sm font-medium text-slate-700">Data</label><input name="date" type="text" value="${object.date || ''}" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2"></div>
+                        <div><label class="block text-sm font-medium text-slate-700">Tipo</label><input name="type" type="text" value="${object.type || ''}" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2"></div>
+                        <div><label class="block text-sm font-medium text-slate-700">Descrição</label><textarea name="description" rows="4" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2">${object.description || ''}</textarea></div>
+                        <div><label class="block text-sm font-medium text-slate-700">URL da Imagem</label><input name="image" type="text" value="${object.image || ''}" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2"></div>
+                        <div class="flex justify-between items-center">
+                            <button type="button" onclick="handleSaveObject(event, '${id}', '${collectionId}')" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Salvar Objeto</button>
+                        </div>
+                    </form>
+                `;
+            },
+            profile: (pageInfo) => {
+                const user = state.currentUser;
+                return `
+                <div id="admin-notification" class="hidden"></div>
+                <h1 class="text-3xl font-bold text-slate-900 mb-6">Meu Perfil</h1>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="flex flex-col md:flex-row items-center gap-6">
+                        <img src="${user.avatar}" alt="Avatar de ${user.name}" class="w-24 h-24 rounded-full">
+                        <div class="flex-1">
+                            <h2 class="text-2xl font-bold">${user.name}</h2>
+                            <p class="text-slate-500">${user.email}</p>
+                            <span class="mt-2 inline-block px-3 py-1 text-sm font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}">${user.role}</span>
+                        </div>
+                    </div>
+                    <div class="mt-8 border-t pt-6">
+                        <h3 class="text-lg font-semibold mb-4">Configurações da Conta</h3>
+                        <form class="space-y-4">
+                            <div><label class="block text-sm font-medium text-slate-700">Nome</label><input type="text" value="${user.name}" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2"></div>
+                            <div><label class="block text-sm font-medium text-slate-700">Email</label><input type="email" value="${user.email}" class="mt-1 block w-full border-slate-300 rounded-md shadow-sm p-2"></div>
+                            <div><button type="button" onclick="showNotification('Perfil atualizado com sucesso!', 'success')" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Salvar Alterações</button></div>
+                        </form>
+                    </div>
+                </div>`
+            }
+        }
+    };
+    
+    // --- AUTHENTICATION --- //
+    function openLoginModal() {
+        $('#user-select').innerHTML = mockData.users.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
+        $('#login-modal').classList.remove('hidden');
+        $('#login-modal').classList.add('flex');
+        setTimeout(() => $('#login-modal-content').classList.remove('scale-95', 'opacity-0'), 10);
+    }
+    function closeLoginModal() {
+        $('#login-modal-content').classList.add('scale-95', 'opacity-0');
+        setTimeout(() => $('#login-modal').classList.add('hidden'), 200);
+    }
+    function handleLogin() {
+        const userId = $('#user-select').value;
+        state.currentUser = mockData.users.find(u => u.id === userId);
+        closeLoginModal();
+        updateUIForAuthState();
+        renderAdminPage({ page: 'dashboard' }); // Changed to dashboard
+    }
+    function handleLogout() {
+        state.currentUser = null;
+        updateUIForAuthState();
+        renderPage('inicio');
+    }
+
+    // --- UI UPDATES --- //
+    function updateUIForAuthState() {
+        const isUserLoggedIn = !!state.currentUser;
+        $('#main-content').classList.toggle('hidden', isUserLoggedIn);
+        $('#admin-panel').classList.toggle('hidden', !isUserLoggedIn);
+        $('#chatbot-widget').classList.toggle('hidden', isUserLoggedIn);
+        $('#header-menu-toggle').classList.toggle('hidden', !isUserLoggedIn);
+        $('#mobile-menu-button-container').classList.toggle('hidden', isUserLoggedIn);
+        $('#public-menu-container').classList.toggle('md:hidden', isUserLoggedIn);
+        $('#main-footer').classList.toggle('hidden', isUserLoggedIn);
+        
+        if (isUserLoggedIn) {
+            renderAdminSidebar();
+        } else {
+             $('#admin-sidebar').classList.add('-translate-x-full');
+        }
+        
+        updateHeader();
+        updateMobileMenu();
+        updateSidebarCollapse();
+    }
+
+    function updateHeader() {
+        const container = $('#user-auth-section');
+        if (state.currentUser) {
+            container.innerHTML = `<div class="relative">
+                <button onclick="toggleUserMenu()" class="flex items-center gap-2 text-sm font-semibold text-white p-1 rounded-full hover:bg-slate-700">
+                    <img src="${state.currentUser.avatar}" class="w-8 h-8 rounded-full" />
+                    <svg class="h-4 w-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                </button>
+                <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <a href="#" onclick="renderAdminPage({ page: 'profile' })" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Meu Perfil</a>
+                    <a href="#" onclick="renderAdminPage({ page: 'dashboard' })" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Painel</a>
+                    <a href="#" onclick="handleLogout()" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Logout</a>
+                </div>
+            </div>`;
+        } else {
+            container.innerHTML = `<button onclick="openLoginModal()" class="bg-blue-500 text-white hover:bg-blue-600 font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">Login</button>`;
+        }
+    }
+    function toggleUserMenu() { $('#user-dropdown').classList.toggle('hidden'); }
+    function updateMobileMenu() {
+        const container = $('#mobile-menu');
+        if (state.currentUser) {
+            container.innerHTML = '';
+            $('#mobile-menu').classList.add('hidden');
+        } else {
+            container.innerHTML = `<div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <button onclick="renderPage('inicio')" class="text-slate-300 hover:text-white block w-full text-left px-3 py-2 rounded-md">Início</button>
+                <button onclick="renderPage('acervo')" class="text-slate-300 hover:text-white block w-full text-left px-3 py-2 rounded-md">Acervo</button>
+                <button onclick="renderPage('contato')" class="text-slate-300 hover:text-white block w-full text-left px-3 py-2 rounded-md">Contato</button>
+                <button onclick="renderPage('sobre')" class="text-slate-300 hover:text-white block w-full text-left px-3 py-2 rounded-md">Sobre</button>
+            </div><div class="pt-4 pb-3 border-t border-slate-700"><div class="px-5"><button onclick="openLoginModal()" class="w-full bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg">Login</button></div></div>`;
+        }
+    }
+    function goHome() {
+        if(state.currentUser) { renderAdminPage({ page: 'dashboard' }); } else { renderPage('inicio'); }
+    }
+
+    // --- PAGE & COMPONENT RENDERERS --- //
+    function renderPage(pageName) {
+        state.currentPage = pageName;
+        state.currentCollectionId = null;
+        state.currentObjectId = null;
+        state.searchQuery = '';
+        state.currentUser = null;
+        updateUIForAuthState();
+        const contentArea = $('#main-content');
+        contentArea.innerHTML = templates[pageName] ? templates[pageName]() : '<h1>Página não encontrada</h1>';
+        
+        if (pageName === 'inicio') { setTimeout(renderGraph, 0); }
+        if (pageName === 'acervo') { renderAcervoContent(); }
+        updateActiveNav();
+    }
+
+    function renderAdminPage(pageInfo) {
+        state.currentAdminPage = pageInfo;
+        const user = state.currentUser; if (!user) return;
+        const pageName = pageInfo.page;
+        const id = pageInfo.id;
+        
+        let content = '';
+        const templateFunction = templates.admin[pageName];
+        if (templateFunction) {
+             content = templateFunction(pageInfo);
+        } else {
+            content = templates.admin.dashboard(user); // Default to dashboard
+        }
+
+        $('#admin-main-content').innerHTML = content;
+        updateActiveAdminNav();
+        // Close user dropdown menu if open
+        if (!$('#user-dropdown').classList.contains('hidden')) {
+            toggleUserMenu();
+        }
+    }
+    
+    function renderAdminSidebar() {
+        const user = state.currentUser;
+        if (!user) return;
+
+        const navLinks = [
+            { page: 'dashboard', label: 'Painel', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />`, curator: true, admin: true},
+            { page: 'collectionsList', label: 'Coleções', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M5 11v6a2 2 0 002 2h10a2 2 0 002-2v-6" />`, curator: true, admin: true},
+            { page: 'objectsList', label: 'Objetos', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7l8 5 8-5" />`, curator: true, admin: true},
+            { page: 'profile', label: 'Meu Perfil', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />`, curator: true, admin: true},
+            { page: 'publicHome', label: 'Ver Site Público', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />`, curator: true, admin: true},
+        ];
+
+        let navItems = navLinks.filter(link => (user.role === 'admin' && link.admin) || (user.role === 'curator' && link.curator))
+            .map(link => {
+                const action = link.page === 'publicHome' ? `renderPage('inicio')` : `renderAdminPage({ page: '${link.page}' })`;
+                return `
+                <a href="#" onclick="${action}" data-page="${link.page}" class="admin-nav-button flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">${link.icon}</svg>
+                    <span class="nav-text">${link.label}</span>
+                </a>`
+            }).join('');
+
+        $('#admin-sidebar').innerHTML = `
+            <div class="p-4 border-b border-slate-700 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <img src="${user.avatar}" class="w-10 h-10 rounded-full flex-shrink-0" />
+                    <div class="nav-text">
+                        <h3 class="font-bold text-white">${user.name}</h3>
+                        <p class="text-sm text-slate-400">${user.role}</p>
+                    </div>
+                </div>
+            </div>
+            <nav class="flex-1 flex flex-col gap-2 p-4">${navItems}</nav>
+            <div class="p-4 border-t border-slate-700 flex-shrink-0">
+                <button onclick="toggleSidebar()" class="admin-nav-button flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700 w-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" id="sidebar-toggle-icon" class="h-6 w-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                    </svg>
+                    <span class="nav-text">Ocultar Menu</span>
+                </button>
+            </div>
+        `;
+    }
+
+    function renderAcervoContent() {
+        const acervoContent = $('#acervo-content');
+        if (state.currentObjectId) { acervoContent.innerHTML = templates.objectPage(state.currentObjectId); } 
+        else if (state.currentCollectionId) { acervoContent.innerHTML = renderObjectsList(state.currentCollectionId); } 
+        else { acervoContent.innerHTML = renderCollectionsList(); }
+        window.scrollTo(0, 0);
+    }
+
+    function renderCollectionsList(filteredCollections = mockData.collections) {
+        const content = `
+            <div class="mb-8"><h1 class="text-3xl font-bold text-slate-900">Nosso Acervo</h1><p class="mt-2 text-slate-600">Pesquise em nossas coleções ou navegue pelos itens.</p></div>
+            <div class="mb-8"><input id="search-input" type="text" placeholder="Pesquisar em todo o acervo..." class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="${state.searchQuery}"></div>
+        `;
+        const collectionsHTML = filteredCollections.length === 0 ? `<div class="text-center py-12"><p class="text-slate-500">Nenhuma coleção encontrada.</p></div>` : `
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Coleções</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${filteredCollections.map(col => `<div onclick="handleCollectionClick('${col.id}')" class="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer group transition-all hover:shadow-xl hover:-translate-y-1"><img src="${col.image || 'https://placehold.co/600x400/cccccc/ffffff?text=Sem+Imagem'}" alt="Imagem da ${col.name}" class="w-full h-48 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/ffffff?text=Imagem+Indisponível';"><div class="p-5"><h3 class="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">${col.name}</h3><p class="text-slate-600 mt-2 text-sm">${col.description}</p></div></div>`).join('')}
+            </div>`;
+        const finalHTML = content + collectionsHTML;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = finalHTML;
+        tempDiv.querySelector('#search-input').addEventListener('input', handleSearch);
+        return tempDiv.innerHTML;
+    }
+
+    function renderObjectsList(collectionId, filteredObjects) {
+        const collection = mockData.collections.find(c => c.id === collectionId);
+        const objectsToShow = filteredObjects || mockData.objects.filter(o => o.collectionId === collectionId);
+        const content = `
+            <div class="mb-6"><button onclick="handleBackToCollections()" class="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>Voltar para Coleções</button></div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">${collection.name}</h2>
+            <p class="text-slate-600 mb-6">${collection.description}</p>
+            <div class="mb-8"><input id="search-input" type="text" placeholder="Pesquisar em ${collection.name}..." class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="${state.searchQuery}"></div>`;
+        const objectsHTML = objectsToShow.length === 0 ? `<div class="text-center py-12"><p class="text-slate-500">Nenhum objeto encontrado para esta busca.</p></div>` : `
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                ${objectsToShow.map(obj => `<div onclick="openObjectPage('${obj.id}')" class="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer group transition-all hover:shadow-xl hover:-translate-y-1"><div class="w-full h-40 bg-slate-200 flex items-center justify-center text-center p-2"><img src="${obj.image}" class="w-full h-full object-contain" alt="Imagem de ${obj.name}" onerror="this.onerror=null;this.style.display='none'; this.parentElement.innerHTML='<h4 class=\\'text-lg font-bold text-slate-700 group-hover:text-blue-600 p-4\\'>${obj.name}</h4>'"/></div><div class="p-4"><h4 class="font-bold truncate" title="${obj.name}">${obj.name}</h4><p class="text-sm text-slate-500">${obj.author || 'Desconhecido'}</p><p class="text-sm text-slate-500">Data: ${obj.date || 'Não datado'}</p></div></div>`).join('')}
+            </div>`;
+        const finalHTML = content + objectsHTML;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = finalHTML;
+        tempDiv.querySelector('#search-input').addEventListener('input', handleSearch);
+        return tempDiv.innerHTML;
+    }
+
+    // Active nav states
+    function updateActiveNav() { $$('.nav-button').forEach(btn => {btn.classList.remove('active');if(btn.textContent.toLowerCase()===state.currentPage)btn.classList.add('active');});}
+    function updateActiveAdminNav() { $$('.admin-nav-button').forEach(btn => {btn.classList.remove('active');if(btn.dataset.page===state.currentAdminPage.page)btn.classList.add('active');});}
+    
+    // --- EVENT HANDLERS & LOGIC --- //
+    function handleCollectionClick(collectionId) { state.currentCollectionId = collectionId; state.searchQuery = ''; renderAcervoContent(); }
+    function handleBackToCollections() { state.currentCollectionId = null; state.currentObjectId = null; state.searchQuery = ''; renderAcervoContent(); }
+    function handleBackToObjectList() { state.currentObjectId = null; renderAcervoContent(); }
+    function openObjectPage(objectId) { state.currentObjectId = objectId; renderAcervoContent(); }
+
+    function handleSearch(event) {
+        state.searchQuery = event.target.value.toLowerCase();
+        const acervoContent = $('#acervo-content');
+        if (state.currentCollectionId && !state.currentObjectId) {
+            const objects = mockData.objects.filter(o => o.collectionId === state.currentCollectionId);
+            const filteredObjects = objects.filter(o => o.name.toLowerCase().includes(state.searchQuery) || (o.author && o.author.toLowerCase().includes(state.searchQuery)));
+            acervoContent.innerHTML = renderObjectsList(state.currentCollectionId, filteredObjects);
+        } else if (!state.currentCollectionId && !state.currentObjectId) {
+            const filteredCollections = mockData.collections.filter(c => c.name.toLowerCase().includes(state.searchQuery) || c.description.toLowerCase().includes(state.searchQuery));
+            acervoContent.innerHTML = renderCollectionsList(filteredCollections);
+        }
+    }
+
+    function toggleSidebar() {
+        state.isSidebarCollapsed = !state.isSidebarCollapsed;
+        updateSidebarCollapse();
+    }
+    
+    function updateSidebarCollapse() {
+        const sidebar = $('#admin-sidebar');
+        const mainContent = $('#admin-main-content');
+        if (!sidebar || !mainContent) return;
+
+        sidebar.classList.toggle('w-64', !state.isSidebarCollapsed);
+        sidebar.classList.toggle('w-20', state.isSidebarCollapsed);
+        mainContent.classList.toggle('md:ml-64', !state.isSidebarCollapsed);
+        mainContent.classList.toggle('md:ml-20', state.isSidebarCollapsed);
+        
+        $$('.nav-text').forEach(el => el.classList.toggle('hidden', state.isSidebarCollapsed));
+
+        const toggleIcon = $('#sidebar-toggle-icon');
+        if (toggleIcon) {
+            toggleIcon.innerHTML = state.isSidebarCollapsed 
+                ? `<path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />` 
+                : `<path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />`;
+        }
+    }
+    
+    // --- CRUD Handlers --- //
+    function handleSaveCollection(event, collectionId) {
+        event.preventDefault();
+        const form = $('#collection-form');
+        const formData = new FormData(form);
+        const collectionData = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            image: formData.get('image'),
+        };
+
+        if (collectionId && collectionId !== 'null') {
+            const index = mockData.collections.findIndex(c => c.id === collectionId);
+            mockData.collections[index] = { ...mockData.collections[index], ...collectionData };
+            showNotification('Coleção atualizada com sucesso!', 'success');
+        } else {
+            collectionData.id = 'col_' + Date.now();
+            mockData.collections.push(collectionData);
+            showNotification('Coleção adicionada com sucesso!', 'success');
+        }
+        renderAdminPage({ page: 'collectionsList' });
+    }
+
+    function handleDeleteCollection(collectionId) {
+        if (confirm('Tem certeza que deseja remover esta coleção? Todos os objetos dentro dela também serão removidos.')) {
+            mockData.collections = mockData.collections.filter(c => c.id !== collectionId);
+            mockData.objects = mockData.objects.filter(o => o.collectionId !== collectionId);
+            showNotification('Coleção removida com sucesso!', 'success');
+            renderAdminPage({ page: 'collectionsList' });
+        }
+    }
+    
+    function handleSaveObject(event, objectId, collectionId) {
+        event.preventDefault();
+        const form = $('#object-form');
+        const formData = new FormData(form);
+        const objectData = {
+            name: formData.get('name'),
+            author: formData.get('author'),
+            date: formData.get('date'),
+            type: formData.get('type'),
+            description: formData.get('description'),
+            image: formData.get('image'),
+        };
+
+        if (objectId && objectId !== 'null') {
+            const index = mockData.objects.findIndex(o => o.id === objectId);
+            mockData.objects[index] = { ...mockData.objects[index], ...objectData };
+            showNotification('Objeto atualizado com sucesso!', 'success');
+        } else {
+            objectData.id = 'obj_' + Date.now();
+            objectData.uri = 'manedwolf:obj/' + Date.now();
+            objectData.collectionId = collectionId;
+            objectData.relatedObjects = [];
+            mockData.objects.push(objectData);
+            showNotification('Objeto adicionado com sucesso!', 'success');
+        }
+        renderAdminPage({ page: 'manageCollection', id: collectionId });
+    }
+
+    function handleDeleteObject(objectId, collectionId, returnPage = 'manageCollection') {
+        if (confirm('Tem certeza que deseja remover este objeto?')) {
+            mockData.objects = mockData.objects.filter(o => o.id !== objectId);
+            showNotification('Objeto removido com sucesso!', 'success');
+            renderAdminPage({ page: returnPage, id: collectionId });
+        }
+    }
+
+
+    // --- NOTIFICATION SYSTEM --- //
+    function showNotification(message, type = 'info') {
+        const container = $('#admin-notification');
+        if (!container) return;
+        const bgColor = type === 'success' ? 'bg-green-500' : (type === 'error' ? 'bg-red-500' : 'bg-blue-500');
+        container.innerHTML = `<div class="${bgColor} text-white font-bold rounded-lg p-4 mb-4">${message}</div>`;
+        container.classList.remove('hidden');
+        setTimeout(() => { container.classList.add('hidden'); }, 3000);
+    }
+    
+    // --- GRAPH & OTHER FUNCTIONS --- //
+    function renderGraph() {
+        const graphContainer = $('#graph-container'); if (!graphContainer) return;
+        graphContainer.innerHTML = '';
+        const width = graphContainer.clientWidth, height = graphContainer.clientHeight;
+        const svg = d3.create("svg").attr("viewBox", [0, 0, width, height]);
+        const graphGroup = svg.append("g");
+        const nodes = [], links = [];
+        mockData.collections.forEach(c => nodes.push({ id: c.id, name: c.name, type: 'collection' }));
+        mockData.objects.forEach(o => { nodes.push({ id: o.id, name: o.name, type: 'object' }); links.push({ source: o.id, target: o.collectionId }); });
+        const simulation = d3.forceSimulation(nodes).force("link", d3.forceLink(links).id(d => d.id).distance(120)).force("charge", d3.forceManyBody().strength(-400)).force("center", d3.forceCenter(width/2, height/2));
+        const link = graphGroup.append("g").attr("stroke", "#64748b").attr("stroke-opacity", 0.6).selectAll("line").data(links).join("line");
+        const node = graphGroup.append("g").selectAll("g").data(nodes).join("g").attr("class", "node").call(drag(simulation));
+        node.append("circle").attr("r", d => d.type === 'collection' ? 18 : 10).attr("fill", d => d.type === 'collection' ? '#f59e0b' : '#0ea5e9').attr("stroke", "#f8fafc").attr("stroke-width", 2.5);
+        node.append("text").text(d => d.name).attr("x", d => d.type === 'collection' ? 24 : 15).attr("y", 5).style("font-size", "14px").style("pointer-events", "none").style("font-weight", "600").attr("fill", "#000");
+        simulation.on("tick", () => { link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y); node.attr("transform", d => `translate(${d.x},${d.y})`); });
+        zoom = d3.zoom().scaleExtent([0.3, 5]).on("zoom", e => graphGroup.attr("transform", e.transform));
+        svg.call(zoom);
+        function drag(sim) { return d3.drag().on("start", e=>{if(!e.active)sim.alphaTarget(.3).restart();e.subject.fx=e.subject.x;e.subject.fy=e.subject.y;}).on("drag",e=>{e.subject.fx=e.x;e.subject.fy=e.y;}).on("end",e=>{if(!e.active)sim.alphaTarget(0);e.subject.fx=null;e.subject.fy=null;});}
+        graphContainer.append(svg.node());
+    }
+    function zoomIn() { d3.select("#graph-container svg").transition().duration(250).call(zoom.scaleBy, 1.3); }
+    function zoomOut() { d3.select("#graph-container svg").transition().duration(250).call(zoom.scaleBy, 1 / 1.3); }
+
+    // --- INITIALIZATION --- //
+    window.onload = () => {
+        renderPage('inicio');
+        updateHeader();
+        updateMobileMenu();
+        
+        $('#mobile-menu-button').addEventListener('click', () => $('#mobile-menu').classList.toggle('hidden'));
+        
+        $('#header-menu-toggle').addEventListener('click', () => {
+            if (state.currentUser) {
+                $('#admin-sidebar').classList.toggle('-translate-x-full');
+            }
+        });
+        
+        $('#chat-bubble').addEventListener('click', () => { $('#chat-window').classList.toggle('hidden'); $('#chat-bubble').classList.toggle('hidden'); });
+        $('#close-chat').addEventListener('click', () => { $('#chat-window').classList.toggle('hidden'); $('#chat-bubble').classList.toggle('hidden'); });
+    };
+
+    </script>
+</body>
+</html>

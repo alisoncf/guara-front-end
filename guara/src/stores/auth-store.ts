@@ -1,88 +1,106 @@
 import { defineStore } from 'pinia';
-import { SessionStorage } from 'quasar';
-import { StorageKey } from 'src/constants/StorageKey';
-import { Auth, Repositorio } from 'src/pages/tipos';
+import { ref } from 'vue';
+import { api } from 'src/boot/axios';
+// Importa os plugins do Quasar diretamente, em vez de usar o hook useQuasar
+import { LocalStorage, Notify } from 'quasar';
+import { login as loginService } from 'src/services/authService';
 
-const defaultState: Auth = {
-  email: '',
-  permissao: '',
-  repositorio: '',
-  token: '',
-  user: '',
-  validade: '',
-  repositorio_conectado: {} as Repositorio,
-  isLoggedIn: false,
-};
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
 
-export const useAuthStore = defineStore('useAuthStore', {
-  state: () => {
-    let sessionData: Auth = defaultState;
+export const useAuthStore = defineStore('auth', () => {
+  // --- STATE ---
+  const token = ref(sessionStorage.getItem('guara_token'));
+  const user = ref<string | null>(sessionStorage.getItem('guara_user'));
+
+  // --- GETTERS ---
+  const isAuthenticated = ref(!!token.value);
+
+  // --- ACTIONS ---
+
+  /**
+   * Função principal de login.
+   * @param {object} credentials - Contém o email e a password.
+   */
+  async function login(credentials: LoginCredentials) {
     try {
-      const storedData = SessionStorage.getItem(StorageKey.auth);
-      if (storedData) {
-        sessionData = JSON.parse(storedData as string);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar dados do SessionStorage:', error);
-    }
+      const responseData = await loginService(
+        credentials.email,
+        credentials.password
+      );
 
-    return {
-      ...defaultState,
-      ...sessionData,
-    };
-  },
-
-  getters: {
-    get(): Auth {
-      return {
-        email: this.email,
-        permissao: this.permissao,
-        repositorio: this.repositorio,
-        token: this.token,
-        user: this.user,
-        validade: this.validade,
-        repositorio_conectado: this.repositorio_conectado,
-        isLoggedIn: this.isLoggedIn,
+      token.value = responseData.token;
+      const userData = {
+        name: responseData.user,
+        email: responseData.email,
+        permission: responseData.permissao,
+        repositorios: responseData.repositorios_associados_nomes,
       };
-    },
-  },
+      user.value = JSON.stringify(userData);
+      isAuthenticated.value = true;
 
-  actions: {
-    set(objeto: Auth) {
-      SessionStorage.set(StorageKey.auth, JSON.stringify(objeto));
+      sessionStorage.setItem('guara_token', token.value);
+      sessionStorage.setItem('guara_user', user.value);
 
-      this.email = objeto.email;
-      this.permissao = objeto.permissao;
-      this.repositorio = objeto.repositorio;
-      this.token = objeto.token;
-      this.user = objeto.user;
-      this.validade = objeto.validade;
-      this.repositorio_conectado = objeto.repositorio_conectado;
-      this.isLoggedIn = objeto.isLoggedIn || !!objeto.token;
-    },
+      // Log para depuração
+      console.log('=== DEBUG: Login Store ===');
+      console.log('Token recebido:', responseData.token);
+      console.log('Token salvo na store:', token.value);
+      console.log(
+        'Token salvo no sessionStorage:',
+        sessionStorage.getItem('guara_token')
+      );
+      console.log('isAuthenticated:', isAuthenticated.value);
+      console.log('Tipo do token:', typeof responseData.token);
+      console.log('Token começa com:', responseData.token?.substring(0, 20));
+      console.log('========================');
 
-    limpar() {
-      SessionStorage.remove(StorageKey.auth);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
 
-      this.email = defaultState.email;
-      this.permissao = defaultState.permissao;
-      this.repositorio = defaultState.repositorio;
-      this.token = defaultState.token;
-      this.user = defaultState.user;
-      this.validade = defaultState.validade;
-      this.repositorio_conectado = defaultState.repositorio_conectado;
-      this.isLoggedIn = defaultState.isLoggedIn;
-    },
+      // Adiciona log para depuração
+      console.log('Login realizado!');
+      console.log('Token:', token.value);
+      console.log('User:', userData);
+      console.log('isAuthenticated:', isAuthenticated.value);
 
-    logout() {
-      this.email = '';
-      this.permissao = '';
-      this.repositorio = '';
-      this.token = '';
-      this.user = '';
-      this.validade = '';
-      this.repositorio_conectado = {} as Repositorio;
-      this.isLoggedIn = false;
-    },
-  },
+      // Retorna sucesso para que o componente saiba quando redirecionar
+      return true;
+    } catch (error) {
+      console.error('Erro de login:', error);
+      isAuthenticated.value = false;
+      Notify.create({
+        type: 'negative',
+        message: 'Email ou password inválidos. Por favor, tente novamente.',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Função de logout.
+   */
+  function logout() {
+    token.value = null;
+    user.value = null;
+    isAuthenticated.value = false;
+
+    sessionStorage.removeItem('guara_token');
+    sessionStorage.removeItem('guara_user');
+
+    delete api.defaults.headers.common['Authorization'];
+
+    // A store não deve mais se preocupar com o redirecionamento.
+    // Isso será feito no componente que chamar a função de logout.
+    return true;
+  }
+
+  return {
+    token,
+    user,
+    isAuthenticated,
+    login,
+    logout,
+  };
 });

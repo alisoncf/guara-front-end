@@ -1,1 +1,29 @@
-// app global css in SCSS form
+/*
+  Container principal para centralizar o conteúdo do cabeçalho,
+  rodapé e páginas, garantindo que não fiquem largos demais em
+  telas grandes e tenham um espaçamento lateral adequado.
+*/
+.main-container {
+  max-width: 1200px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/*
+  Define a cor do link ativo na navegação, usando a variável global do Quasar.
+  Agora, este estilo funcionará sem erros.
+*/
+.q-btn.q-router-link--active {
+  color: var(--q-color-blue-4) !important;
+}
+
+/*
+  Estilo para os links no rodapé, para que mudem de cor ao passar o mouse.
+*/
+.hover-link:hover {
+  color: white;
+  text-decoration: underline;
+}

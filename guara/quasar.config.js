@@ -15,13 +15,33 @@ module.exports = configure(function (ctx) {
       } : false,
       port: 9000,
       proxy: {
+        '/relation': {
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false
+        },
+        '/repositorios': {
+          target: 'http://localhost:5000', // Ou http, dependendo do seu backend
+          changeOrigin: true,
+          secure: false
+        },
         '/classapi': {
-          target: 'https://localhost:5000',
+          target: 'http://localhost:5000',
           changeOrigin: true,
           secure: false
         },
         '/sparqapi': {
-          target: 'https://localhost:5000',
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+          secure: false
+        },
+        '/dim': {
+          target: 'http://localhost:5000', // Ou o endereço do seu backend
+          changeOrigin: true,
+          secure: false
+        },
+        '/acesso': {
+          target: 'http://localhost:5000', // Ou o endereço do seu backend
           changeOrigin: true,
           secure: false
         }

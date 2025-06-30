@@ -6,7 +6,7 @@
       </div>
 
       <div class="text-h2" style="opacity:.4">
-        Oops. Nothing here...
+        Oops. Nada por aqui...
       </div>
 
       <q-btn
@@ -15,14 +15,14 @@
         text-color="blue"
         unelevated
         to="/"
-        label="Go Home"
+        label="Voltar para a Home"
         no-caps
       />
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 defineOptions({
   name: 'ErrorNotFound'
 });
