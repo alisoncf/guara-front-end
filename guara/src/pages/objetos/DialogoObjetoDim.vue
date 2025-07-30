@@ -50,6 +50,7 @@ watchEffect(() => {
 });
 function carregar() {
   if (objeto.value.id != '') {
+    console.log('passou aqui');
     return;
   }
   if (useObjetoStore.getObjetoDim.id) {
@@ -92,7 +93,7 @@ function novo() {
   objeto.value.id = '';
 }
 onBeforeMount(() => {
-  //fazer algo
+  console.log('montando');
 });
 </script>
 
@@ -113,7 +114,7 @@ onBeforeMount(() => {
 
       <q-card-section>
         <div class="q-gutter-x-md">
-          <label>Tipo de Objeto</label>
+          <label>Dimensão/Tipo</label>
           <q-select
             v-model="tipoSelecionado"
             outlined
@@ -135,7 +136,8 @@ onBeforeMount(() => {
           label="Descrição"
           autogrow
           outlined
-          title="Uma descrição pormenorizada do evento com local, marcos históricos, fatos e figuras importantes etc"
+          title="Uma descrição pormenorizada do evento com local,
+          marcos históricos, fatos e figuras importantes etc"
         />
         <q-input
           v-model="objeto.resumo"

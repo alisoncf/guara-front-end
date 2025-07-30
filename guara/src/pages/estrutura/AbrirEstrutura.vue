@@ -9,6 +9,7 @@ import { listarClasses } from 'src/services/api';
 import { useAuthStore } from 'src/stores/auth-store';
 import { textoAposUltimoChar } from '../funcoes';
 import { ClasseComum, ClassQueryResult, Coluna, TreeNode } from '../tipos';
+import apiConfig from 'src/apiConfig';
 
 const dialogOpen = ref<boolean>(false);
 const editMode = ref<boolean>(false);
@@ -157,7 +158,7 @@ async function listarClasseMae() {
     }
 
     const response = await axios.post<ClassQueryResult>(
-      'http://localhost:5000/classapi/listar_classes',
+      apiConfig.endpoints.class.list,
       {
         keyword: keyword.value,
         orderby: 'subclassof',

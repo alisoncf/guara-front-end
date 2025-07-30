@@ -41,7 +41,7 @@ const labelTipo = computed(() => {
     case 'dimensionais':
       return 'Palavra-chave (Objetos dimensionais)';
     default:
-      return 'Palavra-chave';
+      return 'Palavra-chave'; 
   }
 });
 function buscar() {
@@ -76,14 +76,16 @@ function irParaNovoDim() {
 }
 
 function irParaEditar(obj: ObjetoFisico) {
+  console.log(obj.titulo);
   if (aba.value == 'fisicos') {
     useObjetoStore.setObjeto(obj);
     mostrarPopUpObjetoFis.value = true;
   } else {
-    console.log('objeto', obj);
+    console.log('objeto ->', obj);
     useObjetoStore.setObjetoDim(obj);
-
+    useObjetoStore.setObjeto(obj);
     mostrarPopUpObjetoDim.value = true;
+    console.log('store', useObjetoStore.get);
   }
 }
 

@@ -37,7 +37,7 @@ export async function listarRepositorios(nome: string | null) {
 
   try {
     const response = await axios.get<RepoQueryResult>(
-      'http://localhost:5000/repositorios/listar_repositorios?name=' + nome
+      apiConfig.endpoints.listar_repo + '?name=' + nome
     );
 
     listaRepo.value = [];
@@ -47,7 +47,7 @@ export async function listarRepositorios(nome: string | null) {
         descricao: item.descricao ? item.descricao.value : '',
         contato: item.contato ? item.contato.value : '',
         nome: item.nome ? item.nome.value : '',
-
+        imagem: '',
         responsavel: item.responsavel ? item.responsavel.value : '',
       };
       listaRepo.value.push(classItem);
@@ -76,7 +76,7 @@ export async function listarClasses(keyword: string) {
 
   try {
     const response = await axios.post<ClassQueryResult>(
-      'http://localhost:5000/classapi/listar_classes',
+      apiConfig.endpoints.class.list,
       {
         keyword: keyword,
         repository: uri,
@@ -125,7 +125,7 @@ export async function listarClasses2(keyword: string) {
     }
 
     const response = await axios.post<ClassQueryResult>(
-      'http://localhost:5000/classapi/listar_classes',
+      apiConfig.endpoints.class.list,
       {
         keyword: keyword,
         repository: uri,
@@ -163,20 +163,17 @@ export async function listarClassesFetch(keyword: string) {
   console.log('Iniciando requisição com Fetch...');
 
   try {
-    const response = await fetch(
-      'http://localhost:5000/classapi/listar_classes',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          keyword: keyword,
-          repository: repoStore.get.uri,
-          orderby: 'subclassof',
-        }),
-      }
-    );
+    const response = await fetch(apiConfig.endpoints.class.list, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        keyword: keyword,
+        repository: repoStore.get.uri,
+        orderby: 'subclassof',
+      }),
+    });
 
     if (!response.ok) {
       const errorMessage = await response.text();

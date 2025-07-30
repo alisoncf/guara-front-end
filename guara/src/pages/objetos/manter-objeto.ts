@@ -138,12 +138,7 @@ export interface Evento {
   obj: ObjetoDimensional;
   inicio: string;
   fim: string;
-  periodicidade: string;
-
-}
-export const periodicidade{
-  mensal: 'Mensal',
-  
+  periodicidade: 'Mensal' | 'Anual' | 'Semanal';
 }
 export interface Arquivo {
   nome: string;

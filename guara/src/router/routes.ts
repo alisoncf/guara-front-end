@@ -13,11 +13,15 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'repositorios-amigos',
-        component: () => import('pages/AbrirRepositorios.vue'),
+        component: () => import('pages/repositorios/AbrirRepositorios.vue'),
       },
       {
         path: 'organizacao-estrutura',
         component: () => import('pages/estrutura/AbrirEstrutura.vue'),
+      },
+      {
+        path: 'testar-aplicacao',
+        component: () => import('pages/estrutura/TestarAplicacao.vue'),
       },
       {
         path: 'criar-objeto',

@@ -17,7 +17,7 @@ export async function efetuarLogin(
   repositorio: string,
   nome_repositorio: string
 ): Promise<Auth> {
-  const url = apiConfig.baseURL + apiConfig.endpoints.login;
+  const url = apiConfig.endpoints.login;
   if (!email || !password) {
     Notify.create({
       type: 'negative',

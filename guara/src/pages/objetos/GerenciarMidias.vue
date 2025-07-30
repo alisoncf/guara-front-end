@@ -3,7 +3,7 @@ import { ref, onMounted, onBeforeMount } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
-import { mostrarPopUpMidias, ObjetoFisico } from './manter-objeto';
+import { ObjetoFisico } from './manter-objeto';
 import apiConfig from 'src/apiConfig';
 import { Dialog, Notify } from 'quasar';
 
@@ -22,7 +22,7 @@ const midiasEncontradas = ref([] as Midia[]);
 const useFileUpload = ref([true] as any);
 const thumbnails = ref([] as any);
 const router = useRouter();
-const mostrar_excluidos = ref(false);
+
 function adicionarMidia() {
   midias.value.push({ file: '', url: '', uri: '' });
   useFileUpload.value.push(true);
@@ -178,17 +178,16 @@ function buscarMidias() {
     })
     .then((response) => {
       const midiasCombinadas = ref([] as Midia[]);
-      const midiasLocais = response.data.arquivos_locais || [];
+
       midiasCombinadas.value = response.data.arquivos_combinados || [];
-      const midiasSparql =
-        response.data.arquivos_sparql?.results?.bindings || [];
 
       midiasCombinadas.value.forEach((midia) => {
-        midia.url = 'http://localhost/' + midia.uri; // Define .url como .uri
+        midia.url =
+          apiConfig.endpoints.midias.getFile + midia.uri + '/' + midia.uri; // Define .url como .uri
       });
 
       midiasEncontradas.value = midiasCombinadas.value;
-      console.log(midiasEncontradas.value);
+      console.log('path', midiasEncontradas.value);
     })
     .catch((error) => {
       Notify.create({

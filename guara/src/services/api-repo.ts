@@ -10,15 +10,15 @@ import { Notify } from 'quasar';
 const api = axios.create({
   baseURL: apiConfig.baseURL,
 });
-export const repositorioSelecionado = ref({} as Repositorio);
+export const repositorioSelecionado = ref({ nome: '' } as Repositorio);
 // Exemplo de chamada a um endpoint específico
 
 export async function listarRepositorios(
   name?: string
 ): Promise<Repositorio[]> {
-  const listaRepo = ref<Repositorio[]>([]);
-  const url = `${apiConfig.baseURL}${apiConfig.endpoints.listar_repo}`;
-  console.log('url', url);
+  const listaRepo = ref([] as Repositorio[]);
+  const url = apiConfig.endpoints.listar_repo;
+
   try {
     const response = await axios.get<RepoQueryResult>(url, {
       params: name ? { name } : {}, // Envia name como parâmetro, se informado
@@ -30,6 +30,7 @@ export async function listarRepositorios(
       contato: item.contato?.value || '',
       nome: item.nome?.value || '',
       responsavel: item.responsavel?.value || '',
+      imagem: item.imagem?.value,
     }));
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
@@ -50,9 +51,9 @@ export async function buscarRepositorio(nome: string): Promise<Repositorio> {
     responsavel: '',
     uri: '',
   } as Repositorio);
-  const url = `${apiConfig.baseURL}${
-    apiConfig.endpoints.listar_repo
-  }?name=${encodeURIComponent(nome)}`;
+  const url = `${apiConfig.endpoints.listar_repo}?name=${encodeURIComponent(
+    nome
+  )}`;
 
   try {
     const response = await fetch(url, {

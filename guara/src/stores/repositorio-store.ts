@@ -9,8 +9,8 @@ const defaultState: Repositorio = {
   descricao: '',
   nome: '',
   responsavel: '',
-  uri: ''
-
+  uri: '',
+  imagem: '',
 };
 
 export const useDadosRepositorio = defineStore('useDadosRepositorio', {

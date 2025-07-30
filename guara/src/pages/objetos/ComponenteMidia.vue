@@ -6,6 +6,7 @@ import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
 import { mostrarPopUpMidias, ObjetoFisico } from './manter-objeto';
 import apiConfig from 'src/apiConfig';
 import { Dialog, Notify } from 'quasar';
+import { textoAposUltimoChar } from '../funcoes';
 
 const objetoId = ref({} as string); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
@@ -14,6 +15,7 @@ interface Midia {
   file: string | null;
   url: string;
   uri: string;
+  nome: string;
 }
 
 const objetoSelecionado = ref({} as ObjetoFisico);
@@ -21,11 +23,9 @@ const midias = ref([] as Midia[]);
 const midiasEncontradas = ref([] as Midia[]);
 const useFileUpload = ref([true] as any);
 const thumbnails = ref([] as any);
-const router = useRouter();
-const mostrar_excluidos = ref(false);
 
 function adicionarMidia() {
-  midias.value.push({ file: '', url: '', uri: '' });
+  midias.value.push({ nome: '', file: '', url: '', uri: '' });
   useFileUpload.value.push(true);
   thumbnails.value.push();
 }
@@ -136,13 +136,15 @@ function submitMidias() {
   formData.append('repository', objetoSelecionado.value.repositorio);
   console.log('selecionado', objetoSelecionado.value.repositorio);
   // Adiciona cada mídia ao FormData
-  midias.value.forEach((midia: { file; url: string | Blob }, index) => {
-    if (midia.file) {
-      formData.append('midias', midia.file); // Envia o arquivo diretamente
-    } else if (midia.url) {
-      formData.append('links', midia.url); // Envia a URL como string
+  midias.value.forEach(
+    (midia: { file: string | null; url: string | Blob }, index) => {
+      if (midia.file) {
+        formData.append('midias', midia.file); // Envia o arquivo diretamente
+      } else if (midia.url) {
+        formData.append('links', midia.url); // Envia a URL como string
+      }
     }
-  });
+  );
 
   axios
     .post(apiConfig.baseURL + apiConfig.endpoints.upload, formData, {
@@ -179,17 +181,18 @@ function buscarMidias() {
     })
     .then((response) => {
       const midiasCombinadas = ref([] as Midia[]);
-      const midiasLocais = response.data.arquivos_locais || [];
       midiasCombinadas.value = response.data.arquivos_combinados || [];
-      const midiasSparql =
-        response.data.arquivos_sparql?.results?.bindings || [];
-
       midiasCombinadas.value.forEach((midia) => {
-        midia.url = 'http://localhost/' + midia.uri; // Define .url como .uri
+        midia.url =
+          apiConfig.endpoints.midias.getFile +
+          '/' +
+          objetoId.value +
+          '/' +
+          textoAposUltimoChar(midia.uri, '/'); // Define .url como .uri
       });
 
       midiasEncontradas.value = midiasCombinadas.value;
-      console.log(midiasEncontradas.value);
+      console.log('midias', midiasEncontradas.value);
     })
     .catch((error) => {
       Notify.create({
@@ -207,7 +210,13 @@ watchEffect(() => {
 onMounted(() => {
   //
 });
-
+function trataNomeArquivo(nome: string) {
+  if (nome.length < 50) {
+    return nome;
+  } else {
+    return nome.substring(1, 50) + '... .' + textoAposUltimoChar(nome, '.');
+  }
+}
 onBeforeMount(() => {
   //
 });
@@ -271,7 +280,8 @@ onBeforeMount(() => {
             >
               <template v-slot:body="props">
                 <q-tr :props="props">
-                  <q-td key="nome">{{ props.row.nome }}</q-td>
+                  <q-td key="nome">{{ trataNomeArquivo(props.row.nome) }}</q-td>
+
                   <q-td key="preview">
                     <img
                       v-if="isImage(props.row.url)"

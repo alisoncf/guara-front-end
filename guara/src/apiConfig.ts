@@ -9,10 +9,16 @@ const apiConfig = {
   baseURL: isProduction ? 'https://localhost:5000' : 'http://localhost:5000',
   endpoints: {
     classapi: '/classapi',
+
     upload: '/uploadapi/upload',
     remove_file: '/uploadapi/remove',
     sparqapi: '/sparqapi',
     objectapi: '/objectapi',
+    class: { list: baseURL + '/classapi/list' },
+    repositorio: {
+      create: baseURL + '/repo_handler/add',
+      update: baseURL + '/repo_handler/update',
+    },
     dimensional: {
       create: baseURL + '/dim/create',
       list: baseURL + '/dim/list',
@@ -35,10 +41,11 @@ const apiConfig = {
     midias: {
       list: baseURL + '/midias/list',
       upload: baseURL + '/uploadapi/upload',
+      getFile: baseURL + '/uploadapi/midias',
     },
 
-    listar_repo: '/repositorios/listar_repositorios',
-    login: '/acesso/login',
+    listar_repo: baseURL + '/repositorios/list',
+    login: baseURL + '/acesso/login',
   },
   dimension: {
     Pessoa: baseOnto + 'Pessoa',

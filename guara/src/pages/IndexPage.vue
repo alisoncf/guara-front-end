@@ -34,6 +34,7 @@ function selecionarRepositorio(repo: Repositorio) {
   router.push('/abrir-colecoes');
 }
 onBeforeMount(() => {
+  console.log('montando');
   listarRepo();
 });
 </script>
@@ -74,7 +75,7 @@ onBeforeMount(() => {
       </q-card>
 
       <div
-        v-if="!store.user"
+        v-if="!store.user || store.user == undefined || store.user == ''"
         class="row justify-left q-gutter-md"
         style="max-width: 1000px"
       >

@@ -31,6 +31,7 @@ export interface Repositorio {
   contato: string;
   descricao: string;
   responsavel: string;
+  imagem: string;
 }
 
 export interface Auth {
@@ -98,6 +99,10 @@ export interface RepoQuery {
     value: string;
   };
   responsavel?: {
+    type: string;
+    value: string;
+  };
+  imagem?: {
     type: string;
     value: string;
   };
