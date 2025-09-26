@@ -1,6 +1,5 @@
 <template>
   <q-layout view="hHh LpR fFf">
-    <!-- Header -->
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-btn
@@ -19,7 +18,23 @@
           </div>
         </q-toolbar-title>
 
-        <!-- User menu -->
+        <q-select
+          v-if="repositoryStore.myRepositories.length > 0"
+          v-model="repositoryStore.currentRepository"
+          :options="repositoryStore.myRepositories"
+          option-label="nome"
+          option-value="uri"
+          label="Repositório Ativo"
+          dense
+          borderless
+          dark
+          emit-value
+          map-options
+          style="min-width: 250px"
+          class="q-mr-md"
+          @update:model-value="handleRepositoryChange"
+        />
+
         <q-btn-dropdown flat color="white" icon="account_circle">
           <q-list>
             <q-item
@@ -46,7 +61,6 @@
       </q-toolbar>
     </q-header>
 
-    <!-- Sidebar -->
     <q-drawer
       v-model="leftDrawerOpen"
       show-if-above
@@ -78,6 +92,7 @@
           v-ripple
           :active="$route.path.startsWith('/admin/collections')"
           @click="$router.push('/admin/collections')"
+          :disable="!repositoryStore.currentRepository"
         >
           <q-item-section avatar>
             <q-icon name="collections" />
@@ -90,6 +105,7 @@
           v-ripple
           :active="$route.path.startsWith('/admin/objects')"
           @click="$router.push('/admin/objects')"
+          :disable="!repositoryStore.currentRepository"
         >
           <q-item-section avatar>
             <q-icon name="inventory_2" />
@@ -124,7 +140,6 @@
       </q-list>
     </q-drawer>
 
-    <!-- Main content -->
     <q-page-container>
       <router-view />
     </q-page-container>
@@ -132,13 +147,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
+import { useRepositoryStore } from 'stores/repository-store'; // Importado
 import { Notify } from 'quasar';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const repositoryStore = useRepositoryStore(); // Instanciado
 
 const leftDrawerOpen = ref(false);
 
@@ -154,6 +171,34 @@ function handleLogout() {
     message: 'Logout realizado com sucesso!',
   });
 }
+
+// NOVO: Função para lidar com a mudança de repositório
+async function handleRepositoryChange(repoUri) {
+  if (repoUri) {
+    await repositoryStore.selectRepository(repoUri);
+    Notify.create({
+      type: 'info',
+      message: `Repositório '${repositoryStore.currentRepository?.nome}' selecionado.`,
+    });
+    // Força um recarregamento da página para garantir que todos os componentes
+    // peguem os dados do novo repositório.
+    // O ideal seria uma reatividade mais granular, mas para começar, isso garante consistência.
+    window.location.reload();
+  }
+}
+
+// NOVO: Lógica executada quando o layout é montado
+onMounted(async () => {
+  // Busca os repositórios do usuário
+  await repositoryStore.fetchMine();
+
+  // Se nenhum repositório estiver selecionado, seleciona o primeiro da lista
+  if (!repositoryStore.currentRepository && repositoryStore.myRepositories.length > 0) {
+    const firstRepo = repositoryStore.myRepositories[0];
+    await repositoryStore.selectRepository(firstRepo.uri);
+  }
+});
+
 </script>
 
 <style scoped>

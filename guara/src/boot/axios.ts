@@ -1,74 +1,66 @@
 // src/boot/axios.ts
 import { boot } from 'quasar/wrappers';
 import axios from 'axios';
-import { useAuthStore } from 'src/stores/auth-store';
 import { Notify } from 'quasar';
+import apiConfig from 'src/config/apiConfig'; // Importe a configuração central
 
-const API_BASE_URL = 'http://localhost:5000';
-console.log('API_BASE_URL:', API_BASE_URL);
-const api = axios.create({ baseURL: API_BASE_URL });
+// Crie a instância do axios usando a baseURL da configuração
+const api = axios.create({ baseURL: apiConfig.baseURL });
 
-// Interceptor de requisição - configurado imediatamente
-api.interceptors.request.use((config) => {
-  // Log para depuração
-  console.log('=== DEBUG: Interceptor de Requisição ===');
-  console.log('URL da requisição:', config.url);
-  console.log('Método:', config.method);
+export default boot(({ app }) => {
+  // --- Interceptor de Requisição ---
+  api.interceptors.request.use((config) => {
+    // Tenta obter o token do Local Storage (mais comum para persistência)
+    const token = localStorage.getItem('token');
 
-  // Tentar obter o token do sessionStorage diretamente
-  const token = sessionStorage.getItem('guara_token');
-  console.log('Token do sessionStorage:', token);
-
-  // Verificar se é um token JWT válido (não um token do Quasar)
-  if (token && !token.startsWith('__q_strn|')) {
-    config.headers.Authorization = `Bearer ${token}`;
-    console.log(
-      'Header Authorization adicionado:',
-      config.headers.Authorization
-    );
-  } else {
-    console.log('Token inválido ou não encontrado:', token);
-  }
-
-  // Adicionar Content-Type para requisições POST/PUT
-  if (config.method === 'post' || config.method === 'put') {
-    config.headers['Content-Type'] = 'application/json';
-  }
-
-  console.log('Headers finais:', config.headers);
-  console.log('=====================================');
-
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response, // Sucesso, apenas retorne a resposta
-  (error) => {
-    // Se for um erro de rede, notifique o usuário
-    if (error.response) {
-      // O servidor respondeu com um status de erro (4xx, 5xx)
-      const message =
-        error.response.data.message || 'Ocorreu um erro na requisição.';
-      Notify.create({ type: 'negative', message });
-    } else if (error.request) {
-      // A requisição foi feita mas não houve resposta (ex: backend offline)
-      Notify.create({
-        type: 'negative',
-        message:
-          'Não foi possível conectar ao servidor. Verifique sua conexão.',
-      });
-    } else {
-      // Erro ao configurar a requisição
-      Notify.create({
-        type: 'negative',
-        message: 'Erro inesperado ao criar a requisição.',
-      });
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return Promise.reject(error);
-  }
-);
 
-export default boot(({ app, store }) => {
+    // O Content-Type padrão para POST/PUT/PATCH é application/json.
+    // O Axios já faz isso por padrão quando o `data` é um objeto.
+    // No entanto, se o `data` for um FormData (para uploads), o Axios
+    // define automaticamente o Content-Type para 'multipart/form-data'
+    // com o boundary correto. Portanto, não precisamos definir o header aqui.
+
+    return config;
+  });
+
+  // --- Interceptor de Resposta (para tratamento de erros) ---
+  api.interceptors.response.use(
+    (response) => response, // Se a resposta for bem-sucedida, apenas a retorne
+    (error) => {
+      if (error.response) {
+        // O servidor respondeu com um status de erro (4xx, 5xx)
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Ocorreu um erro no servidor.';
+
+        if (status === 401) {
+          // Se o erro for 401 (Não Autorizado), pode ser um token inválido ou expirado.
+          // Aqui você pode chamar a ação de logout da sua store para limpar os dados do usuário.
+          // Ex: useAuthStore().logout();
+          Notify.create({ type: 'negative', message: 'Sua sessão expirou. Por favor, faça login novamente.' });
+        } else {
+          Notify.create({ type: 'negative', message });
+        }
+      } else if (error.request) {
+        // A requisição foi feita mas não houve resposta (backend offline)
+        Notify.create({
+          type: 'negative',
+          message: 'Não foi possível conectar ao servidor. Verifique a API e sua conexão.',
+        });
+      } else {
+        // Erro ao configurar a requisição
+        Notify.create({
+          type: 'negative',
+          message: 'Erro inesperado ao criar a requisição.',
+        });
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  // Disponibiliza a instância do axios globalmente no app Vue
   app.config.globalProperties.$api = api;
 });
 

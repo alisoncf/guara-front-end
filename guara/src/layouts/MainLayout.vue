@@ -1,6 +1,5 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <!-- CABEÇALHO (Header) -->
     <q-header elevated class="bg-grey-10 text-white">
       <div class="main-container">
         <q-toolbar class="q-px-none q-py-sm">
@@ -11,11 +10,10 @@
               style="text-decoration: none"
             >
               Guará
-              <span class="text-blue-4">Digital</span>
+              <span class="text-blue-4">.</span>
             </router-link>
           </q-toolbar-title>
 
-          <!-- Navegação Desktop -->
           <div class="gt-sm row items-center no-wrap">
             <q-btn
               v-for="link in navLinks"
@@ -26,13 +24,12 @@
               stretch
               class="q-ml-sm"
             />
-            <!-- Botão dinâmico de login/logout com menu -->
             <template v-if="authStore.isAuthenticated">
               <q-btn-dropdown
                 color="blue-5"
                 unelevated
                 class="q-ml-lg"
-                :label="authStore.user?.name || 'Usuário'"
+                :label="authStore.user?.username || 'Usuário'"
                 dropdown-icon="arrow_drop_down"
               >
                 <q-list>
@@ -57,7 +54,6 @@
             </template>
           </div>
 
-          <!-- Botão de Menu Mobile -->
           <q-btn
             flat
             dense
@@ -71,7 +67,6 @@
       </div>
     </q-header>
 
-    <!-- MENU LATERAL (Drawer) para Mobile -->
     <q-drawer
       v-model="rightDrawerOpen"
       side="right"
@@ -96,13 +91,12 @@
         <q-separator dark class="q-my-md" />
         <q-item>
           <q-item-section>
-            <!-- Botão dinâmico de login/logout no drawer -->
             <template v-if="authStore.isAuthenticated">
               <q-btn-dropdown
                 color="blue-5"
                 unelevated
                 class="full-width"
-                :label="authStore.user?.name || 'Usuário'"
+                :label="authStore.user?.username || 'Usuário'"
                 dropdown-icon="arrow_drop_down"
               >
                 <q-list>
@@ -130,12 +124,10 @@
       </q-list>
     </q-drawer>
 
-    <!-- CONTAINER DA PÁGINA -->
     <q-page-container class="bg-grey-1">
       <router-view />
     </q-page-container>
 
-    <!-- RODAPÉ (Footer) -->
     <div class="bg-grey-9 text-grey-4">
       <div class="main-container">
         <div class="q-py-lg">
@@ -160,8 +152,8 @@
                 >
                   <q-item-section>
                     <q-item-label class="text-grey-4 hover-link">{{
-                      link.name
-                    }}</q-item-label>
+                        link.name
+                      }}</q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -179,10 +171,8 @@
       </div>
     </div>
 
-    <!-- O componente do modal continua igual -->
     <login-modal v-model="showLoginModal" />
 
-    <!-- Chatbot público -->
     <PublicChatbot />
   </q-layout>
 </template>

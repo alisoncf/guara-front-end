@@ -58,20 +58,32 @@ const routes = [
         props: true,
       },
 
-      // Rotas de Objetos
+      // --- ROTAS DE OBJETOS ATUALIZADAS ---
       {
         path: 'objects',
         component: () => import('pages/admin/ObjectsListPage.vue'),
       },
+      // Físicos
       {
-        path: 'objects/new',
-        component: () => import('pages/admin/CreateObjectPage.vue'),
+        path: 'objects/physical/new',
+        component: () => import('pages/admin/CreatePhysicalObjectPage.vue'),
       },
       {
-        path: 'objects/edit/:id',
-        component: () => import('pages/admin/EditObjectPage.vue'),
+        path: 'objects/physical/edit/:id',
+        component: () => import('pages/admin/EditPhysicalObjectPage.vue'),
         props: true,
       },
+      // Dimensionais (JÁ INCLUINDO AS NOVAS ROTAS)
+      {
+        path: 'objects/dimensional/new',
+        component: () => import('pages/admin/CreateDimensionalObjectPage.vue'),
+      },
+      {
+        path: 'objects/dimensional/edit/:id',
+        component: () => import('pages/admin/EditDimensionalObjectPage.vue'),
+        props: true,
+      },
+      // Comuns
       {
         path: 'objects/view/:id',
         component: () => import('pages/admin/ViewObjectPage.vue'),

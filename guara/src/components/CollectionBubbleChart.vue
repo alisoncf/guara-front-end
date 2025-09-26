@@ -4,108 +4,108 @@
       <h2>Estatísticas das Coleções</h2>
       <p>Visualize a distribuição de objetos por coleção</p>
     </div>
-    <Bubble v-if="chartData" :data="chartData" :options="chartOptions" />
+    <div v-if="loading" class="text-center q-pa-lg">
+      <q-spinner-dots color="primary" size="40px" />
+      <p class="q-mt-md">Carregando dados para o gráfico...</p>
+    </div>
+    <Bubble v-else-if="chartData && chartData.datasets.length > 0" :data="chartData" :options="chartOptions" style="height: 400px" />
+    <div v-else class="text-center q-pa-lg text-grey">
+      <q-icon name="bubble_chart" size="48px" />
+      <p class="q-mt-md">Não há dados suficientes para exibir o gráfico.</p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { Bubble } from 'vue-chartjs';
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  PointElement,
-  LinearScale,
-} from 'chart.js';
-import { buscarDadosColecoes } from 'src/services/api-colecoes';
+import { Chart as ChartJS, Title, Tooltip, Legend, PointElement, LinearScale } from 'chart.js';
+import { useClassStore } from 'stores/class-store';
+import { useDimensionalObjectStore } from 'stores/dimensional-object-store';
+import { storeToRefs } from 'pinia';
 
 // Registra os componentes necessários do Chart.js
 ChartJS.register(Title, Tooltip, Legend, PointElement, LinearScale);
 
-interface ColecaoData {
-  name: string;
-  value: number;
-  category: string;
-}
+// Usando as stores
+const classStore = useClassStore();
+const objectStore = useDimensionalObjectStore();
 
-const chartData = ref<any>(null);
+// Pegando os dados e o estado de loading de forma reativa
+const { classes: collections, loading: loadingCollections } = storeToRefs(classStore);
+const { objects, loading: loadingObjects } = storeToRefs(objectStore);
+
+const loading = computed(() => loadingCollections.value || loadingObjects.value);
 
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
     legend: {
-      display: true,
-      position: 'top' as const,
-    },
-    title: {
       display: false,
     },
     tooltip: {
       callbacks: {
         label: function (context: any) {
           const data = context.raw;
-          return [
-            `Coleção: ${data.name}`,
-            `Objetos: ${data.value}`,
-            `Categoria: ${data.category}`,
-          ];
+          return `Coleção: ${data.name} (${data.value} objetos)`;
         },
       },
     },
   },
   scales: {
-    x: {
-      title: {
-        display: true,
-        text: 'Quantidade de Objetos',
-      },
-    },
     y: {
-      title: {
-        display: true,
-        text: 'Quantidade de Objetos',
-      },
+      beginAtZero: true,
+      title: { text: 'Contagem de Objetos', display: true }
+    },
+    x: {
+      beginAtZero: true,
+      title: { text: 'Contagem de Objetos', display: true }
     },
   },
 };
 
-async function carregarDados() {
-  try {
-    const dados = await buscarDadosColecoes();
-
-    // Agrupa as coleções por categoria
-    const categorias = [...new Set(dados.map((d) => d.category))];
-    const datasets = categorias.map((categoria) => {
-      const colecoesCategoria = dados.filter((d) => d.category === categoria);
-      return {
-        label: categoria,
-        data: colecoesCategoria.map((d) => ({
-          x: d.value,
-          y: d.value,
-          r: Math.sqrt(d.value) * 2, // Tamanho da bolha baseado na raiz quadrada do valor
-          name: d.name,
-          value: d.value,
-          category: d.category,
-        })),
-        backgroundColor: `hsla(${Math.random() * 360}, 70%, 50%, 0.6)`,
-        borderColor: `hsla(${Math.random() * 360}, 70%, 50%, 1)`,
-        borderWidth: 1,
-      };
-    });
-
-    chartData.value = {
-      datasets,
-    };
-  } catch (error) {
-    console.error('Erro ao carregar dados:', error);
+// chartData agora é uma computed property que reage às mudanças nas stores
+const chartData = computed(() => {
+  if (collections.value.length === 0) {
+    return null;
   }
-}
 
+  // Conta quantos objetos existem para cada coleção
+  const objectCounts = collections.value.map(collection => {
+    const count = objects.value.filter(obj => obj.colecao === collection.uri).length;
+    return {
+      name: collection.label,
+      value: count,
+    };
+  }).filter(c => c.value > 0); // Mostra apenas coleções com objetos
+
+  return {
+    datasets: [
+      {
+        label: 'Coleções',
+        // Gera os dados para cada bolha
+        data: objectCounts.map(col => ({
+          x: col.value,
+          y: col.value,
+          r: Math.sqrt(col.value) * 5 + 2, // Fórmula para o raio da bolha
+          name: col.name,
+          value: col.value,
+        })),
+        backgroundColor: 'rgba(37, 145, 207, 0.7)',
+      },
+    ],
+  };
+});
+
+// Busca os dados quando o componente é montado
 onMounted(() => {
-  carregarDados();
+  if (collections.value.length === 0) {
+    classStore.fetchAll();
+  }
+  if (objects.value.length === 0) {
+    objectStore.fetchAll();
+  }
 });
 </script>
 
@@ -123,16 +123,5 @@ onMounted(() => {
 .chart-header {
   text-align: center;
   margin-bottom: 20px;
-}
-
-.chart-header h2 {
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.chart-header p {
-  font-size: 16px;
-  color: #666;
 }
 </style>

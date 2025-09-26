@@ -1,92 +1,54 @@
 <template>
   <q-page class="q-pa-md">
-    <div class="row q-col-gutter-lg">
-      <!-- Informações do perfil -->
+    <div v-if="user" class="row q-col-gutter-lg">
       <div class="col-12 col-lg-8">
         <q-card>
           <q-card-section>
             <div class="text-h5 q-mb-md">Meu Perfil</div>
 
             <div class="row q-col-gutter-md">
-              <!-- Avatar e informações básicas -->
               <div class="col-12 col-md-4 text-center">
                 <q-avatar size="120px" class="q-mb-md">
                   <q-img
-                    :src="
-                      user?.avatar ||
-                      'https://placehold.co/200x200/cccccc/ffffff?text=Avatar'
-                    "
-                    :alt="user?.name"
+                    :src="user.avatar || 'https://placehold.co/200x200/cccccc/ffffff?text=Avatar'"
+                    :alt="user.username"
                   />
                 </q-avatar>
-                <div class="text-h6">{{ user?.name }}</div>
-                <div class="text-subtitle2 text-grey">{{ user?.email }}</div>
+                <div class="text-h6">{{ user.username }}</div>
+                <div class="text-subtitle2 text-grey">{{ user.email }}</div>
                 <q-chip
-                  :label="user?.permission"
-                  :color="getPermissionColor(user?.permission)"
+                  :label="user.permission"
+                  :color="getPermissionColor(user.permission)"
                   text-color="white"
                   class="q-mt-sm"
                 />
               </div>
 
-              <!-- Detalhes do perfil -->
               <div class="col-12 col-md-8">
                 <q-form @submit="updateProfile" class="q-gutter-md">
-                  <div class="row q-col-gutter-md">
-                    <div class="col-12 col-md-6">
-                      <q-input
-                        v-model="profileForm.name"
-                        label="Nome Completo"
-                        outlined
-                        :rules="[(val) => !!val || 'Nome é obrigatório']"
-                      />
-                    </div>
-                    <div class="col-12 col-md-6">
-                      <q-input
-                        v-model="profileForm.email"
-                        label="Email"
-                        type="email"
-                        outlined
-                        :rules="[(val) => !!val || 'Email é obrigatório']"
-                      />
-                    </div>
-                  </div>
-
-                  <div class="row q-col-gutter-md">
-                    <div class="col-12 col-md-6">
-                      <q-input
-                        v-model="profileForm.phone"
-                        label="Telefone"
-                        outlined
-                        mask="(##) #####-####"
-                      />
-                    </div>
-                    <div class="col-12 col-md-6">
-                      <q-input
-                        v-model="profileForm.institution"
-                        label="Instituição"
-                        outlined
-                      />
-                    </div>
-                  </div>
-
+                  <q-input
+                    v-model="profileForm.name"
+                    label="Nome Completo"
+                    outlined
+                    :rules="[(val) => !!val || 'Nome é obrigatório']"
+                  />
+                  <q-input
+                    v-model="profileForm.email"
+                    label="Email"
+                    type="email"
+                    outlined
+                    :rules="[(val) => !!val || 'Email é obrigatório']"
+                  />
                   <q-input
                     v-model="profileForm.bio"
                     label="Biografia"
                     type="textarea"
                     rows="3"
                     outlined
-                    hint="Breve descrição sobre você"
+                    hint="Breve descrição sobre você (funcionalidade futura)"
                   />
-
-                  <div class="row q-gutter-md">
-                    <q-btn
-                      label="Salvar Alterações"
-                      type="submit"
-                      color="primary"
-                      :loading="saving"
-                    />
-                    <q-btn label="Cancelar" color="grey" @click="resetForm" />
+                  <div>
+                    <q-btn label="Salvar Alterações" type="submit" color="primary" :loading="saving" />
                   </div>
                 </q-form>
               </div>
@@ -94,162 +56,69 @@
           </q-card-section>
         </q-card>
 
-        <!-- Alterar senha -->
         <q-card class="q-mt-md">
           <q-card-section>
             <div class="text-h6 q-mb-md">Alterar Senha</div>
-
             <q-form @submit="changePassword" class="q-gutter-md">
               <div class="row q-col-gutter-md">
                 <div class="col-12 col-md-4">
-                  <q-input
-                    v-model="passwordForm.currentPassword"
-                    label="Senha Atual"
-                    type="password"
-                    outlined
-                    :rules="[(val) => !!val || 'Senha atual é obrigatória']"
-                  />
+                  <q-input v-model="passwordForm.currentPassword" label="Senha Atual" type="password" outlined :rules="[(val) => !!val || 'Senha atual é obrigatória']"/>
                 </div>
                 <div class="col-12 col-md-4">
-                  <q-input
-                    v-model="passwordForm.newPassword"
-                    label="Nova Senha"
-                    type="password"
-                    outlined
-                    :rules="[(val) => !!val || 'Nova senha é obrigatória']"
-                  />
+                  <q-input v-model="passwordForm.newPassword" label="Nova Senha" type="password" outlined :rules="[(val) => !!val || 'Nova senha é obrigatória']"/>
                 </div>
                 <div class="col-12 col-md-4">
-                  <q-input
-                    v-model="passwordForm.confirmPassword"
-                    label="Confirmar Nova Senha"
-                    type="password"
-                    outlined
-                    :rules="[
-                      (val) => !!val || 'Confirmação é obrigatória',
-                      (val) =>
-                        val === passwordForm.newPassword ||
-                        'Senhas não coincidem',
-                    ]"
-                  />
+                  <q-input v-model="passwordForm.confirmPassword" label="Confirmar Nova Senha" type="password" outlined :rules="[(val) => !!val || 'Confirmação é obrigatória', (val) => val === passwordForm.newPassword || 'Senhas não coincidem']"/>
                 </div>
               </div>
-
-              <q-btn
-                label="Alterar Senha"
-                type="submit"
-                color="secondary"
-                :loading="changingPassword"
-              />
+              <q-btn label="Alterar Senha" type="submit" color="secondary" :loading="changingPassword" />
             </q-form>
           </q-card-section>
         </q-card>
       </div>
 
-      <!-- Sidebar com estatísticas e ações -->
       <div class="col-12 col-lg-4">
-        <!-- Estatísticas do usuário -->
         <q-card class="q-mb-md">
           <q-card-section>
             <div class="text-h6 q-mb-md">Minhas Estatísticas</div>
-
             <div class="row q-col-gutter-sm">
-              <div class="col-6">
-                <div class="text-center q-pa-sm">
-                  <div class="text-h4 text-primary">
-                    {{ stats.objectsCreated }}
-                  </div>
-                  <div class="text-caption">Objetos Criados</div>
-                </div>
+              <div class="col-6 text-center q-pa-sm">
+                <div class="text-h4 text-primary">{{ stats.objectsCreated }}</div>
+                <div class="text-caption">Objetos Criados (mock)</div>
               </div>
-              <div class="col-6">
-                <div class="text-center q-pa-sm">
-                  <div class="text-h4 text-secondary">
-                    {{ stats.collectionsManaged }}
-                  </div>
-                  <div class="text-caption">Coleções Gerenciadas</div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="text-center q-pa-sm">
-                  <div class="text-h4 text-accent">{{ stats.lastLogin }}</div>
-                  <div class="text-caption">Último Login</div>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="text-center q-pa-sm">
-                  <div class="text-h4 text-positive">
-                    {{ stats.daysActive }}
-                  </div>
-                  <div class="text-caption">Dias Ativo</div>
-                </div>
+              <div class="col-6 text-center q-pa-sm">
+                <div class="text-h4 text-secondary">{{ stats.collectionsManaged }}</div>
+                <div class="text-caption">Repositórios Gerenciados</div>
               </div>
             </div>
           </q-card-section>
         </q-card>
 
-        <!-- Repositórios associados -->
         <q-card class="q-mb-md">
           <q-card-section>
             <div class="text-h6 q-mb-md">Meus Repositórios</div>
-
-            <div v-if="user?.repositorios && user.repositorios.length > 0">
-              <q-list>
-                <q-item
-                  v-for="repo in user.repositorios"
-                  :key="repo"
-                  clickable
-                  @click="viewRepository(repo)"
-                >
+            <div v-if="myRepositories.length > 0">
+              <q-list bordered separator>
+                <q-item v-for="repo in myRepositories" :key="repo.uri" clickable v-ripple @click="selectRepository(repo)">
                   <q-item-section avatar>
                     <q-icon name="folder" color="primary" />
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label>{{ repo }}</q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <q-icon name="chevron_right" />
+                    <q-item-label>{{ repo.nome }}</q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
             </div>
             <div v-else class="text-center text-grey q-pa-md">
-              Nenhum repositório associado
-            </div>
-          </q-card-section>
-        </q-card>
-
-        <!-- Ações rápidas -->
-        <q-card>
-          <q-card-section>
-            <div class="text-h6 q-mb-md">Ações Rápidas</div>
-
-            <div class="q-gutter-sm">
-              <q-btn
-                label="Voltar ao Dashboard"
-                icon="dashboard"
-                color="primary"
-                class="full-width"
-                @click="$router.push('/admin/dashboard')"
-              />
-              <q-btn
-                label="Ver Site Público"
-                icon="public"
-                color="secondary"
-                class="full-width"
-                @click="$router.push('/')"
-              />
-              <q-btn
-                label="Logout"
-                icon="logout"
-                color="negative"
-                class="full-width"
-                @click="handleLogout"
-              />
+              Nenhum repositório associado.
             </div>
           </q-card-section>
         </q-card>
       </div>
+    </div>
+    <div v-else class="text-center q-pa-xl">
+      <q-spinner-dots color="primary" size="40px" />
+      <p class="q-mt-md">Carregando dados do usuário...</p>
     </div>
   </q-page>
 </template>
@@ -258,137 +127,82 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
+import { useRepositoryStore } from 'stores/repository-store';
+import { storeToRefs } from 'pinia';
 import { Notify } from 'quasar';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const repositoryStore = useRepositoryStore();
 
-// Estado
+const { user } = storeToRefs(authStore);
+const { myRepositories } = storeToRefs(repositoryStore);
+
 const saving = ref(false);
 const changingPassword = ref(false);
 
-// Computed
-const user = computed(() => authStore.user);
+const profileForm = ref({ name: '', email: '', bio: '' });
+const passwordForm = ref({ currentPassword: '', newPassword: '', confirmPassword: '' });
 
-// Formulários
-const profileForm = ref({
-  name: '',
-  email: '',
-  phone: '',
-  institution: '',
-  bio: '',
-});
+// As estatísticas agora são uma computed property
+const stats = computed(() => ({
+  objectsCreated: 0, // Manter como mock, pois não temos essa info da API
+  collectionsManaged: myRepositories.value.length, // Dado real
+}));
 
-const passwordForm = ref({
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: '',
-});
-
-// Estatísticas mockadas
-const stats = ref({
-  objectsCreated: 0,
-  collectionsManaged: 0,
-  lastLogin: 'Hoje',
-  daysActive: 0,
-});
-
-// Métodos
 function getPermissionColor(permission) {
-  switch (permission) {
-    case 'admin':
-      return 'red';
-    case 'editor':
-      return 'blue';
-    case 'leitor':
-      return 'green';
-    default:
-      return 'grey';
-  }
+  const colors = { admin: 'red', editor: 'blue', leitor: 'green' };
+  return colors[permission] || 'grey';
 }
 
 function resetForm() {
-  profileForm.value = {
-    name: user.value?.name || '',
-    email: user.value?.email || '',
-    phone: '',
-    institution: '',
-    bio: '',
-  };
+  if (user.value) {
+    profileForm.value = {
+      name: user.value.username || '',
+      email: user.value.email || '',
+      bio: '', // Este campo não vem da API atualmente
+    };
+  }
 }
 
 async function updateProfile() {
   saving.value = true;
-  try {
-    // Aqui você implementaria a chamada para atualizar o perfil
-    // await userService.updateProfile(profileForm.value);
-
-    Notify.create({
-      type: 'positive',
-      message: 'Perfil atualizado com sucesso!',
-    });
-  } catch (error) {
-    Notify.create({
-      type: 'negative',
-      message: 'Erro ao atualizar perfil: ' + error.message,
-    });
-  } finally {
-    saving.value = false;
-  }
+  // TODO: Implementar a chamada para a API/Serviço de atualização de perfil quando estiver disponível.
+  Notify.create({
+    type: 'info',
+    message: 'Funcionalidade de atualização de perfil ainda não implementada no backend.',
+  });
+  // Exemplo: await userService.updateProfile(profileForm.value);
+  saving.value = false;
 }
 
 async function changePassword() {
   changingPassword.value = true;
-  try {
-    // Aqui você implementaria a chamada para alterar a senha
-    // await authService.changePassword(passwordForm.value);
-
-    Notify.create({
-      type: 'positive',
-      message: 'Senha alterada com sucesso!',
-    });
-
-    // Limpar formulário
-    passwordForm.value = {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    };
-  } catch (error) {
-    Notify.create({
-      type: 'negative',
-      message: 'Erro ao alterar senha: ' + error.message,
-    });
-  } finally {
-    changingPassword.value = false;
-  }
-}
-
-function viewRepository(repoName) {
-  // Implementar navegação para o repositório específico
-  console.log('Visualizar repositório:', repoName);
-  // router.push(`/admin/repository/${repoName}`);
-}
-
-function handleLogout() {
-  authStore.logout();
-  router.push('/');
+  // TODO: Implementar a chamada para a API/Serviço de alteração de senha quando estiver disponível.
   Notify.create({
     type: 'info',
-    message: 'Logout realizado com sucesso!',
+    message: 'Funcionalidade de alteração de senha ainda não implementada no backend.',
   });
+  // Exemplo: await authService.changePassword(passwordForm.value);
+  changingPassword.value = false;
 }
 
-// Lifecycle
+// Ao clicar em um repositório, o seleciona como ativo e volta ao dashboard
+function selectRepository(repo) {
+  repositoryStore.selectRepository(repo.uri);
+  Notify.create({
+    type: 'positive',
+    message: `Repositório '${repo.nome}' selecionado como ativo.`,
+  });
+  router.push('/admin/dashboard');
+}
+
 onMounted(() => {
   resetForm();
 
-  // Carregar estatísticas (mockadas por enquanto)
-  stats.value = {
-    objectsCreated: 15,
-    collectionsManaged: user.value?.repositorios?.length || 0,
-    lastLogin: 'Hoje',
-    daysActive: 30,
-  };
+  // Se os repositórios do usuário ainda não foram carregados, busca-os.
+  if (myRepositories.value.length === 0) {
+    repositoryStore.fetchMine();
+  }
 });
 </script>
