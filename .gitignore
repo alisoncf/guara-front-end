@@ -35,3 +35,10 @@ yarn-error.log*
 
 # local .env files
 .env.local*
+.editorconfig
+.env
+.eslintignore
+*.cjs
+.npmrc
+.prettierrc
+/.vscode
