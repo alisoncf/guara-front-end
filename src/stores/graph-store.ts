@@ -7,8 +7,8 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { Notify } from 'quasar';
 // Importa a função do novo serviço que acabamos de criar
-import { fetchGraphData as fetchGraphDataService } from 'src/services/graphService';
-import type { GraphNode, GraphLink } from 'src/types/apiTypes';
+import { fetchGraphData as fetchGraphDataService } from '../services/graphService';
+import type { GraphNode, GraphLink } from '../types/apiTypes';
 
 export const useGraphStore = defineStore('graph', () => {
   // --- STATE ---

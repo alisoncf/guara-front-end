@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 // Importa o novo componente
-import HomeGraph from 'components/public/HomeGraph.vue';
+import HomeGraph from '../../components/public/HomeGraph.vue';
 
 defineOptions({
   name: 'HomePage'

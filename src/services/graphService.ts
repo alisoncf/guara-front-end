@@ -3,14 +3,14 @@
  *
  * Serviço para interagir com o endpoint de grafo da API (/graph).
  */
-import { api } from 'boot/axios';
-import apiConfig from 'src/config/apiConfig';
+import { api } from '../boot/axios';
+import apiConfig from '../config/apiConfig';
 import type {
   GraphData,
   GraphNode,
   GraphLink,
   SparqlResult,
-} from 'src/types/apiTypes';
+} from '../types/apiTypes';
 import { Notify } from 'quasar';
 
 /**

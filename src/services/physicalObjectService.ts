@@ -3,12 +3,12 @@
  *
  * Serviço para interagir com os endpoints de Objetos Físicos (/fis).
  */
-import { api } from 'boot/axios';
-import apiConfig from 'src/config/apiConfig';
+import { api } from '../boot/axios';
+import apiConfig from '../config/apiConfig';
 import type {
   CreatePhysicalObjectPayload,
   UpdatePhysicalObjectPayload,
-} from 'src/types/apiTypes';
+} from '../types/apiTypes';
 
 /**
  * Cria um novo objeto físico.

@@ -5,8 +5,10 @@ import {
   createWebHashHistory,
   createWebHistory,
 } from 'vue-router';
-
 import routes from './routes';
+
+
+
 
 /*
  * If not building with SSR mode, you can
@@ -21,8 +23,8 @@ export default route(function (/* { store, ssrContext } */) {
   const createHistory = process.env.SERVER
     ? createMemoryHistory
     : process.env.VUE_ROUTER_MODE === 'history'
-    ? createWebHistory
-    : createWebHashHistory;
+      ? createWebHistory
+      : createWebHashHistory;
 
   const Router = createRouter({
     scrollBehavior: () => ({ left: 0, top: 0 }),
@@ -38,8 +40,8 @@ export default route(function (/* { store, ssrContext } */) {
   Router.beforeEach((to, from, next) => {
     // Verifica se a rota requer autenticação
     if (to.matched.some((record) => record.meta.requiresAuth)) {
-      // Verifica se o usuário está autenticado
-      const token = sessionStorage.getItem('guara_token');
+      // CORREÇÃO: Verifica se o usuário está autenticado usando localStorage
+      const token = localStorage.getItem('token'); // Alterado de sessionStorage para localStorage
       console.log(
         '[Router Guard] Rota protegida:',
         to.fullPath,

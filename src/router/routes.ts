@@ -1,104 +1,106 @@
-const routes = [
+import { RouteRecordRaw } from 'vue-router';
+
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
+    component: () => import('../layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/public/HomePage.vue') },
+      { path: '', component: () => import('../pages/public/HomePage.vue') },
       {
         path: 'acervo',
-        component: () => import('pages/public/AcervoPage.vue'),
+        component: () => import('../pages/public/AcervoPage.vue'),
       },
       {
         path: 'acervo/:collectionId',
-        component: () => import('pages/public/CollectionObjectsPage.vue'),
+        component: () => import('../pages/public/CollectionObjectsPage.vue'),
         props: true,
       },
       {
         path: 'acervo/objeto/:objectId',
-        component: () => import('pages/public/ObjectDetailsPage.vue'),
+        component: () => import('../pages/public/ObjectDetailsPage.vue'),
         props: true,
       },
       {
         path: 'contato',
-        component: () => import('pages/public/ContatoPage.vue'),
+        component: () => import('../pages/public/ContatoPage.vue'),
       },
-      { path: 'sobre', component: () => import('pages/public/SobrePage.vue') },
+      { path: 'sobre', component: () => import('../pages/public/SobrePage.vue') },
     ],
   },
 
   // Rotas Admin
   {
     path: '/admin',
-    component: () => import('layouts/AdminLayout.vue'),
+    component: () => import('../layouts/AdminLayout.vue'),
     meta: { requiresAuth: true },
     children: [
       { path: '', redirect: '/admin/dashboard' },
       {
         path: 'dashboard',
-        component: () => import('pages/admin/DashboardPage.vue'),
+        component: () => import('../pages/admin/DashboardPage.vue'),
       },
 
       // Rotas de Coleções
       {
         path: 'collections',
-        component: () => import('pages/admin/CollectionsListPage.vue'),
+        component: () => import('../pages/admin/CollectionsListPage.vue'),
       },
       {
         path: 'collections/new',
-        component: () => import('pages/admin/EditCollectionPage.vue'),
+        component: () => import('../pages/admin/EditCollectionPage.vue'),
       },
       {
         path: 'collections/edit/:id',
-        component: () => import('pages/admin/EditCollectionPage.vue'),
+        component: () => import('../pages/admin/EditCollectionPage.vue'),
         props: true,
       },
       {
         path: 'collections/view/:id',
-        component: () => import('pages/admin/ViewCollectionPage.vue'),
+        component: () => import('../pages/admin/ViewCollectionPage.vue'),
         props: true,
       },
 
       // --- ROTAS DE OBJETOS ATUALIZADAS ---
       {
         path: 'objects',
-        component: () => import('pages/admin/ObjectsListPage.vue'),
+        component: () => import('../pages/admin/ObjectsListPage.vue'),
       },
       // Físicos
       {
         path: 'objects/physical/new',
-        component: () => import('pages/admin/CreatePhysicalObjectPage.vue'),
+        component: () => import('../pages/admin/CreatePhysicalObjectPage.vue'),
       },
       {
         path: 'objects/physical/edit/:id',
-        component: () => import('pages/admin/EditPhysicalObjectPage.vue'),
+        component: () => import('../pages/admin/EditPhysicalObjectPage.vue'),
         props: true,
       },
       // Dimensionais (JÁ INCLUINDO AS NOVAS ROTAS)
       {
         path: 'objects/dimensional/new',
-        component: () => import('pages/admin/CreateDimensionalObjectPage.vue'),
+        component: () => import('../pages/admin/CreateDimensionalObjectPage.vue'),
       },
       {
         path: 'objects/dimensional/edit/:id',
-        component: () => import('pages/admin/EditDimensionalObjectPage.vue'),
+        component: () => import('../pages/admin/EditDimensionalObjectPage.vue'),
         props: true,
       },
       // Comuns
       {
         path: 'objects/view/:id',
-        component: () => import('pages/admin/ViewObjectPage.vue'),
+        component: () => import('../pages/admin/ViewObjectPage.vue'),
         props: true,
       },
       {
         path: 'objects/:id/relations',
-        component: () => import('pages/admin/ObjectRelationsPage.vue'),
+        component: () => import('../pages/admin/ObjectRelationsPage.vue'),
         props: true,
       },
 
       // Perfil do usuário
       {
         path: 'profile',
-        component: () => import('pages/admin/ProfilePage.vue'),
+        component: () => import('../pages/admin/ProfilePage.vue'),
       },
     ],
   },
@@ -106,7 +108,7 @@ const routes = [
   // Rota de fallback (Not Found).
   {
     path: '/:catchAll(.*)*',
-    component: () => import('pages/ErrorNotFound.vue'),
+    component: () => import('../pages/ErrorNotFound.vue'),
   },
 ];
 

@@ -42,3 +42,6 @@ yarn-error.log*
 .npmrc
 .prettierrc
 /.vscode
+.idea/vcs.xml
+/.idea
+/.idea

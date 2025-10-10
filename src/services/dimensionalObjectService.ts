@@ -3,15 +3,15 @@
  *
  * Serviço para interagir com os endpoints de Objetos Dimensionais (/dim).
  */
-import { api } from 'boot/axios';
-import apiConfig from 'src/config/apiConfig';
+import { api } from '../boot/axios';
+import apiConfig from '../config/apiConfig';
 import type {
   MappedObject,
   SparqlQueryResponse,
   SparqlResult,
   CreateDimensionalObjectPayload,
   UpdateDimensionalObjectPayload,
-} from 'src/types/apiTypes';
+} from '../types/apiTypes';
 
 /**
  * Mapeia um resultado SPARQL genérico para um objeto de frontend limpo.

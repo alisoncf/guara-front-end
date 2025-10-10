@@ -3,15 +3,15 @@
  *
  * Serviço para interagir com os endpoints de Classes da Ontologia (/classapi).
  */
-import { api } from 'boot/axios';
-import apiConfig from 'src/config/apiConfig';
+import { api } from '../boot/axios';
+import apiConfig from '../config/apiConfig';
 import type {
   SparqlQueryResponse,
   SparqlResult,
   OntologyClass,
   CreateClassPayload,
   UpdateClassPayload,
-} from 'src/types/apiTypes';
+} from '../types/apiTypes';
 
 /**
  * Mapeia um resultado SPARQL para uma interface de OntologyClass limpa.

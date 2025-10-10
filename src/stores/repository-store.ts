@@ -9,8 +9,8 @@ import { Notify } from 'quasar';
 import {
   fetchAllRepositories,
   fetchMyRepositories,
-} from 'src/services/repositoryService';
-import type { Repository } from 'src/types/apiTypes';
+} from '../services/repositoryService';
+import type { Repository } from '../types/apiTypes';
 import { useAuthStore } from './auth-store';
 
 export const useRepositoryStore = defineStore('repository', () => {
@@ -83,6 +83,22 @@ export const useRepositoryStore = defineStore('repository', () => {
   }
 
   /**
+   * Busca os repositórios apropriados para o usuário logado (todos se for admin,
+   * ou apenas os associados para outras roles).
+   */
+  async function fetchRepositoriesForCurrentUser() {
+    const authStore = useAuthStore();
+    if (!authStore.isAuthenticated) return;
+
+    // Usa o getter que criamos no passo 1
+    if (authStore.isAdmin) {
+      await fetchAll(); // Admin carrega todos os repositórios
+    } else {
+      await fetchMine(); // Outros usuários carregam apenas os seus
+    }
+  }
+
+  /**
    * Define um repositório como o atualmente ativo na aplicação.
    * @param repositoryUri - A URI do repositório a ser selecionado.
    */
@@ -132,5 +148,6 @@ export const useRepositoryStore = defineStore('repository', () => {
     fetchMine,
     selectRepository,
     hydrateCurrentRepository,
+    fetchRepositoriesForCurrentUser,
   };
 });

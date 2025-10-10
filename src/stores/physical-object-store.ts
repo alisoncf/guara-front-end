@@ -11,11 +11,11 @@ import {
   createPhysicalObject,
   updatePhysicalObject,
   deletePhysicalObject,
-} from 'src/services/physicalObjectService';
+} from '../services/physicalObjectService';
 import {
   CreatePhysicalObjectPayload,
   UpdatePhysicalObjectPayload,
-} from 'src/types/apiTypes';
+} from '../types/apiTypes';
 
 export const usePhysicalObjectStore = defineStore('physicalObject', () => {
   // --- STATE ---

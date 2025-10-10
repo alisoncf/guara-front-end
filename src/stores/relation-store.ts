@@ -11,8 +11,8 @@ import {
   fetchObjectRelations,
   addRelation as addRelationService,
   removeSpecificRelation,
-} from 'src/services/relationService';
-import type { Relation, AddRelationPayload, RemoveSpecificRelationPayload } from 'src/types/apiTypes';
+} from '../services/relationService';
+import type { Relation, AddRelationPayload, RemoveSpecificRelationPayload } from '../types/apiTypes';
 
 export const useRelationStore = defineStore('relation', () => {
   // --- STATE ---

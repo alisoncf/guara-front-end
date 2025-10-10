@@ -1,7 +1,7 @@
 // src/services/authService.ts
-import { api } from 'src/boot/axios';
-import apiConfig from 'src/config/apiConfig';
-import type { LoginResponse } from 'src/types/apiTypes';
+import { api } from '../boot/axios';
+import apiConfig from '../config/apiConfig';
+import type { LoginResponse } from '../types/apiTypes';
 
 // Define a estrutura esperada para os dados de registro de um novo usuário
 interface RegisterUserPayload {

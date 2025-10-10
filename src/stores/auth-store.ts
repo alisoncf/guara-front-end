@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { api } from 'src/boot/axios';
+import { api } from '../boot/axios';
 import { Notify } from 'quasar';
-import { login as loginService } from 'src/services/authService';
-import type { AuthenticatedUser, LoginResponse } from 'src/types/apiTypes';
+import { login as loginService } from '../services/authService';
+import type { AuthenticatedUser, LoginResponse } from '../types/apiTypes';
 
 // --- NOVA FUNÇÃO HELPER ---
 // Função para parsear o JSON de forma segura, evitando que a app quebre.
@@ -27,13 +27,13 @@ function getStoredUser(): AuthenticatedUser | null {
 export const useAuthStore = defineStore('auth', () => {
   // --- STATE ---
   const token = ref<string | null>(localStorage.getItem('token'));
-  // --- CORREÇÃO AQUI: Usa a função segura ---
   const user = ref<AuthenticatedUser | null>(getStoredUser());
 
   // --- GETTERS ---
   const isAuthenticated = computed(() => !!token.value && !!user.value);
   const userName = computed(() => user.value?.username || 'Usuário');
   const userPermission = computed(() => user.value?.permission || null);
+  const isAdmin = computed(() => user.value?.permission === 'admin');
 
   // --- ACTIONS ---
 
@@ -63,10 +63,11 @@ export const useAuthStore = defineStore('auth', () => {
         type: 'positive',
         message: 'Login realizado com sucesso!',
       });
-      return true;
+      return true; // <-- 1. RETORNE 'true' EM CASO DE SUCESSO
     } catch (error) {
       console.error('Falha na ação de login:', error);
-      return false;
+      // A notificação de erro já é tratada pelo interceptor do Axios
+      return false; // <-- 2. RETORNE 'false' EM CASO DE FALHA
     }
   }
 
@@ -99,6 +100,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     userName,
     userPermission,
+    isAdmin,
     login,
     logout,
     hydrate,

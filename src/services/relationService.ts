@@ -3,8 +3,8 @@
  *
  * Serviço para gerenciar as relações (triplas RDF) dos objetos.
  */
-import { api } from 'boot/axios';
-import apiConfig from 'src/config/apiConfig';
+import { api } from '../boot/axios';
+import apiConfig from '../config/apiConfig';
 import type {
   Relation,
   SparqlQueryResponse,
@@ -12,7 +12,7 @@ import type {
   AddRelationPayload,
   RemoveSpecificRelationPayload,
   UpdateObjectPropertiesPayload,
-} from 'src/types/apiTypes';
+} from '../types/apiTypes';
 import { Notify } from 'quasar';
 
 /**

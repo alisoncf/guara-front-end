@@ -3,15 +3,15 @@
  *
  * Serviço para interagir com os endpoints de Repositórios da API (/repositorios).
  */
-import { api } from 'boot/axios';
-import apiConfig from 'src/config/apiConfig';
+import { api } from '../boot/axios';
+import apiConfig from '../config/apiConfig';
 import type {
   Repository,
   SparqlQueryResponse,
   SparqlResult,
   AddRepositoryPayload,
   CreateDatasetPayload,
-} from 'src/types/apiTypes';
+} from '../types/apiTypes';
 import { Notify } from 'quasar';
 
 /**

@@ -19,9 +19,9 @@
         </q-toolbar-title>
 
         <q-select
-          v-if="repositoryStore.myRepositories.length > 0"
-          v-model="repositoryStore.currentRepository"
-          :options="repositoryStore.myRepositories"
+          v-if="repositoryOptions.length > 0"
+          v-model="currentRepository"
+          :options="repositoryOptions"
           option-label="nome"
           option-value="uri"
           label="Repositório Ativo"
@@ -147,17 +147,29 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue'; // Adicionado 'computed'
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
-import { useRepositoryStore } from 'stores/repository-store'; // Importado
+import { useRepositoryStore } from 'stores/repository-store';
 import { Notify } from 'quasar';
+import { storeToRefs } from 'pinia'; // Importe storeToRefs
 
 const router = useRouter();
 const authStore = useAuthStore();
-const repositoryStore = useRepositoryStore(); // Instanciado
+const repositoryStore = useRepositoryStore();
+
+// Use storeToRefs para manter a reatividade no v-model e nas opções
+const { currentRepository } = storeToRefs(repositoryStore);
 
 const leftDrawerOpen = ref(false);
+
+// Este computed irá fornecer a lista correta de opções para o seletor
+const repositoryOptions = computed(() => {
+  if (authStore.isAdmin) {
+    return repositoryStore.allRepositories;
+  }
+  return repositoryStore.myRepositories;
+});
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
@@ -166,13 +178,9 @@ function toggleLeftDrawer() {
 function handleLogout() {
   authStore.logout();
   router.push('/');
-  Notify.create({
-    type: 'info',
-    message: 'Logout realizado com sucesso!',
-  });
 }
 
-// NOVO: Função para lidar com a mudança de repositório
+// A função de 'change' continua a mesma, mas agora será mais confiável
 async function handleRepositoryChange(repoUri) {
   if (repoUri) {
     await repositoryStore.selectRepository(repoUri);
@@ -180,25 +188,25 @@ async function handleRepositoryChange(repoUri) {
       type: 'info',
       message: `Repositório '${repositoryStore.currentRepository?.nome}' selecionado.`,
     });
-    // Força um recarregamento da página para garantir que todos os componentes
-    // peguem os dados do novo repositório.
-    // O ideal seria uma reatividade mais granular, mas para começar, isso garante consistência.
+    // Forçar o reload continua sendo uma forma simples de garantir consistência
     window.location.reload();
   }
 }
 
-// NOVO: Lógica executada quando o layout é montado
 onMounted(async () => {
-  // Busca os repositórios do usuário
-  await repositoryStore.fetchMine();
+  // 1. Tenta carregar o repositório salvo no localStorage
+  repositoryStore.hydrateCurrentRepository();
 
-  // Se nenhum repositório estiver selecionado, seleciona o primeiro da lista
-  if (!repositoryStore.currentRepository && repositoryStore.myRepositories.length > 0) {
-    const firstRepo = repositoryStore.myRepositories[0];
+  // 2. Busca a lista de repositórios apropriada para o usuário
+  await repositoryStore.fetchRepositoriesForCurrentUser();
+
+  // 3. Se NENHUM repositório estiver ativo E a lista de opções não estiver vazia...
+  if (!repositoryStore.currentRepository && repositoryOptions.value.length > 0) {
+    const firstRepo = repositoryOptions.value[0];
+    // 4. ...seleciona automaticamente o primeiro da lista.
     await repositoryStore.selectRepository(firstRepo.uri);
   }
 });
-
 </script>
 
 <style scoped>

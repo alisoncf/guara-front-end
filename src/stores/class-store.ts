@@ -12,12 +12,12 @@ import {
   createClass,
   updateClass,
   deleteClass,
-} from 'src/services/classService';
+} from '../services/classService';
 import type {
   OntologyClass,
   CreateClassPayload,
   UpdateClassPayload,
-} from 'src/types/apiTypes';
+} from '../types/apiTypes';
 
 export const useClassStore = defineStore('class', () => {
   // --- STATE ---
@@ -27,17 +27,24 @@ export const useClassStore = defineStore('class', () => {
   // --- ACTIONS ---
 
   /**
+   * Limpa a lista de classes do estado.
+   */
+  function clearClasses() {
+    classes.value = [];
+  }
+  /**
    * Busca e armazena a lista de classes do repositório atualmente selecionado.
    */
   async function fetchAll() {
     const repoStore = useRepositoryStore();
     if (!repoStore.currentRepositoryQueryUrl) {
-      Notify.create({ type: 'warning', message: 'Por favor, selecione um repositório primeiro.' });
+      //Notify.create({ type: 'warning', message: 'Por favor, selecione um repositório primeiro.' });
       return;
     }
 
     loading.value = true;
     try {
+      classes.value = [];
       classes.value = await fetchClasses(repoStore.currentRepositoryQueryUrl);
     } catch (error) {
       console.error('Erro ao buscar classes da ontologia:', error);
@@ -140,5 +147,6 @@ export const useClassStore = defineStore('class', () => {
     create,
     update,
     remove,
+    clearClasses,
   };
 });

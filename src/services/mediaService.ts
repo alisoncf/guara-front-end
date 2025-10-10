@@ -1,13 +1,13 @@
 // src/services/mediaService.ts
 
-import { api } from 'src/boot/axios';
-import apiConfig from 'src/config/apiConfig';
+import { api } from '../boot/axios';
+import apiConfig from '../config/apiConfig';
 import type {
   UploadResponse,
   RemoveMediaResponse,
   ListMediaResponse,
   MediaFile,
-} from 'src/types/apiTypes';
+} from '../types/apiTypes';
 import { Notify } from 'quasar';
 
 // --- Tipos para os Payloads das Funções ---

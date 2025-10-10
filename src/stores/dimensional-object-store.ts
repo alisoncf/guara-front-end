@@ -13,12 +13,12 @@ import {
   createDimensionalObject,
   updateDimensionalObject,
   deleteDimensionalObject,
-} from 'src/services/dimensionalObjectService';
+} from '../services/dimensionalObjectService';
 import type {
   MappedObject,
   CreateDimensionalObjectPayload,
   UpdateDimensionalObjectPayload,
-} from 'src/types/apiTypes';
+} from '../types/apiTypes';
 
 export const useDimensionalObjectStore = defineStore('dimensionalObject', () => {
   // --- STATE ---

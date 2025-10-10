@@ -47,7 +47,9 @@
 </template>
 
 <script setup lang="ts">
-import { MappedObject } from 'src/types/apiTypes';
+
+
+import { MappedObject } from '../../types/apiTypes';
 
 defineProps<{
   object: MappedObject | null

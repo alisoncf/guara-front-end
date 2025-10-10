@@ -20,8 +20,8 @@
 import { computed, onMounted } from 'vue';
 import { Bubble } from 'vue-chartjs';
 import { Chart as ChartJS, Title, Tooltip, Legend, PointElement, LinearScale } from 'chart.js';
-import { useClassStore } from 'stores/class-store';
-import { useDimensionalObjectStore } from 'stores/dimensional-object-store';
+import { useClassStore } from '../stores/class-store';
+import { useDimensionalObjectStore } from '../stores/dimensional-object-store';
 import { storeToRefs } from 'pinia';
 
 // Registra os componentes necessários do Chart.js

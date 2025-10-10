@@ -1,11 +1,16 @@
-const { configure } = require('quasar/wrappers');
+// Arquivo: quasar.config.js
 
-module.exports = configure(function (ctx) {
-  const isProduction = ctx.prod; // ou use process.env.NODE_ENV === 'production'
+import { configure } from 'quasar/wrappers';
+import path from 'path';
+
+export default configure(function (ctx) {
+  const isProduction = ctx.prod;
 
   return {
     build: {
-      // Suas outras configurações de build
+      alias: {
+        src: path.resolve(__dirname, './src'),
+      }
     },
 
     devServer: {
@@ -21,7 +26,7 @@ module.exports = configure(function (ctx) {
           secure: false
         },
         '/repositorios': {
-          target: 'http://localhost:5000', // Ou http, dependendo do seu backend
+          target: 'http://localhost:5000',
           changeOrigin: true,
           secure: false
         },
@@ -36,12 +41,12 @@ module.exports = configure(function (ctx) {
           secure: false
         },
         '/dim': {
-          target: 'http://localhost:5000', // Ou o endereço do seu backend
+          target: 'http://localhost:5000',
           changeOrigin: true,
           secure: false
         },
         '/acesso': {
-          target: 'http://localhost:5000', // Ou o endereço do seu backend
+          target: 'http://localhost:5000',
           changeOrigin: true,
           secure: false
         }
@@ -57,17 +62,8 @@ module.exports = configure(function (ctx) {
     },
 
     extras: [
-      // 'ionicons-v4',
-      // 'mdi-v5',
-      // 'fontawesome-v6',
-      // 'eva-icons',
-      // 'themify',
-      // 'line-awesome',
-      // 'roboto-font-latin-ext', // this or either 'roboto-font', NEVER both!
-
-      'roboto-font', // optional, you are not bound to it
-      'material-icons', // optional, you are not bound to it
+      'roboto-font',
+      'material-icons',
     ],
-    // Outras configurações do Quasar...
   };
 });

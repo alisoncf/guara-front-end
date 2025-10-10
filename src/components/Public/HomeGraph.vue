@@ -25,10 +25,10 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount, watch } from 'vue';
-import { useGraphStore } from 'stores/graph-store';
+import { useGraphStore } from '../../stores/graph-store';
 import * as d3 from 'd3';
 import { storeToRefs } from 'pinia';
-import type { GraphNode, GraphLink } from 'src/types/apiTypes';
+import type { GraphNode, GraphLink } from '../../types/apiTypes';
 
 interface D3GraphNode extends GraphNode, d3.SimulationNodeDatum {}
 
