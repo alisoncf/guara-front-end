@@ -207,7 +207,7 @@ export interface ListMediaResponse {
 export interface GraphNode {
   id: string; // URI do recurso
   name: string;
-  type: 'collection' | 'object';
+  type: 'collection' | 'object' | 'repository';
   description?: string;
 }
 

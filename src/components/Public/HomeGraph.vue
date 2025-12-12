@@ -32,6 +32,38 @@ import type { GraphNode, GraphLink } from '../../types/apiTypes';
 
 interface D3GraphNode extends GraphNode, d3.SimulationNodeDatum {}
 
+// --- Funções helper para o visual ---
+function getNodeRadius(node: D3GraphNode): number {
+  switch (node.type) {
+    case 'repository': return 20; // Repositório (Maior)
+    case 'collection': return 14; // Coleção (Médio)
+    case 'object': return 9;     // Objeto (Pequeno)
+    default: return 10;
+  }
+}
+
+function getNodeColor(node: D3GraphNode): string {
+  switch (node.type) {
+    case 'repository': return '#c2410c'; // Laranja Escuro/Vermelho
+    case 'collection': return '#f59e0b'; // Laranja
+    case 'object': return '#3b82f6';     // Azul
+    default: return '#6b7280'; // Cinza
+  }
+}
+
+// --- (NOVO) Função para distâncias de link dinâmicas ---
+function getLinkDistance(link: GraphLink): number {
+  // O D3 substitui os IDs por referências aos nós
+  const sourceNode = link.source as D3GraphNode;
+
+  switch (sourceNode.type) {
+    case 'repository': return 150; // Link (Repositório -> Coleção) mais longo
+    case 'collection': return 70;  // Link (Coleção -> Objeto) mais curto
+    default: return 100;
+  }
+}
+// --- FIM DA MODIFICAÇÃO ---
+
 const containerRef = ref<HTMLDivElement | null>(null);
 const graphStore = useGraphStore();
 const { nodes, links } = storeToRefs(graphStore);
@@ -41,6 +73,14 @@ let g: d3.Selection<SVGGElement, unknown, null, undefined>;
 let simulation: d3.Simulation<D3GraphNode, GraphLink>;
 let zoomBehavior: d3.ZoomBehavior<SVGSVGElement, unknown>;
 let resizeObserver: ResizeObserver;
+
+let linkSelection: d3.Selection<SVGLineElement, GraphLink, SVGGElement, unknown>;
+let nodeSelection: d3.Selection<SVGGElement, D3GraphNode, SVGGElement, unknown>;
+
+// --- (MODIFICAÇÃO 1) ---
+// Removemos a variável stopTimer.
+// let stopTimer: ReturnType<typeof setTimeout> | null = null;
+// --- FIM DA MODIFICAÇÃO ---
 
 const tooltip = reactive({
   opacity: 0,
@@ -60,23 +100,30 @@ const zoomOut = () => {
 const updateGraph = () => {
   if (!g) return;
 
-  const node = g.selectAll<SVGGElement, D3GraphNode>('.node-group')
+  // if (stopTimer) { // <-- REMOVIDO
+  //   clearTimeout(stopTimer);
+  // }
+
+  nodeSelection = g.selectAll<SVGGElement, D3GraphNode>('.node-group')
     .data(nodes.value as D3GraphNode[], d => d.id)
     .join(
       enter => {
         const nodeGroup = enter.append('g').attr('class', 'node-group').call(dragHandler(simulation));
+
         nodeGroup.append('circle')
-          .attr('r', d => (d.type === 'collection' ? 14 : 9))
+          .attr('r', d => getNodeRadius(d))
           .attr('stroke', '#fff')
           .attr('stroke-width', 2)
-          .attr('fill', d => (d.type === 'collection' ? '#f59e0b' : '#3b82f6'));
+          .attr('fill', d => getNodeColor(d));
+
         nodeGroup.append('text')
           .text(d => d.name)
-          .attr('x', 18)
+          .attr('x', d => getNodeRadius(d) + 4)
           .attr('y', 5)
           .attr('font-family', 'Inter, sans-serif')
           .attr('font-size', '12px')
           .attr('fill', '#1f2937');
+
         nodeGroup.on('mouseover', (event, d) => {
           tooltip.title = d.name;
           tooltip.description = d.description || '';
@@ -90,7 +137,7 @@ const updateGraph = () => {
       }
     );
 
-  const link = g.selectAll<SVGLineElement, GraphLink>('line.link')
+  linkSelection = g.selectAll<SVGLineElement, GraphLink>('line.link')
     .data(links.value, d => `${d.source}-${d.target}`)
     .join(
       enter => enter.insert('line', '.node-group')
@@ -101,18 +148,20 @@ const updateGraph = () => {
     );
 
   simulation.nodes(nodes.value as D3GraphNode[]);
-  (simulation.force('link') as d3.ForceLink<D3GraphNode, GraphLink>).links(links.value);
+
+  // --- (MODIFICAÇÃO 2) ---
+  // Dizemos à força de link para usar nossa nova função getLinkDistance
+  (simulation.force('link') as d3.ForceLink<D3GraphNode, GraphLink>)
+    .links(links.value)
+    .distance(d => getLinkDistance(d)); // <-- MODIFICADO
+  // --- FIM DA MODIFICAÇÃO ---
+
   simulation.alpha(1).restart();
 
-  simulation.on('tick', () => {
-    link
-      .attr('x1', (d) => (d.source as any).x)
-      .attr('y1', (d) => (d.source as any).y)
-      .attr('x2', (d) => (d.target as any).x)
-      .attr('y2', (d) => (d.target as any).y);
-
-    node.attr('transform', d => `translate(${d.x}, ${d.y})`);
-  });
+  // --- (MODIFICAÇÃO 3) ---
+  // O timer que parava a simulação foi REMOVIDO.
+  // stopTimer = setTimeout(() => { ... });
+  // --- FIM DA MODIFICAÇÃO ---
 };
 
 const initializeGraph = () => {
@@ -124,9 +173,27 @@ const initializeGraph = () => {
     .attr('viewBox', [-width / 2, -height / 2, width, height]);
   g = svg.append('g');
   simulation = d3.forceSimulation<D3GraphNode>()
-    .force('link', d3.forceLink<D3GraphNode, GraphLink>().id(d => d.id).distance(100).strength(0.7))
-    .force('charge', d3.forceManyBody().strength(-600))
+    // --- (MODIFICAÇÃO 4) ---
+    // A força de link agora é inicializada sem uma distância fixa
+    .force('link', d3.forceLink<D3GraphNode, GraphLink>().id(d => d.id).strength(0.5)) // <-- STRENGTH E DISTANCE MUDADOS
+    // A força de repulsão foi drasticamente reduzida de -600 para -150
+    .force('charge', d3.forceManyBody().strength(-150)) // <-- VALOR MUDADO
+    // --- FIM DA MODIFICAÇÃO ---
     .force('center', d3.forceCenter(0, 0).strength(0.1));
+
+  simulation.on('tick', () => {
+    if (linkSelection) {
+      linkSelection
+        .attr('x1', (d) => (d.source as any).x)
+        .attr('y1', (d) => (d.source as any).y)
+        .attr('x2', (d) => (d.target as any).x)
+        .attr('y2', (d) => (d.target as any).y);
+    }
+    if (nodeSelection) {
+      nodeSelection.attr('transform', d => `translate(${d.x}, ${d.y})`);
+    }
+  });
+
   zoomBehavior = d3.zoom<SVGSVGElement, unknown>()
     .scaleExtent([0.1, 8])
     .on('zoom', ({ transform }) => g.attr('transform', transform));
@@ -145,8 +212,12 @@ function dragHandler(simulationInstance: d3.Simulation<D3GraphNode, GraphLink>) 
   }
   function dragended(event: any, d: D3GraphNode) {
     if (!event.active) simulationInstance.alphaTarget(0);
+
+    // --- (MODIFICAÇÃO 5) ---
+    // "Soltamos" o nó de volta para a simulação após arrastá-lo
     d.fx = null;
     d.fy = null;
+    // --- FIM DA MODIFICAÇÃO ---
   }
   return d3.drag<any, D3GraphNode>()
     .on('start', dragstarted)
@@ -154,7 +225,7 @@ function dragHandler(simulationInstance: d3.Simulation<D3GraphNode, GraphLink>) 
     .on('end', dragended);
 }
 
-watch(links, updateGraph, { deep: true });
+watch([nodes, links], updateGraph, { deep: true });
 
 onMounted(() => {
   initializeGraph();
@@ -171,6 +242,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  if (simulation) {
+    simulation.stop(); // <-- Paramos a simulação ao sair da página
+  }
+
   if (resizeObserver && containerRef.value) {
     resizeObserver.unobserve(containerRef.value);
   }

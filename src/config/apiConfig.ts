@@ -5,12 +5,18 @@ const baseURL = process.env.DEV
   ? 'http://localhost:5000' // URL para desenvolvimento
   : 'https://sua-api-em-producao.com'; // URL para produção
 
+//API MemoriA
+const memoriaBaseURL = process.env.DEV
+  ? 'http://localhost:5080'
+  : 'https://sua-api-memoria-prod.com';
+
 // Prefixo base para as URIs da sua ontologia
 const baseOnto = 'http://guara.ueg.br/ontologias/v1/objetos#';
 
 const apiConfig = {
   // URL base para a instância do axios usar
   baseURL,
+  memoriaBaseURL,
 
   // Endpoints relativos. O axios irá concatená-los com a baseURL.
   endpoints: {
@@ -63,6 +69,13 @@ const apiConfig = {
       upload: '/uploadapi/upload',
       remove: '/uploadapi/remove',
     },
+
+    memoria: {
+      chatbot: '/api/v1/chatbot',
+      health: '/api/v1/health',
+      oculusStatus: '/api/v1/status/oculus',
+      processDocument: '/api/v1/documents/process'
+    }
   },
 
   // URIs completas para os tipos dimensionais da sua ontologia

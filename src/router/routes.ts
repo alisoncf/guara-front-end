@@ -102,6 +102,10 @@ const routes: RouteRecordRaw[] = [
         path: 'profile',
         component: () => import('../pages/admin/ProfilePage.vue'),
       },
+      {
+        path: 'tools/extraction',
+        component: () => import('../pages/admin/DocumentExtractionPage.vue'),
+      },
     ],
   },
 

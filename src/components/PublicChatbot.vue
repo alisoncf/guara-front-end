@@ -1,91 +1,122 @@
 <template>
-  <div>
-    <!-- Botão flutuante -->
+  <div class="chatbot-container">
     <q-btn
+      v-if="!open"
       round
       color="primary"
-      icon="chat"
-      class="fixed bottom-6 right-6 z-max"
+      icon="chat_bubble"
+      size="lg"
+      class="fixed-bottom-right q-ma-md shadow-10 z-top"
       @click="toggleChat"
-      v-if="!open"
-    />
-
-    <!-- Janela do chat -->
-    <q-card
-      v-if="open"
-      class="fixed bottom-6 right-6 z-max"
-      style="width: 350px; max-width: 95vw; min-height: 420px"
     >
-      <q-bar>
-        <div class="text-bold">Assistente Virtual</div>
-        <q-space />
-        <q-btn dense flat icon="close" @click="toggleChat" />
-      </q-bar>
-      <q-separator />
-      <div
-        class="q-pa-sm"
-        style="height: 320px; overflow-y: auto"
-        ref="chatScroll"
+      <q-tooltip anchor="center left" self="center right">Assistente Virtual</q-tooltip>
+    </q-btn>
+
+    <transition
+      appear
+      enter-active-class="animated slideInUp"
+      leave-active-class="animated slideOutDown"
+    >
+      <q-card
+        v-if="open"
+        class="fixed-bottom-right q-ma-md z-top shadow-10 column"
+        style="width: 380px; height: 500px; max-width: 90vw;"
       >
-        <div v-for="(msg, idx) in messages" :key="idx" class="q-mb-sm">
-          <div
-            :class="msg.from === 'user' ? 'text-right' : 'text-left'"
-            style="white-space: pre-line"
-          >
-            <q-chip
-              :color="msg.from === 'user' ? 'primary' : 'grey-3'"
-              :text-color="msg.from === 'user' ? 'white' : 'black'"
-              class="q-mb-xs"
-              :class="msg.from === 'user' ? 'float-right' : 'float-left'"
-            >
-              {{ msg.text }}
-            </q-chip>
+        <q-bar class="bg-primary text-white">
+          <q-icon name="smart_toy" />
+          <div class="text-weight-bold q-ml-sm">Guará Assistente</div>
+          <q-space />
+          <q-btn dense flat icon="close" @click="toggleChat" />
+        </q-bar>
+
+        <div class="col q-pa-md scroll bg-grey-1" ref="chatScroll">
+
+          <div v-if="!currentRepoName" class="q-pa-sm q-mb-md bg-warning text-white rounded-borders text-center text-caption">
+            <q-icon name="warning" />
+            Selecione um acervo na página "Acervo" para habilitar o chat.
+          </div>
+
+          <div v-for="(msg, idx) in messages" :key="idx" class="q-mb-md">
+            <div :class="msg.from === 'user' ? 'row justify-end' : 'row justify-start'">
+              <div
+                class="q-pa-sm rounded-borders"
+                :class="msg.from === 'user' ? 'bg-primary text-white' : 'bg-white text-grey-9 shadow-1'"
+                style="max-width: 85%; white-space: pre-wrap; word-break: break-word;"
+              >
+                <div v-if="msg.from === 'bot'" class="text-caption text-grey-6 q-mb-xs">Guará</div>
+                {{ msg.text }}
+
+                <div v-if="msg.sources && msg.sources.length" class="q-mt-sm q-pt-sm" style="border-top: 1px solid #eee">
+                  <div class="text-caption text-weight-bold">Fontes:</div>
+                  <ul class="q-pl-md q-my-none text-caption">
+                    <li v-for="(src, i) in msg.sources" :key="i">
+                      {{ src.item_title || 'Item sem título' }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="loading" class="row justify-start q-mb-md">
+            <q-spinner-dots color="primary" size="2em" />
           </div>
         </div>
-      </div>
-      <q-separator />
-      <q-form @submit.prevent="sendMessage">
-        <div class="row no-wrap q-pa-sm">
+
+        <q-separator />
+
+        <q-form @submit.prevent="sendMessage" class="bg-white q-pa-sm">
           <q-input
             v-model="input"
             dense
             outlined
-            placeholder="Digite sua mensagem..."
-            class="col"
-            @keyup.enter="sendMessage"
-            :disable="loading"
-          />
-          <q-btn
-            icon="send"
-            color="primary"
-            flat
-            round
-            :loading="loading"
-            @click="sendMessage"
-            :disable="!input"
-          />
-        </div>
-      </q-form>
-    </q-card>
+            placeholder="Digite sua pergunta..."
+            :disable="loading || !currentRepoName"
+            autofocus
+          >
+            <template v-slot:after>
+              <q-btn
+                round
+                dense
+                flat
+                icon="send"
+                color="primary"
+                @click="sendMessage"
+                :disable="!input.trim() || loading"
+              />
+            </template>
+          </q-input>
+        </q-form>
+      </q-card>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue';
-import { appConfig } from 'src/config/appConfig';
+import { ref, nextTick, computed } from 'vue';
+import { useRepositoryStore } from 'stores/repository-store';
+import { sendMessageToChatbot } from 'src/services/chatbotService';
 
+const repositoryStore = useRepositoryStore();
 const open = ref(false);
 const input = ref('');
 const loading = ref(false);
-const messages = ref([{ from: 'bot', text: 'Olá! Como posso ajudar?' }]);
+const messages = ref([
+  { from: 'bot', text: 'Olá! Selecione um acervo e pergunte-me algo sobre os objetos catalogados.' }
+]);
 const chatScroll = ref(null);
+
+// Computa o nome/ID do repositório para enviar à API
+const currentRepoName = computed(() => {
+  if (!repositoryStore.currentRepository) return null;
+  const uriParts = repositoryStore.currentRepository.uri.split('#');
+  return uriParts.length > 1 ? uriParts[1] : uriParts[0].split('/').pop();
+});
 
 function toggleChat() {
   open.value = !open.value;
   if (open.value) {
-    nextTick(() => {
-      scrollToBottom();
-    });
+    scrollToBottom();
   }
 }
 
@@ -98,7 +129,9 @@ function scrollToBottom() {
 }
 
 async function sendMessage() {
-  if (!input.value.trim()) return;
+  // Evita envio vazio ou duplo clique
+  if (loading.value || !input.value.trim() || !currentRepoName.value) return;
+
   const userMsg = input.value;
   messages.value.push({ from: 'user', text: userMsg });
   input.value = '';
@@ -106,21 +139,18 @@ async function sendMessage() {
   scrollToBottom();
 
   try {
-    // Usa a URL centralizada do appConfig
-    const response = await fetch(appConfig.chatbotApiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: userMsg }),
-    });
-    const data = await response.json();
+    const data = await sendMessageToChatbot(userMsg, currentRepoName.value);
+
     messages.value.push({
       from: 'bot',
-      text: data.reply || 'Desculpe, não entendi.',
+      text: data.reply || 'Não encontrei uma resposta no contexto atual.',
+      sources: data.sources
     });
   } catch (e) {
+    console.error(e);
     messages.value.push({
       from: 'bot',
-      text: 'Erro ao conectar ao assistente.',
+      text: 'Desculpe, ocorreu um erro ao comunicar com a MemoriA. Tente novamente mais tarde.',
     });
   } finally {
     loading.value = false;
@@ -130,13 +160,11 @@ async function sendMessage() {
 </script>
 
 <style scoped>
-/* Ajuste para mobile */
-@media (max-width: 500px) {
-  .fixed.bottom-6.right-6 {
-    right: 2vw !important;
-    bottom: 2vw !important;
-    width: 98vw !important;
-    min-width: 0 !important;
-  }
+.z-top {
+  z-index: 9999;
+}
+/* Garante que o input não fique colado no fundo do card */
+.q-form {
+  border-top: 1px solid #ddd;
 }
 </style>

@@ -1,12 +1,20 @@
 // src/boot/axios.ts
 import { boot } from 'quasar/wrappers';
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { Notify } from 'quasar';
-import apiConfig from 'src/config/apiConfig'; // Importe a configuração central
+import apiConfig from '../config/apiConfig';
 
+
+declare module '@vue/runtime-core' {
+  interface ComponentCustomProperties {
+    $api: AxiosInstance;
+    $memoriaApi: AxiosInstance; // Adiciona tipagem global
+  }
+}
 // Crie a instância do axios usando a baseURL da configuração
 const api = axios.create({ baseURL: apiConfig.baseURL });
-
+//Instância MemoriA
+export const memoriaApi = axios.create({ baseURL: apiConfig.memoriaBaseURL });
 export default boot(({ app }) => {
   // --- Interceptor de Requisição ---
   api.interceptors.request.use((config) => {
@@ -60,8 +68,23 @@ export default boot(({ app }) => {
     }
   );
 
-  // Disponibiliza a instância do axios globalmente no app Vue
+  memoriaApi.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      // Tratamento de erro específico para MemoriA, se desejar
+      const msg = error.response?.data?.message || 'Erro ao conectar com MemoriA.';
+
+      // Evita flood de notificações se for apenas um check de status silencioso
+      if (!error.config.url?.includes('health')) {
+        Notify.create({ type: 'negative', message: `MemoriA: ${msg}` });
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  // Disponibiliza ambas globalmente
   app.config.globalProperties.$api = api;
+  app.config.globalProperties.$memoriaApi = memoriaApi;
 });
 
 export { api };

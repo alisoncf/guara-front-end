@@ -4,12 +4,63 @@
       <div>
         <h4 class="q-my-none">Dashboard</h4>
         <p class="text-grey q-mt-sm q-mb-none">
-          Bem-vindo ao painel administrativo do Guará. Repositório ativo:
-          <strong>{{ repositoryStore.currentRepository?.nome || 'Nenhum' }}</strong>
+          Bem-vindo ao painel administrativo do Guará.
+          Repositorio ativo: <strong>{{ repositoryStore.currentRepository?.nome || 'Nenhum' }}</strong>
         </p>
       </div>
     </div>
 
+    <div class="row q-col-gutter-md q-mb-lg">
+      <div class="col-12 col-sm-6">
+        <q-card bordered class="status-card">
+          <q-item>
+            <q-item-section avatar>
+              <q-icon name="dns" color="primary" size="lg" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label class="text-h6">API MemoriA</q-item-label>
+              <q-item-label caption>Backend de Inteligência (Porta Diferente)</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-chip
+                :color="memoriaOnline ? 'positive' : 'negative'"
+                text-color="white"
+                :icon="memoriaOnline ? 'check_circle' : 'error'"
+              >
+                {{ memoriaOnline ? 'Online' : 'Offline' }}
+              </q-chip>
+            </q-item-section>
+          </q-item>
+        </q-card>
+      </div>
+
+      <div class="col-12 col-sm-6">
+        <q-card bordered class="status-card">
+          <q-item>
+            <q-item-section avatar>
+              <q-icon name="visibility" color="accent" size="lg" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label class="text-h6">Oculus (OCR)</q-item-label>
+              <q-item-label caption>Extração de Texto</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-chip
+                :color="oculusStatus.status === 'ok' ? 'positive' : 'negative'"
+                text-color="white"
+                :icon="oculusStatus.status === 'ok' ? 'check_circle' : 'error'"
+              >
+                {{ oculusStatus.status || 'Verificando...' }}
+              </q-chip>
+            </q-item-section>
+          </q-item>
+          <q-separator v-if="oculusStatus.detail" />
+          <q-card-section v-if="oculusStatus.detail" class="text-caption text-grey">
+            {{ oculusStatus.detail }}
+          </q-card-section>
+        </q-card>
+      </div>
+    </div>
     <q-card v-if="!repositoryStore.currentRepository" class="bg-warning text-white">
       <q-card-section>
         <div class="text-h6">Nenhum repositório selecionado</div>
@@ -37,22 +88,6 @@
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-12 col-sm-6 col-md-3">
-          <q-card class="text-center">
-            <q-card-section>
-              <div class="text-h4 text-accent">{{ stats.newSubmissions }}</div>
-              <div class="text-subtitle2">Novos Envios (mock)</div>
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-          <q-card class="text-center">
-            <q-card-section>
-              <div class="text-h4 text-positive">{{ stats.activeUsers }}</div>
-              <div class="text-subtitle2">Usuários Ativos (mock)</div>
-            </q-card-section>
-          </q-card>
-        </div>
       </div>
 
       <q-card class="q-mb-lg">
@@ -66,68 +101,6 @@
                 label="Nova Coleção"
                 class="full-width"
                 @click="$router.push('/admin/collections/new')"
-              />
-            </div>
-            <div class="col-12 col-sm-6 col-md-3">
-              <q-btn-dropdown
-                split
-                color="secondary"
-                icon="add"
-                label="Novo Objeto Físico"
-                class="full-width"
-                @click="$router.push('/admin/objects/physical/new')"
-              >
-                <q-list>
-                  <q-item clickable v-close-popup @click="$router.push('/admin/objects/dimensional/new')">
-                    <q-item-section>
-                      <q-item-label>Novo Objeto Dimensional</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-btn-dropdown>
-            </div>
-          </div>
-        </q-card-section>
-      </q-card>
-
-      <q-card>
-        <q-card-section>
-          <div class="row items-center justify-between q-mb-md">
-            <div class="text-h6">Coleções no Repositório</div>
-            <q-btn
-              flat
-              color="primary"
-              label="Ver Todas"
-              @click="$router.push('/admin/collections')"
-            />
-          </div>
-
-          <div v-if="loading" class="text-center q-pa-lg">
-            <q-spinner-dots size="50px" color="primary" />
-            <div class="q-mt-sm">Carregando coleções...</div>
-          </div>
-
-          <div v-else-if="collections.length === 0" class="text-center q-pa-lg">
-            <q-icon name="collections" size="48px" color="grey-4" />
-            <div class="text-grey q-mt-sm">Nenhuma coleção encontrada neste repositório.</div>
-            <q-btn
-              color="primary"
-              label="Criar Primeira Coleção"
-              class="q-mt-md"
-              @click="$router.push('/admin/collections/new')"
-            />
-          </div>
-
-          <div v-else class="row q-col-gutter-md">
-            <div
-              v-for="collection in collections.slice(0, 3)"
-              :key="collection.uri"
-              class="col-12 col-md-4"
-            >
-              <CollectionCardAdmin
-                :collection="collection"
-                @view="viewCollection"
-                @manage="manageCollection"
               />
             </div>
           </div>
@@ -144,7 +117,10 @@ import { useRepositoryStore } from 'stores/repository-store';
 import { useDimensionalObjectStore } from 'stores/dimensional-object-store';
 import { useClassStore } from 'stores/class-store';
 import { storeToRefs } from 'pinia';
-import CollectionCardAdmin from 'components/Admin/CollectionCardAdmin.vue'; // Importa o novo componente
+import CollectionCardAdmin from 'components/Admin/CollectionCardAdmin.vue';
+
+// --- IMPORTAÇÃO DOS NOVOS SERVIÇOS ---
+import { checkMemoriaStatus, checkOculusStatus } from 'src/services/statusService';
 
 const router = useRouter();
 const repositoryStore = useRepositoryStore();
@@ -163,6 +139,19 @@ const stats = ref({
   activeUsers: 1,
 });
 
+// --- ESTADOS REATIVOS PARA OS STATUS ---
+const memoriaOnline = ref(false);
+const oculusStatus = ref({ status: '...', detail: '' });
+
+// --- FUNÇÃO PARA CHECAR SERVIÇOS ---
+async function checkServices() {
+  // Verifica MemoriA
+  memoriaOnline.value = await checkMemoriaStatus();
+
+  // Verifica Oculus
+  oculusStatus.value = await checkOculusStatus();
+}
+
 async function loadData() {
   if (!repositoryStore.currentRepository) {
     return;
@@ -180,19 +169,26 @@ async function loadData() {
   };
 }
 
-function viewCollection(collection) {
-  const encodedId = encodeURIComponent(collection.uri);
-  router.push(`/admin/collections/view/${encodedId}`);
-}
-
-function manageCollection(collection) {
-  const encodedId = encodeURIComponent(collection.uri);
-  router.push(`/admin/collections/edit/${encodedId}`);
-}
-
+// Watchers e Hooks existentes
 watch(() => repositoryStore.currentRepository, (newRepo) => {
   if (newRepo) {
     loadData();
   }
 }, { immediate: true });
+
+onMounted(() => {
+  // Chama a verificação assim que a página carrega
+  checkServices();
+});
 </script>
+
+<style scoped>
+.status-card {
+  height: 100%;
+  transition: transform 0.2s;
+}
+.status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>

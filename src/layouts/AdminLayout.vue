@@ -131,6 +131,22 @@
 
         <q-separator />
 
+        <q-item-label header>Ferramentas</q-item-label>
+
+        <q-item
+          clickable
+          v-ripple
+          :active="$route.path === '/admin/tools/extraction'"
+          @click="$router.push('/admin/tools/extraction')"
+        >
+          <q-item-section avatar>
+            <q-icon name="document_scanner" />
+          </q-item-section>
+          <q-item-section>Extração (Oculus)</q-item-section>
+        </q-item>
+
+        <q-separator />
+
         <q-item clickable v-ripple @click="$router.push('/')">
           <q-item-section avatar>
             <q-icon name="public" />

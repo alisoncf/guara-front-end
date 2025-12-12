@@ -27,7 +27,7 @@ function mapSparqlResultToObject(binding: SparqlResult): MappedObject {
     tipo: (binding.tipo?.value as 'Físico' | 'Dimensional') || undefined,
     dimensao: binding.dimensao?.value,
     colecao: binding.colecao?.value,
-    tiposFisicos: binding.tipos?.value ? binding.tipos.value.split(', ') : [],
+    tiposFisicos: binding.tipoFisico?.value ? binding.tipoFisico.value.split(', ') : [],
   };
 }
 
