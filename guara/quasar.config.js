@@ -31,7 +31,7 @@ module.exports = configure(function (ctx) {
 
     framework: {
       config: {},
-      lang: 'pt-br',
+      lang: 'pt-BR',
       iconSet: 'material-icons',
       plugins: ['Dialog','Notify']
     },
