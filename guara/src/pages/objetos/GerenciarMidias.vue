@@ -6,6 +6,7 @@ import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
 import { ObjetoFisico } from './manter-objeto';
 import apiConfig from 'src/apiConfig';
 import { Dialog, Notify } from 'quasar';
+import { useAuthStore } from 'src/stores/auth-store';
 
 const objetoId = ref({} as string); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
@@ -22,6 +23,7 @@ const midiasEncontradas = ref([] as Midia[]);
 const useFileUpload = ref([true] as any);
 const thumbnails = ref([] as any);
 const router = useRouter();
+const store = useAuthStore();
 
 function adicionarMidia() {
   midias.value.push({ file: '', url: '', uri: '' });
@@ -69,6 +71,7 @@ function handleToggleChange(index: string | number) {
   }
 }
 function excluir(arquivo: string) {
+
   Dialog.create({
     title: 'Exclusão',
     message:
@@ -78,11 +81,19 @@ function excluir(arquivo: string) {
   })
     .onOk(() => {
       axios
-        .post(apiConfig.baseURL + apiConfig.endpoints.remove_file, {
-          objetoId: objetoId.value,
-          repositorio: objetoSelecionado.value.repositorio,
-          file: arquivo,
-        })
+        .post(
+          apiConfig.baseURL + apiConfig.endpoints.remove_file,
+          {
+            objetoId: objetoId.value,
+            repositorio: objetoSelecionado.value.repositorio,
+            file: arquivo,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${store.token}`,
+            },
+          }
+        )
         .then((response) => {
           Notify.create({
             type: 'warning',

@@ -41,7 +41,7 @@ const labelTipo = computed(() => {
     case 'dimensionais':
       return 'Palavra-chave (Objetos dimensionais)';
     default:
-      return 'Palavra-chave'; 
+      return 'Palavra-chave';
   }
 });
 function buscar() {
@@ -231,35 +231,54 @@ function Upload(id: string) {
           </template>
           <template v-slot:body-cell-acoes="props">
             <q-td :props="props">
-              <q-btn
-                dense
-                color="blue-9"
-                icon="edit"
-                title="Editar o objeto digital"
-                @click="irParaEditar(props.row)"
-              />
-              <q-btn
-                dense
-                color="purple-6 "
-                icon="format_list_bulleted"
-                title="ir para as mídias deste objeto"
-                @click="irParaMidias(props.row)"
-              />
-              <q-btn
-                v-if="1 > 1"
-                dense
-                color="red-6 "
-                icon="edit"
-                title="ir para as mídias deste objeto"
-                @click="Upload(props.row.id)"
-              />
-              <q-btn
-                dense
-                color="red-7"
-                icon="delete"
-                title="excluir definitivamente este objeto"
-                @click="deletarObjeto(props.row)"
-              />
+              <q-btn dense flat icon="more_vert">
+                <q-menu fit dense>
+                  <q-list dense style="min-width: 100px">
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaEditar(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-avatar icon="edit" />
+                      </q-item-section>
+                      <q-item-section>Editar</q-item-section>
+                    </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaMidias(props.row)"
+                    >
+                      <q-item-section avatar flat>
+                        <q-avatar icon="photo" />
+                      </q-item-section>
+                      <q-item-section>Mídias</q-item-section>
+                    </q-item>
+                    <q-item
+                      v-if="1 > 1"
+                      clickable
+                      v-close-popup
+                      @click="Upload(props.row.id)"
+                    >
+                      <q-item-section avatar flat>
+                        <q-avatar icon="upload" />
+                      </q-item-section>
+                      <q-item-section>Upload</q-item-section>
+                    </q-item>
+                    <q-separator />
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="deletarObjeto(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-avatar icon="delete_forever" color="red-7" />
+                      </q-item-section>
+                      <q-item-section>Excluir</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
             </q-td>
           </template>
         </q-table>

@@ -7,10 +7,11 @@ import { mostrarPopUpMidias, ObjetoFisico } from './manter-objeto';
 import apiConfig from 'src/apiConfig';
 import { Dialog, Notify } from 'quasar';
 import { textoAposUltimoChar } from '../funcoes';
+import { useAuthStore } from 'src/stores/auth-store';
 
 const objetoId = ref({} as string); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
-
+const store = useAuthStore();
 interface Midia {
   file: string | null;
   url: string;
@@ -70,6 +71,7 @@ function handleToggleChange(index: number) {
   }
 }
 function excluir(arquivo: string) {
+  console.log('token: ',store.token)
   Dialog.create({
     title: 'Exclusão',
     message:
@@ -79,11 +81,19 @@ function excluir(arquivo: string) {
   })
     .onOk(() => {
       axios
-        .post(apiConfig.baseURL + apiConfig.endpoints.remove_file, {
-          objetoId: objetoId.value,
-          repositorio: objetoSelecionado.value.repositorio,
-          file: arquivo,
-        })
+        .post(
+          apiConfig.baseURL + apiConfig.endpoints.remove_file,
+          {
+            objetoId: objetoId.value,
+            repositorio: objetoSelecionado.value.repositorio,
+            file: arquivo,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${store.token}`,
+            },
+          }
+        )
         .then((response) => {
           Notify.create({
             type: 'warning',
