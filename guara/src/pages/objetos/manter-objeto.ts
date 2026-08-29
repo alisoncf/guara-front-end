@@ -1,11 +1,23 @@
 import apiConfig from 'src/apiConfig';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useAuthStore } from 'src/stores/auth-store';
+
+const authStore = useAuthStore();
 
 export const mostrarPopUpObjetoDim = ref(false);
 export const mostrarPopUpObjetoFis = ref(false);
 export const mostrarPopUpMidias = ref(false);
 export const mostrarPopUpRelacoes = ref(false);
 export const mostrarPopUpAddRelacao = ref(false);
+export const mostrarPopUpGrafoRelacoes = ref(false);
+
+// Controla se os diálogos de objeto abrem apenas para visualização (sem permitir alterações)
+export const somenteLeituraObjeto = ref(false);
+
+// Somente usuários administradores autenticados podem criar/editar objetos
+export const usuarioAdminLogado = computed(
+  () => authStore.get.isLoggedIn === true && !!authStore.get.user
+);
 export interface Dimensao {
   tipo: string;
   uri: string;
@@ -110,6 +122,32 @@ export interface ObjetoDimensional {
   lon: string;
   inicio: string;
   fim: string;
+}
+
+export function objetoDimensionalVazio(): ObjetoDimensional {
+  return {
+    id: '',
+    obj: '',
+    resumo: '',
+    associatedMedia: [],
+    assunto: '',
+    dataCriacao: '',
+    dataModificacao: '',
+    descricao: '',
+    onde: [],
+    oque: [],
+    quando: [],
+    quem: [],
+    repositorio: '',
+    temRelacao: [],
+    tipo: { tipo: '', uri: '' },
+    titulo: '',
+    coordenadas: '',
+    lat: '',
+    lon: '',
+    fim: '',
+    inicio: '',
+  };
 }
 
 export interface Lugar {

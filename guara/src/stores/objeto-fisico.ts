@@ -10,6 +10,7 @@ const defaultState = {
   objetoSelecionado: {} as ObjetoFisico, // Objeto individual
   objetoSelecionadoDim: {} as ObjetoDimensional,
   listaObj: [] as ObjetoFisico[], // Lista de objetos
+  listaObjDim: [] as ObjetoDimensional[], // Lista de objetos dimensionais
   keyword: '', // Palavra-chave usada na pesquisa
 };
 
@@ -37,6 +38,9 @@ export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {
     getLista(): ObjetoFisico[] {
       return this.$state.listaObj;
     },
+    getListaDim(): ObjetoDimensional[] {
+      return this.$state.listaObjDim;
+    },
     getKeyword(): string {
       return this.$state.keyword;
     },
@@ -60,6 +64,10 @@ export const useDadosObjetoFisico = defineStore('useDadosObjetoFisico', {
     },
     setLista(lista: ObjetoFisico[]) {
       this.$state.listaObj = lista;
+      SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
+    },
+    setListaDim(lista: ObjetoDimensional[]) {
+      this.$state.listaObjDim = lista;
       SessionStorage.set(StorageKey.objetoFisico, JSON.stringify(this.$state));
     },
     setKeyword(keyword: string) {

@@ -1,21 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeMount, watchEffect, computed } from 'vue';
-import axios from 'axios';
+
 import { useRouter } from 'vue-router';
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
 import {
   mostrarPopUpAddRelacao,
-  mostrarPopUpMidias,
+
   mostrarPopUpRelacoes,
   ObjetoFisico,
-  Relacao,
+
   Tripla,
 } from './manter-objeto';
-import apiConfig from 'src/apiConfig';
-import { Dialog, Notify } from 'quasar';
+
 import { colunasDim, colunasRelacaoFis } from '../colecoes/funcoes-funcoes';
 import { pesquisarRelacoes } from 'src/services/api-objeto-dim';
-import { mapearPropriedade, textoAposUltimoChar } from '../funcoes';
+
 
 const objetoId = ref({} as string); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
@@ -34,10 +33,6 @@ const labelTipo = computed(() => {
 
 const objetoSelecionado = ref({} as ObjetoFisico);
 
-const useFileUpload = ref([true] as any);
-const thumbnails = ref([] as any);
-const router = useRouter();
-const mostrar_excluidos = ref(false);
 
 async function buscarRelacoes() {
   objetoId.value = objetoStore.getObjeto.obj;

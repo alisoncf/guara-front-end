@@ -53,6 +53,11 @@ const routes: RouteRecordRaw[] = [
         path: '/logout',
         component: () => import('pages/LogoutPage.vue'),
       },
+      {
+        path: '/exemplo-grafo',
+        name: 'ExemploGrafo',
+        component: () => import('pages/exemplos/exemploGrafo.vue'),
+      },
     ],
   },
 

@@ -90,3 +90,10 @@ export function mapearPropriedade(uri: string) {
 
   return mapa[uri] || uri; // Retorna o valor original se não encontrar no mapa
 }
+
+export function truncarTexto(texto: string, limite: number): string {
+  if (texto.length > limite) {
+    return texto.substring(0, limite) + '(...)';
+  }
+  return texto;
+}

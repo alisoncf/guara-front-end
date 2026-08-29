@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 import {
+  Dimensao,
+  ListaTipoDim,
+  mostrarPopUpGrafoRelacoes,
   mostrarPopUpMidias,
   mostrarPopUpObjetoDim,
   mostrarPopUpObjetoFis,
   mostrarPopUpRelacoes,
   ObjetoDimensional,
+  objetoDimensionalVazio,
   ObjetoFisico,
+  somenteLeituraObjeto,
+  usuarioAdminLogado,
 } from '../objetos/manter-objeto';
 
 import { useRouter } from 'vue-router';
@@ -19,18 +25,22 @@ import {
 } from 'src/services/objeto-fisico-api';
 import { colunasDim, colunasFisico } from './funcoes-funcoes';
 import DialogoObjetoDim from '../objetos/DialogoObjetoDim.vue';
-import { textoAposUltimoChar } from '../funcoes';
+import { textoAposUltimoChar, truncarTexto } from '../funcoes';
 import DialogoObjetoFis from '../objetos/DialogoObjetoFis.vue';
 import ComponenteMidia from '../objetos/ComponenteMidia.vue';
 import ComponenteRelacao from '../objetos/ComponenteRelacao.vue';
 import ComponenteAddRelacao from '../objetos/ComponenteAddRelacao.vue';
+import ComponenteGrafoRelacoes from '../objetos/ComponenteGrafoRelacoes.vue';
 
 const router = useRouter();
 
 const useObjetoStore = useDadosObjetoFisico();
 const keyword = ref(useObjetoStore.getKeyword); // Carrega a última pesquisa
 const listaObj = ref(useObjetoStore.getLista); // Mantém a lista carregada
-const listaObjDim = ref([] as ObjetoDimensional[]);
+const listaObjDim = ref(useObjetoStore.getListaDim); // Mantém a lista carregada
+
+const listaDimensoes = ListaTipoDim();
+const dimensoesSelecionadas = ref<Dimensao[]>([...listaDimensoes]);
 
 const aba = ref<string>('fisicos');
 
@@ -47,11 +57,41 @@ const labelTipo = computed(() => {
 function buscar() {
   aba.value == 'fisicos' ? pesquisarFis() : pesquisarDim();
 }
+function dimensaoSelecionada(dim: Dimensao) {
+  return dimensoesSelecionadas.value.some((d) => d.tipo === dim.tipo);
+}
+function alternarDimensao(dim: Dimensao) {
+  if (dimensaoSelecionada(dim)) {
+    dimensoesSelecionadas.value = dimensoesSelecionadas.value.filter(
+      (d) => d.tipo !== dim.tipo
+    );
+  } else {
+    dimensoesSelecionadas.value.push(dim);
+  }
+  pesquisarDim();
+}
 async function pesquisarDim() {
-  const obj = ref({} as ObjetoDimensional);
-  obj.value.descricao = keyword.value;
-  listaObjDim.value = await pesquisarObjetosDim(obj.value);
-  console.log(listaObjDim.value);
+  let resultado: ObjetoDimensional[] = [];
+  if (dimensoesSelecionadas.value.length !== 0) {
+    if (dimensoesSelecionadas.value.length === listaDimensoes.length) {
+      const obj = ref({} as ObjetoDimensional);
+      obj.value.descricao = keyword.value;
+      resultado = await pesquisarObjetosDim(obj.value);
+    } else {
+      const resultados = await Promise.all(
+        dimensoesSelecionadas.value.map((dim) => {
+          const obj = ref({} as ObjetoDimensional);
+          obj.value.descricao = keyword.value;
+          obj.value.tipo = dim;
+          return pesquisarObjetosDim(obj.value);
+        })
+      );
+      resultado = resultados.flat();
+    }
+  }
+  listaObjDim.value = resultado;
+  useObjetoStore.setListaDim(resultado); // Salva no store
+  useObjetoStore.setKeyword(keyword.value); // Salva a palavra-chave
 }
 
 async function pesquisarFis() {
@@ -66,27 +106,33 @@ function irParaNovo() {
   const obj = ref({ id: '', titulo: '' } as ObjetoFisico);
   useObjetoStore.limparObjeto;
   useObjetoStore.setObjeto(obj);
+  somenteLeituraObjeto.value = false;
   mostrarPopUpObjetoFis.value = true;
 }
 function irParaNovoDim() {
-  const obj = ref({ id: '', titulo: '' } as ObjetoFisico);
-  useObjetoStore.setObjeto(obj);
-  //  router.push('/criar-objeto-dim');
+  const objVazio = objetoDimensionalVazio();
+  useObjetoStore.setObjetoDim(objVazio);
+  useObjetoStore.setObjeto(objVazio);
+  somenteLeituraObjeto.value = false;
   mostrarPopUpObjetoDim.value = true;
 }
 
-function irParaEditar(obj: ObjetoFisico) {
-  console.log(obj.titulo);
+function abrirObjeto(obj: ObjetoFisico, somenteLeitura: boolean) {
+  somenteLeituraObjeto.value = somenteLeitura;
   if (aba.value == 'fisicos') {
     useObjetoStore.setObjeto(obj);
     mostrarPopUpObjetoFis.value = true;
   } else {
-    console.log('objeto ->', obj);
     useObjetoStore.setObjetoDim(obj);
     useObjetoStore.setObjeto(obj);
     mostrarPopUpObjetoDim.value = true;
-    console.log('store', useObjetoStore.get);
   }
+}
+function irParaEditar(obj: ObjetoFisico) {
+  abrirObjeto(obj, false);
+}
+function irParaVisualizar(obj: ObjetoFisico) {
+  abrirObjeto(obj, true);
 }
 
 function deletarObjeto(obj: ObjetoFisico) {
@@ -102,9 +148,18 @@ function irParaRelacoes(obj: ObjetoFisico) {
   useObjetoStore.setObjeto(obj);
   mostrarPopUpRelacoes.value = true;
 }
+function irParaGrafo(obj: ObjetoFisico) {
+  useObjetoStore.setObjeto(obj);
+  mostrarPopUpGrafoRelacoes.value = true;
+}
 function Upload(id: string) {
   router.push('upload-midias/:' + id);
 }
+
+// Recarrega a lista automaticamente ao trocar de aba, sem precisar clicar em "Pesquisar"
+watch(aba, () => {
+  buscar();
+});
 </script>
 
 <template>
@@ -142,6 +197,24 @@ function Upload(id: string) {
           </div>
         </div>
 
+        <div v-if="aba == 'dimensionais'" class="q-mb-md">
+          <div class="text-caption text-grey-8 q-mb-xs">
+            Filtrar por dimensão
+          </div>
+          <q-chip
+            v-for="dim in listaDimensoes"
+            :key="dim.tipo"
+            clickable
+            :outline="!dimensaoSelecionada(dim)"
+            :color="dimensaoSelecionada(dim) ? 'teal' : 'grey-6'"
+            :text-color="dimensaoSelecionada(dim) ? 'white' : 'grey-8'"
+            :icon="dimensaoSelecionada(dim) ? 'check' : undefined"
+            @click="alternarDimensao(dim)"
+          >
+            {{ dim.tipo }}
+          </q-chip>
+        </div>
+
         <q-table
           v-if="aba == 'fisicos'"
           :rows="listaObj"
@@ -150,6 +223,8 @@ function Upload(id: string) {
           striped
           title="Objetos físicos do Acervo"
           wrap-cells
+          class="tabela-clicavel"
+          @row-click="(evt, row) => irParaVisualizar(row)"
         >
           <template v-slot:body-cell-#="{ rowIndex }">
             <q-td>{{ rowIndex + 1 }}</q-td>
@@ -158,11 +233,22 @@ function Upload(id: string) {
             <q-td style="font-size: 10px">{{ props.row.id }}</q-td>
           </template>
           <template v-slot:body-cell-acoes="props">
-            <q-td :props="props">
+            <q-td :props="props" @click.stop>
               <q-btn dense flat icon="more_vert">
                 <q-menu fit dense>
                   <q-list dense style="min-width: 100px">
                     <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaVisualizar(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-avatar icon="visibility" />
+                      </q-item-section>
+                      <q-item-section>Visualizar</q-item-section>
+                    </q-item>
+                    <q-item
+                      v-if="usuarioAdminLogado"
                       clickable
                       v-close-popup
                       @click="irParaEditar(props.row)"
@@ -192,6 +278,16 @@ function Upload(id: string) {
                       </q-item-section>
                       <q-item-section>Relações</q-item-section>
                     </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaGrafo(props.row)"
+                    >
+                      <q-item-section avatar flat>
+                        <q-avatar icon="account_tree" />
+                      </q-item-section>
+                      <q-item-section>Grafo</q-item-section>
+                    </q-item>
                     <q-separator />
                     <q-item
                       clickable
@@ -217,6 +313,8 @@ function Upload(id: string) {
           striped
           title="Objetos dimensionais do Acervo"
           wrap-cells
+          class="tabela-clicavel"
+          @row-click="(evt, row) => irParaVisualizar(row)"
         >
           <template v-slot:body-cell-#="{ rowIndex }">
             <q-td>{{ rowIndex + 1 }}</q-td>
@@ -224,17 +322,31 @@ function Upload(id: string) {
           <template v-slot:body-cell-id="props">
             <q-td style="font-size: 10px">{{ props.row.id }}</q-td>
           </template>
+          <template v-slot:body-cell-resumo="props">
+            <q-td>{{ truncarTexto(props.row.resumo, 150) }}</q-td>
+          </template>
           <template v-slot:body-cell-dimensao="props">
             <q-td :props="props">{{
               textoAposUltimoChar(props.row.dimensao, '#')
             }}</q-td>
           </template>
           <template v-slot:body-cell-acoes="props">
-            <q-td :props="props">
+            <q-td :props="props" @click.stop>
               <q-btn dense flat icon="more_vert">
                 <q-menu fit dense>
                   <q-list dense style="min-width: 100px">
                     <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaVisualizar(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-avatar icon="visibility" />
+                      </q-item-section>
+                      <q-item-section>Visualizar</q-item-section>
+                    </q-item>
+                    <q-item
+                      v-if="usuarioAdminLogado"
                       clickable
                       v-close-popup
                       @click="irParaEditar(props.row)"
@@ -253,6 +365,26 @@ function Upload(id: string) {
                         <q-avatar icon="photo" />
                       </q-item-section>
                       <q-item-section>Mídias</q-item-section>
+                    </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaRelacoes(props.row)"
+                    >
+                      <q-item-section avatar flat>
+                        <q-avatar icon="hub" />
+                      </q-item-section>
+                      <q-item-section>Relações</q-item-section>
+                    </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaGrafo(props.row)"
+                    >
+                      <q-item-section avatar flat>
+                        <q-avatar icon="account_tree" />
+                      </q-item-section>
+                      <q-item-section>Grafo</q-item-section>
                     </q-item>
                     <q-item
                       v-if="1 > 1"
@@ -286,13 +418,13 @@ function Upload(id: string) {
       <q-card-section>
         <q-btn-group flat push>
           <q-btn
-            v-if="aba == 'fisicos'"
+            v-if="aba == 'fisicos' && usuarioAdminLogado"
             @click="irParaNovo"
             color="primary"
             label="Criar Objeto Físico"
           />
           <q-btn
-            v-if="aba == 'dimensionais'"
+            v-if="aba == 'dimensionais' && usuarioAdminLogado"
             @click="irParaNovoDim"
             color="green-8"
             label="Criar Objeto Dimensional"
@@ -309,6 +441,16 @@ function Upload(id: string) {
       <ComponenteMidia />
       <ComponenteRelacao />
       <ComponenteAddRelacao />
+      <ComponenteGrafoRelacoes />
     </template>
   </div>
 </template>
+
+<style scoped>
+.tabela-clicavel :deep(tbody tr) {
+  cursor: pointer;
+}
+.tabela-clicavel :deep(tbody tr:hover) {
+  background: rgba(0, 150, 136, 0.06);
+}
+</style>

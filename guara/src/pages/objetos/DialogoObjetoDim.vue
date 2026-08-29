@@ -5,63 +5,54 @@ import {
   ListaTipoDim,
   Dimensao,
   ObjetoDimensional,
+  objetoDimensionalVazio,
   DimMapping,
   mostrarPopUpObjetoDim,
-  ObjetoDigital,
   mostrarPopUpRelacoes,
+  somenteLeituraObjeto,
+  usuarioAdminLogado,
 } from './manter-objeto';
 import {
   gravarObjetoDim,
   id_novo_objeto_dim_gravado,
-  pesquisarObjetosDim,
+
 } from 'src/services/api-objeto-dim';
 import { useDadosObjetoFisico } from 'src/stores/objeto-fisico';
 import { textoAposUltimoChar } from '../funcoes';
 const useObjetoStore = useDadosObjetoFisico();
 const listaDim = ListaTipoDim();
 const tipoSelecionado = ref(DimMapping('pessoa') as Dimensao);
-const objeto = ref<ObjetoDimensional>({
-  id: '',
-  obj: '',
-  resumo: '',
-  associatedMedia: [],
-  assunto: '',
-  dataCriacao: '',
-  dataModificacao: '',
-  descricao: '',
-  onde: [],
-  oque: [],
-  quando: [],
-  quem: [],
-  repositorio: '',
-  temRelacao: [],
-  tipo: { tipo: '', uri: '' },
-  titulo: '',
-  coordenadas: '',
-  lat: '',
-  lon: '',
-  fim: '',
-  inicio: '',
-});
+const abaObjeto = ref<'basicos' | 'outros'>('basicos');
+const objeto = ref<ObjetoDimensional>(objetoDimensionalVazio());
 watchEffect(() => {
   if (mostrarPopUpObjetoDim.value) {
+    abaObjeto.value = 'basicos';
     carregar();
   }
 });
 function carregar() {
-  if (objeto.value.id != '') {
-    console.log('passou aqui');
+  const idNoStore = useObjetoStore.getObjetoDim.id || '';
+  if (objeto.value.id === idNoStore) {
     return;
   }
-  if (useObjetoStore.getObjetoDim.id) {
+  if (idNoStore) {
     objeto.value = { ...useObjetoStore.getObjetoDim };
     tipoSelecionado.value = DimMapping(
       textoAposUltimoChar(objeto.value.tipo, '#')
     );
+  } else {
+    objeto.value = objetoDimensionalVazio();
+    tipoSelecionado.value = DimMapping('pessoa');
   }
 }
 
+function liberarEdicao() {
+  somenteLeituraObjeto.value = false;
+}
 function gravar() {
+  if (somenteLeituraObjeto.value) {
+    return;
+  }
   objeto.value.tipo = tipoSelecionado.value;
   gravarObjetoDim(objeto.value);
 
@@ -83,10 +74,16 @@ function irParaMapa() {
   }
 }
 function irParaRelacoes() {
+  if (somenteLeituraObjeto.value) {
+    return;
+  }
   useObjetoStore.setObjeto(objeto);
   mostrarPopUpRelacoes.value = true;
 }
 function novo() {
+  if (somenteLeituraObjeto.value) {
+    return;
+  }
   objeto.value.titulo = '';
   objeto.value.descricao = '';
   objeto.value.resumo = '';
@@ -99,9 +96,7 @@ onBeforeMount(() => {
 
 <template>
   <q-dialog v-model="mostrarPopUpObjetoDim" class="q-pa-md scroll" persistent>
-    <q-card
-      style="width: 90vw; height: 90vw; max-width: 90vw; max-height: 90vh"
-    >
+    <q-card class="dialogo-objeto-dim">
       <q-toolbar>
         <q-toolbar-title v-if="!objeto.id || objeto.id == ''"
           >Criar {{ tipoSelecionado.tipo }}
@@ -109,79 +104,136 @@ onBeforeMount(() => {
         <q-toolbar-title v-else
           >{{ tipoSelecionado.tipo }} - {{ objeto.titulo }}
         </q-toolbar-title>
+        <q-badge
+          v-if="somenteLeituraObjeto"
+          color="grey-7"
+          label="Somente visualização"
+          class="q-mr-md"
+        />
         <q-btn icon="close" flat round dense v-close-popup />
       </q-toolbar>
 
-      <q-card-section>
-        <div class="q-gutter-x-md">
-          <label>Dimensão/Tipo</label>
-          <q-select
-            v-model="tipoSelecionado"
-            outlined
-            :options="listaDim"
-            option-label="tipo"
-            label="tipo"
-            fill-input
-            clearable
-          ></q-select>
-        </div>
-
-        <q-input
-          v-model="objeto.titulo"
-          outlined
-          label="Título/nome do objeto"
-        />
-        <q-input
-          v-model="objeto.descricao"
-          label="Descrição"
-          autogrow
-          outlined
-          title="Uma descrição pormenorizada do evento com local,
-          marcos históricos, fatos e figuras importantes etc"
-        />
-        <q-input
-          v-model="objeto.resumo"
-          label="Resumo"
-          outlined
-          title="uma versão resumida para o usuário ter uma visão geral"
-          autogrow
-        />
-        <q-input
-          v-if="tipoSelecionado.tipo.toLowerCase() == 'lugar'"
-          v-model="objeto.coordenadas"
-          label="Coordenadas (latitude,longitude)"
-          outlined
-          title="uma versão resumida para o usuário ter uma visão geral"
+      <q-card-section class="dialogo-objeto-dim-conteudo">
+        <q-tabs
+          v-model="abaObjeto"
+          class="text-teal"
+          align="justify"
+          active-color="teal"
+          indicator-color="teal"
+          dense
         >
-          <template v-slot:append>
-            <q-btn icon="pin_drop" @click="irParaMapa" flat size="smaller" />
-          </template>
-        </q-input>
-        <q-input
-          v-if="tipoSelecionado.tipo.toLowerCase() == 'evento'"
-          v-model="objeto.inicio"
-          label="Data de Início"
-          outlined
-          title="uma data inicial ou um período inicial aproximado"
-        />
-        <q-input
-          v-if="tipoSelecionado.tipo.toLowerCase() == 'evento'"
-          v-model="objeto.fim"
-          label="Data de Encerramento"
-          outlined
-          title="uma data inicial ou um período final aproximado"
-        />
+          <q-tab name="basicos" label="Dados básicos" />
+          <q-tab name="outros" label="Outros dados" />
+        </q-tabs>
+        <q-separator />
+        <q-tab-panels v-model="abaObjeto" animated>
+          <q-tab-panel name="basicos">
+            <div class="q-gutter-x-md">
+              <label>Dimensão/Tipo</label>
+              <q-select
+                v-model="tipoSelecionado"
+                outlined
+                :options="listaDim"
+                option-label="tipo"
+                label="tipo"
+                fill-input
+                clearable
+                :disable="somenteLeituraObjeto"
+              ></q-select>
+            </div>
+
+            <q-input
+              v-model="objeto.titulo"
+              outlined
+              label="Título/nome do objeto"
+              :readonly="somenteLeituraObjeto"
+            />
+            <q-input
+              v-model="objeto.descricao"
+              label="Descrição"
+              autogrow
+              outlined
+              title="Uma descrição pormenorizada do evento com local,
+          marcos históricos, fatos e figuras importantes etc"
+              :readonly="somenteLeituraObjeto"
+            />
+            <q-input
+              v-model="objeto.resumo"
+              label="Resumo"
+              outlined
+              title="uma versão resumida para o usuário ter uma visão geral"
+              autogrow
+              :readonly="somenteLeituraObjeto"
+            />
+            <q-input
+              v-if="tipoSelecionado.tipo.toLowerCase() == 'lugar'"
+              v-model="objeto.coordenadas"
+              label="Coordenadas (latitude,longitude)"
+              outlined
+              title="uma versão resumida para o usuário ter uma visão geral"
+              :readonly="somenteLeituraObjeto"
+            >
+              <template v-slot:append>
+                <q-btn
+                  icon="pin_drop"
+                  @click="irParaMapa"
+                  flat
+                  size="smaller"
+                />
+              </template>
+            </q-input>
+            <q-input
+              v-if="tipoSelecionado.tipo.toLowerCase() == 'evento'"
+              v-model="objeto.inicio"
+              label="Data de Início"
+              outlined
+              title="uma data inicial ou um período inicial aproximado"
+              :readonly="somenteLeituraObjeto"
+            />
+            <q-input
+              v-if="tipoSelecionado.tipo.toLowerCase() == 'evento'"
+              v-model="objeto.fim"
+              label="Data de Encerramento"
+              outlined
+              title="uma data inicial ou um período final aproximado"
+              :readonly="somenteLeituraObjeto"
+            />
+          </q-tab-panel>
+          <q-tab-panel name="outros">
+            <div class="text-grey-7 q-pa-md text-center">
+              Nenhum dado de vocabulário disponível ainda.
+            </div>
+          </q-tab-panel>
+        </q-tab-panels>
       </q-card-section>
 
-      <q-card-actions>
+      <q-card-actions class="botoes-fixos">
         <q-btn-group flat push>
-          <q-btn @click="gravar" label="Salvar Objeto" color="green-8" />
-          <q-btn @click="novo" label="Novo objeto" color="blue-8" />
+          <q-btn
+            @click="gravar"
+            label="Salvar Objeto"
+            color="green-8"
+            v-if="!somenteLeituraObjeto"
+          />
+          <q-btn
+            @click="novo"
+            label="Novo objeto"
+            color="blue-8"
+            v-if="!somenteLeituraObjeto"
+          />
           <q-btn
             @click="irParaRelacoes"
             label="Adicionar relações"
             color="orange-8"
-            v-if="objeto.id && objeto.id != ''"
+            v-if="objeto.id && objeto.id != '' && !somenteLeituraObjeto"
+          />
+          <q-btn
+            @click="liberarEdicao"
+            label="Editar"
+            color="orange-8"
+            v-if="
+              objeto.id && objeto.id != '' && somenteLeituraObjeto && usuarioAdminLogado
+            "
           />
 
           <q-btn
@@ -195,3 +247,24 @@ onBeforeMount(() => {
     </q-card>
   </q-dialog>
 </template>
+
+<style scoped>
+.dialogo-objeto-dim {
+  width: 90vw;
+  max-width: 90vw;
+  height: 85vh;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.dialogo-objeto-dim-conteudo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.botoes-fixos {
+  flex: 0 0 auto;
+  border-top: 1px solid #e0e0e0;
+  background: #fff;
+}
+</style>
