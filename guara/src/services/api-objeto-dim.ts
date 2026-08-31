@@ -110,6 +110,42 @@ export function addRelacao(tripla: Tripla) {
     });
 }
 
+export async function removerRelacao(tripla: Tripla): Promise<boolean> {
+  try {
+    const response = await fetch(apiConfig.endpoints.relacao.remove, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + authStore.token,
+      },
+      body: JSON.stringify({
+        ...tripla,
+        repository: authStore.get.repositorio_conectado.uri,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorMessage = await response.text();
+      throw new Error(errorMessage || 'Não foi possível remover a relação.');
+    }
+
+    Notify.create({
+      type: 'positive',
+      message: 'Relação removida com sucesso!',
+      timeout: 3000,
+    });
+    return true;
+  } catch (error: any) {
+    console.error('Erro ao remover relação:', error);
+    Notify.create({
+      type: 'negative',
+      message: `Erro ao remover relação: ${error.message}`,
+      timeout: 5000,
+    });
+    return false;
+  }
+}
+
 export async function pesquisarRelacoes(obj_uri: string) {
   const lista = ref([] as Tripla[]);
 

@@ -7,9 +7,9 @@ import {
   listaRelacoes,
   mostrarPopUpAddRelacao,
   mostrarPopUpMidias,
-  mostrarPopUpRelacoes,
   ObjetoDigital,
   ObjetoFisico,
+  relacaoPreSelecionada,
   Relacao,
   Tripla,
 } from './manter-objeto';
@@ -49,8 +49,13 @@ function buscarRelacoes() {
   objetoEmEdicao.value = objetoStore.getObjeto;
 }
 watchEffect(() => {
-  if (mostrarPopUpRelacoes.value) {
+  if (mostrarPopUpAddRelacao.value) {
     buscarRelacoes();
+    if (relacaoPreSelecionada.value) {
+      relacaoSelecionada.value = relacaoPreSelecionada.value;
+      relacaoPreSelecionada.value = null;
+      busque.objetos('');
+    }
   }
 });
 onMounted(() => {

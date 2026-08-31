@@ -11,6 +11,12 @@ export const mostrarPopUpRelacoes = ref(false);
 export const mostrarPopUpAddRelacao = ref(false);
 export const mostrarPopUpGrafoRelacoes = ref(false);
 
+// Quando definido, o diálogo de "Adicionar Relação" abre já com este tipo selecionado
+export const relacaoPreSelecionada = ref<Relacao | null>(null);
+
+// Quando definido, o diálogo "Gerenciar Relações" abre já filtrado por esta dimensão
+export const dimensaoFiltroInicialRelacoes = ref<Dimensao | null>(null);
+
 // Controla se os diálogos de objeto abrem apenas para visualização (sem permitir alterações)
 export const somenteLeituraObjeto = ref(false);
 

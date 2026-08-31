@@ -4,6 +4,7 @@ import { ref, onBeforeMount, watchEffect } from 'vue';
 import {
   ListaTipoDim,
   Dimensao,
+  dimensaoFiltroInicialRelacoes,
   ObjetoDimensional,
   objetoDimensionalVazio,
   DimMapping,
@@ -89,6 +90,25 @@ function novo() {
   objeto.value.resumo = '';
   objeto.value.id = '';
 }
+function iconeDimensao(tipo: string): string {
+  switch (tipo.toLowerCase()) {
+    case 'pessoa':
+      return 'person';
+    case 'lugar':
+      return 'place';
+    case 'evento':
+      return 'event';
+    case 'tempo':
+      return 'schedule';
+    default:
+      return 'category';
+  }
+}
+function irParaRelacaoDimensao(dim: Dimensao) {
+  dimensaoFiltroInicialRelacoes.value = dim;
+  useObjetoStore.setObjeto(objeto.value);
+  mostrarPopUpRelacoes.value = true;
+}
 onBeforeMount(() => {
   console.log('montando');
 });
@@ -113,6 +133,7 @@ onBeforeMount(() => {
         <q-btn icon="close" flat round dense v-close-popup />
       </q-toolbar>
 
+      <div class="dialogo-objeto-dim-corpo">
       <q-card-section class="dialogo-objeto-dim-conteudo">
         <q-tabs
           v-model="abaObjeto"
@@ -207,6 +228,28 @@ onBeforeMount(() => {
         </q-tab-panels>
       </q-card-section>
 
+      <div class="dialogo-objeto-dim-lateral">
+        <q-btn
+          v-for="dim in listaDim"
+          :key="dim.tipo"
+          round
+          flat
+          color="grey-8"
+          :icon="iconeDimensao(dim.tipo)"
+          :disable="!objeto.id || objeto.id == ''"
+          @click="irParaRelacaoDimensao(dim)"
+        >
+          <q-tooltip>
+            {{
+              !objeto.id || objeto.id == ''
+                ? 'Salve o objeto para ver relações'
+                : 'Relações de ' + dim.tipo
+            }}
+          </q-tooltip>
+        </q-btn>
+      </div>
+      </div>
+
       <q-card-actions class="botoes-fixos">
         <q-btn-group flat push>
           <q-btn
@@ -257,10 +300,28 @@ onBeforeMount(() => {
   display: flex;
   flex-direction: column;
 }
-.dialogo-objeto-dim-conteudo {
+.dialogo-objeto-dim-corpo {
   flex: 1 1 auto;
   min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+.dialogo-objeto-dim-conteudo {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-y: auto;
+}
+.dialogo-objeto-dim-lateral {
+  flex: 0 0 auto;
+  width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 8px;
+  border-left: 1px solid #e0e0e0;
+  background: #fafafa;
 }
 .botoes-fixos {
   flex: 0 0 auto;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 
 import {
   Dimensao,
@@ -25,7 +25,9 @@ import {
 } from 'src/services/objeto-fisico-api';
 import { colunasDim, colunasFisico } from './funcoes-funcoes';
 import DialogoObjetoDim from '../objetos/DialogoObjetoDim.vue';
-import { textoAposUltimoChar, truncarTexto } from '../funcoes';
+import { FuncaoComCallback, textoAposUltimoChar, truncarTexto } from '../funcoes';
+import { listarClasses } from 'src/services/api';
+import { ClasseComum } from '../tipos';
 import DialogoObjetoFis from '../objetos/DialogoObjetoFis.vue';
 import ComponenteMidia from '../objetos/ComponenteMidia.vue';
 import ComponenteRelacao from '../objetos/ComponenteRelacao.vue';
@@ -42,7 +44,34 @@ const listaObjDim = ref(useObjetoStore.getListaDim); // Mantém a lista carregad
 const listaDimensoes = ListaTipoDim();
 const dimensoesSelecionadas = ref<Dimensao[]>([...listaDimensoes]);
 
+const listaColecoes = ref<ClasseComum[]>([]);
+const colecoesFiltradas = ref<ClasseComum[]>([]);
+const colecaoSelecionada = ref<string | null>(null);
+
 const aba = ref<string>('fisicos');
+
+function rotuloColecao(colecao: ClasseComum): string {
+  return colecao.label || colecao.nome_curto;
+}
+async function carregarColecoes() {
+  listaColecoes.value = await listarClasses('');
+  colecoesFiltradas.value = listaColecoes.value;
+}
+function filtrarColecoes(valor: string, atualizar: FuncaoComCallback) {
+  atualizar(() => {
+    if (valor === '') {
+      colecoesFiltradas.value = listaColecoes.value;
+      return;
+    }
+    const busca = valor.toLocaleLowerCase();
+    colecoesFiltradas.value = listaColecoes.value.filter((colecao) =>
+      rotuloColecao(colecao).toLocaleLowerCase().includes(busca)
+    );
+  });
+}
+onMounted(() => {
+  carregarColecoes();
+});
 
 const labelTipo = computed(() => {
   switch (aba.value) {
@@ -97,7 +126,10 @@ async function pesquisarDim() {
 async function pesquisarFis() {
   const obj = ref({} as ObjetoFisico);
   obj.value.descricao = keyword.value;
-  listaObj.value = await pesquisarObjetosFisicos(obj.value);
+  const resultado = await pesquisarObjetosFisicos(obj.value);
+  listaObj.value = colecaoSelecionada.value
+    ? resultado.filter((item) => item.colecao === colecaoSelecionada.value)
+    : resultado;
   useObjetoStore.setLista(listaObj); // Salva no store
   useObjetoStore.setKeyword(keyword.value); // Salva a palavra-chave
 }
@@ -193,6 +225,30 @@ watch(aba, () => {
               label="Pesquisar"
               icon="search"
               class="q-ml-md"
+            />
+          </div>
+        </div>
+
+        <div v-if="aba == 'fisicos'" class="row q-mb-md">
+          <div class="col-xs-12 col-md-6">
+            <div class="text-caption text-grey-8 q-mb-xs">
+              Filtrar por coleção
+            </div>
+            <q-select
+              v-model="colecaoSelecionada"
+              :options="colecoesFiltradas"
+              :option-label="rotuloColecao"
+              option-value="uri"
+              emit-value
+              map-options
+              outlined
+              dense
+              clearable
+              use-input
+              input-debounce="0"
+              label="Todas as coleções"
+              @filter="filtrarColecoes"
+              @update:model-value="pesquisarFis()"
             />
           </div>
         </div>
