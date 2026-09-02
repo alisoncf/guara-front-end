@@ -217,17 +217,7 @@ onBeforeMount(() => {
                 <q-td>{{ rowIndex + 1 }}</q-td>
               </template>
 
-              <template v-slot:body-cell-propriedade="props">
-                <q-td>
-                  <q-chips
-                    v-if="props.row.tipoDimensao != ''"
-                    icon="place"
-                    flat
-                  ></q-chips>
-                  {{ props.row.propriedade }}
 
-                </q-td>
-              </template>
               <template v-slot:body-cell-acoes="props">
                 <q-td>
                   <q-btn

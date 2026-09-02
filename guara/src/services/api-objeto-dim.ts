@@ -3,6 +3,7 @@ import {
   ObjetoDimensional,
   ObjetoFisico,
   Relacao,
+  tipoDimensional,
   Tripla,
 } from '../pages/objetos/manter-objeto';
 import { useAuthStore } from 'src/stores/auth-store';
@@ -177,6 +178,10 @@ export async function pesquisarRelacoes(obj_uri: string) {
       complemento: '',
       titulo: item.titulo,
       propriedade_abreviada: textoAposUltimoChar(item.propriedade.value, '#'),
+      tipoDimensao:  item.tipoDimensao ? item.tipoDimensao.value : '',
+      objAssociado: item.objAssociado ? item.objAssociado.value : '',
+      tipo_recurso: item.tipo_recurso ? item.tipo_recurso.value : '',
+      direcao: item.direcao ? item.direcao.value : '',
     }))) as Tripla[];
 
     return lista.value;

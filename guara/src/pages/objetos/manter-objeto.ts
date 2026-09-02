@@ -281,4 +281,6 @@ export interface Tripla {
   tipo_recurso: string;
   titulo: string;
   propriedade_abreviada: string;
+  tipoDimensao?:string;
+  objAssociado?:string;
 }

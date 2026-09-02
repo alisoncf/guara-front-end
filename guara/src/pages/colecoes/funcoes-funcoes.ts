@@ -56,6 +56,20 @@ export const colunasRelacaoFis = [
       row.titulo?.value || textoAposUltimoChar(row.valor?.value, '#') || '',
     sortable: true,
   },
+  {
+    name: 'objAssociado',
+    label: 'objAssociado',
+    align: 'left',
+    field: 'objAssociado',
+    sortable: true,
+  },
+  {
+    name: 'dimensao',
+    label: 'Dimensão',
+    align: 'left',
+    field: 'tipoDimensao',
+    sortable: true,
+  },
   { name: 'acoes', label: 'Ações', align: 'center' },
 ] as Coluna[];
 

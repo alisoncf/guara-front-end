@@ -7,7 +7,7 @@ import { useQuasar } from 'quasar';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 import { listarClasses } from 'src/services/api';
 import { useAuthStore } from 'src/stores/auth-store';
-import { textoAposUltimoChar } from '../funcoes';
+import { textoAposUltimoChar, truncarTexto } from '../funcoes';
 import { ClasseComum, ClassQueryResult, Coluna, TreeNode } from '../tipos';
 import apiConfig from 'src/apiConfig';
 
@@ -80,6 +80,8 @@ const keyword = ref<string>('');
 
 const listaClasses = ref<ClasseComum[]>([]);
 const arvoreClasses = ref<TreeNode[]>([]);
+const visualizacao = ref<'tabela' | 'cards'>('tabela');
+const LIMITE_DESCRICAO_CARD = 140;
 
 const columns = [
   { name: 'label', label: 'Nome', align: 'left', field: 'label' },
@@ -328,43 +330,171 @@ watch(
       <div class="col-xs-6 col-md-6 col-lg-2">
         <q-btn @click="search" color="teal" label="Pesquisar" icon="search" />
       </div>
+      <div class="col-xs-12 col-lg flex items-center justify-end">
+        <q-btn-toggle
+          v-model="visualizacao"
+          dense
+          unelevated
+          toggle-color="teal"
+          color="white"
+          text-color="grey-8"
+          :options="[
+            { value: 'tabela', icon: 'table_rows', label: 'Tabela' },
+            { value: 'cards', icon: 'grid_view', label: 'Cards' },
+          ]"
+        />
+      </div>
     </div>
 
     <q-card>
       <q-table
+        v-if="visualizacao == 'tabela'"
         :rows="listaClasses"
         :columns="columns"
         row-key="id"
         striped
-        title="Classes do acervo"
+        title="Organização e estrutura do acervo"
         wrap-cells
       >
-        <template v-slot:body-cell-acoes="props">
-          <q-td :props="props">
-            <q-btn
-              dense
-              color="blue-9"
-              icon="edit"
-              @click="editClass(props.row)"
-              title="alterar a classe"
-            />
-            <q-btn
-              dense
-              color="purple-6 "
-              icon="format_list_bulleted"
-              @click="editClass(props.row)"
-              title="ir para os objetos desta coleção"
-            />
-            <q-btn
-              dense
-              color="red-7"
-              icon="delete"
-              @click="excluir_classe(props.row)"
-              title="excluir definitivamente essa classe"
-            />
-          </q-td>
-        </template>
+      <template v-slot:body-cell-acoes="props">
+            <q-td :props="props" @click.stop>
+              <q-btn dense flat icon="more_vert">
+                <q-menu fit dense>
+                  <q-list dense style="min-width: 100px">
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaVisualizar(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-avatar icon="visibility" />
+                      </q-item-section>
+                      <q-item-section>Visualizar</q-item-section>
+                    </q-item>
+                    <q-item
+                      v-if="usuarioAdminLogado"
+                      clickable
+                      v-close-popup
+                      @click="irParaEditar(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-avatar icon="edit" />
+                      </q-item-section>
+                      <q-item-section>Editar</q-item-section>
+                    </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaMidias(props.row)"
+                    >
+                      <q-item-section avatar flat>
+                        <q-avatar icon="photo" />
+                      </q-item-section>
+                      <q-item-section>Mídias</q-item-section>
+                    </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaRelacoes(props.row)"
+                    >
+                      <q-item-section avatar flat>
+                        <q-avatar icon="hub" />
+                      </q-item-section>
+                      <q-item-section>Relações</q-item-section>
+                    </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="irParaGrafo(props.row)"
+                    >
+                      <q-item-section avatar flat>
+                        <q-avatar icon="account_tree" />
+                      </q-item-section>
+                      <q-item-section>Grafo</q-item-section>
+                    </q-item>
+                    <q-separator />
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="deletarObjeto(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-avatar icon="delete_forever" disabled color="red-7" />
+                      </q-item-section>
+                      <q-item-section>Excluir</q-item-section>
+                    </q-item>
+                  </q-list></q-menu
+                >
+              </q-btn>
+            </q-td>
+          </template>
       </q-table>
+
+      <q-card-section v-else>
+        <div class="text-subtitle2 q-mb-md">
+          Organização e estrutura do acervo
+        </div>
+        <div v-if="listaClasses.length === 0" class="text-grey-7 text-center q-pa-lg">
+          Nenhuma classe encontrada.
+        </div>
+        <div v-else class="row q-col-gutter-md">
+          <div
+            v-for="classe in listaClasses"
+            :key="classe.uri"
+            class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
+          >
+            <q-card bordered flat class="classe-card">
+              <q-card-section>
+                <div class="text-subtitle1 text-weight-bold classe-nome">
+                  {{ classe.label || classe.nome_curto }}
+                </div>
+                <div class="text-caption text-grey-7 q-mb-sm">
+                  Classe mãe:
+                  {{ classe.mae_curta && classe.mae_curta != '-' ? classe.mae_curta : '—' }}
+                </div>
+                <div
+                  class="text-body2 classe-descricao"
+                  :title="classe.description"
+                >
+                  {{
+                    classe.description
+                      ? truncarTexto(classe.description, LIMITE_DESCRICAO_CARD)
+                      : 'Sem descrição.'
+                  }}
+                </div>
+              </q-card-section>
+              <q-separator />
+              <q-card-actions align="right">
+                <q-btn
+                  dense
+                  flat
+
+                  icon="edit"
+                  @click="editClass(classe)"
+                  title="alterar a classe"
+                />
+                <q-btn
+                  dense
+                  flat
+
+                  icon="category"
+                  @click="irParaObjetos(classe)"
+                  title="ir para os objetos desta coleção"
+                />
+                <q-btn
+                  dense
+                  flat
+
+                  icon="delete"
+                  @click="excluir_classe(classe)"
+                  title="excluir definitivamente essa classe"
+                  disabled="true"
+                />
+              </q-card-actions>
+            </q-card>
+          </div>
+        </div>
+      </q-card-section>
 
       <q-dialog v-model="dialogOpen" class="q-pa-md scroll" persistent>
         <q-card style="width: 80vw; max-width: 90vw; max-height: 90vh">
@@ -424,3 +554,29 @@ watch(
     </q-card>
   </q-page>
 </template>
+
+<style scoped>
+.classe-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.classe-nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.classe-descricao {
+  min-height: 4.2em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+</style>
