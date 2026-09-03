@@ -9,7 +9,9 @@ const apiConfig = {
   baseURL: isProduction ? 'https://localhost:5000' : 'http://localhost:5000',
   endpoints: {
     classapi: '/classapi',
-
+    recomendacao: {
+      sugerir: baseURL + '/recomendacao/sugerir',
+    },
     upload: '/uploadapi/upload',
     remove_file: '/uploadapi/remove',
     sparqapi: '/sparqapi',
@@ -43,6 +45,7 @@ const apiConfig = {
       upload: baseURL + '/uploadapi/upload',
       getFile: baseURL + '/uploadapi/midias',
     },
+    cidadeai: baseURL +'/ia/cidades',
 
     listar_repo: baseURL + '/repositorios/list',
     login: baseURL + '/acesso/login',
@@ -62,6 +65,7 @@ const apiConfig = {
     colecao: baseOnto + 'colecao',
     temRelacao: baseOnto + 'temRelacao',
   },
+
 };
 
 export default apiConfig;

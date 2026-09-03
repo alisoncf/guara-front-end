@@ -4,12 +4,14 @@ import axios from 'axios';
 
 import { useQuasar } from 'quasar';
 
-import { useDadosRepositorio } from 'src/stores/repositorio-store';
+
 import { listarClasses } from 'src/services/api';
 import { useAuthStore } from 'src/stores/auth-store';
 import { textoAposUltimoChar, truncarTexto } from '../funcoes';
 import { ClasseComum, ClassQueryResult, Coluna, TreeNode } from '../tipos';
 import apiConfig from 'src/apiConfig';
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 const dialogOpen = ref<boolean>(false);
 const editMode = ref<boolean>(false);
@@ -80,7 +82,7 @@ const keyword = ref<string>('');
 
 const listaClasses = ref<ClasseComum[]>([]);
 const arvoreClasses = ref<TreeNode[]>([]);
-const visualizacao = ref<'tabela' | 'cards'>('tabela');
+const visualizacao = ref<'tabela' | 'cards'>('cards');
 const LIMITE_DESCRICAO_CARD = 140;
 
 const columns = [
@@ -142,6 +144,12 @@ function findParentNode(nodes: TreeNode[], parentLabel: string): any {
     }
   }
   return null;
+}
+function irParaObjetos(classe: ClasseComum) {
+  router.push({
+    path: '/abrir-colecoes',
+    query: { colecao: classe.uri },
+  });
 }
 async function listarClasseMae() {
   try {
@@ -300,7 +308,9 @@ const showNotif = (mensagem: any) => {
 };
 
 onBeforeMount(() => {
+
   listarClasseMae();
+  search();
 });
 
 watch(
@@ -329,6 +339,14 @@ watch(
       </div>
       <div class="col-xs-6 col-md-6 col-lg-2">
         <q-btn @click="search" color="teal" label="Pesquisar" icon="search" />
+        <q-btn
+          @click="abrirDialogoNovaClasse"
+          color="primary"
+          label="Nova Classe"
+          rounded
+          flat
+          icon="add"
+        />
       </div>
       <div class="col-xs-12 col-lg flex items-center justify-end">
         <q-btn-toggle
@@ -357,75 +375,29 @@ watch(
         wrap-cells
       >
       <template v-slot:body-cell-acoes="props">
-            <q-td :props="props" @click.stop>
-              <q-btn dense flat icon="more_vert">
-                <q-menu fit dense>
-                  <q-list dense style="min-width: 100px">
-                    <q-item
-                      clickable
-                      v-close-popup
-                      @click="irParaVisualizar(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-avatar icon="visibility" />
-                      </q-item-section>
-                      <q-item-section>Visualizar</q-item-section>
-                    </q-item>
-                    <q-item
-                      v-if="usuarioAdminLogado"
-                      clickable
-                      v-close-popup
-                      @click="irParaEditar(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-avatar icon="edit" />
-                      </q-item-section>
-                      <q-item-section>Editar</q-item-section>
-                    </q-item>
-                    <q-item
-                      clickable
-                      v-close-popup
-                      @click="irParaMidias(props.row)"
-                    >
-                      <q-item-section avatar flat>
-                        <q-avatar icon="photo" />
-                      </q-item-section>
-                      <q-item-section>Mídias</q-item-section>
-                    </q-item>
-                    <q-item
-                      clickable
-                      v-close-popup
-                      @click="irParaRelacoes(props.row)"
-                    >
-                      <q-item-section avatar flat>
-                        <q-avatar icon="hub" />
-                      </q-item-section>
-                      <q-item-section>Relações</q-item-section>
-                    </q-item>
-                    <q-item
-                      clickable
-                      v-close-popup
-                      @click="irParaGrafo(props.row)"
-                    >
-                      <q-item-section avatar flat>
-                        <q-avatar icon="account_tree" />
-                      </q-item-section>
-                      <q-item-section>Grafo</q-item-section>
-                    </q-item>
-                    <q-separator />
-                    <q-item
-                      clickable
-                      v-close-popup
-                      @click="deletarObjeto(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-avatar icon="delete_forever" disabled color="red-7" />
-                      </q-item-section>
-                      <q-item-section>Excluir</q-item-section>
-                    </q-item>
-                  </q-list></q-menu
-                >
-              </q-btn>
+            <q-td :props="props">
+              <q-btn
+                dense
+                flat
+                icon="edit"
+                @click="editClass(props.row)"
+                title="alterar a classe"
+              />
+              <q-btn
+                dense
+                flat
+                icon="category"
+                @click="irParaObjetos(props.row)"
+                title="ir para os objetos desta coleção"
+              />
+              <q-btn
+                dense
+                flat
+                icon="delete"
+                @click="excluir_classe(props.row)"
+                title="excluir definitivamente essa classe"
+                disabled="true"
+              />
             </q-td>
           </template>
       </q-table>

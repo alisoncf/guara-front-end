@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeMount, watchEffect, computed } from 'vue';
+import { ref, onMounted, onBeforeMount, watch, watchEffect, computed } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
@@ -7,10 +7,14 @@ import {
   listaRelacoes,
   mostrarPopUpAddRelacao,
   mostrarPopUpMidias,
+  mostrarPopUpObjetoDim,
+  mostrarPopUpObjetoFis,
   ObjetoDigital,
+  objetoDimensionalVazio,
   ObjetoFisico,
   relacaoPreSelecionada,
   Relacao,
+  somenteLeituraObjeto,
   Tripla,
 } from './manter-objeto';
 import apiConfig from 'src/apiConfig';
@@ -65,6 +69,35 @@ onMounted(() => {
 onBeforeMount(() => {
   //
 });
+
+// Evita empilhar 3 diálogos ao mesmo tempo (o de criação pode ficar
+// escondido atrás deste): fecha "Adicionar Relação" enquanto cria o
+// novo objeto e reabre automaticamente assim que o outro for fechado.
+const reabrirAoFecharCriacao = ref(false);
+watch([mostrarPopUpObjetoDim, mostrarPopUpObjetoFis], ([dimAberto, fisAberto]) => {
+  if (!dimAberto && !fisAberto && reabrirAoFecharCriacao.value) {
+    reabrirAoFecharCriacao.value = false;
+    mostrarPopUpAddRelacao.value = true;
+  }
+});
+
+function irParaNovoObjetoDim() {
+  const objVazio = objetoDimensionalVazio();
+  objetoStore.setObjetoDim(objVazio);
+  objetoStore.setObjeto(objVazio);
+  somenteLeituraObjeto.value = false;
+  reabrirAoFecharCriacao.value = true;
+  mostrarPopUpAddRelacao.value = false;
+  mostrarPopUpObjetoDim.value = true;
+}
+function irParaNovoObjetoFis() {
+  const objVazio = { id: '', titulo: '' } as ObjetoFisico;
+  objetoStore.setObjeto(objVazio);
+  somenteLeituraObjeto.value = false;
+  reabrirAoFecharCriacao.value = true;
+  mostrarPopUpAddRelacao.value = false;
+  mostrarPopUpObjetoFis.value = true;
+}
 
 async function adicionarRelacao() {
   const tripla = ref({} as Tripla);
@@ -195,6 +228,33 @@ const busque = {
                   outlined
                   v-model="valorSelecionado"
                 />
+
+                <div
+                  v-if="relacaoSelecionada.nome != 'relation'"
+                  class="row q-gutter-sm q-mt-sm"
+                >
+                  <span class="text-caption text-grey-7 flex items-center">
+                    Não achou o que precisa?
+                  </span>
+                  <q-btn
+                    outline
+                    dense
+                    no-caps
+                    color="green-8"
+                    icon="add"
+                    label="Criar objeto dimensional"
+                    @click="irParaNovoObjetoDim"
+                  />
+                  <q-btn
+                    outline
+                    dense
+                    no-caps
+                    color="primary"
+                    icon="add"
+                    label="Criar objeto físico"
+                    @click="irParaNovoObjetoFis"
+                  />
+                </div>
               </div>
             </div>
           </q-card-section>

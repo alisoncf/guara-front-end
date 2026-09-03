@@ -2,9 +2,9 @@
 
 import axios from 'axios';
 import apiConfig from '../apiConfig';
-import { ObjetoFisico } from '../pages/objetos/manter-objeto';
-import { useRouter } from 'vue-router';
-import { Dialog, Notify } from 'quasar';
+
+
+
 import {
   ClasseComum,
   ClassQueryResult,
@@ -18,7 +18,7 @@ import { useAuthStore } from 'src/stores/auth-store';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 const authStore = useAuthStore();
 const repoStore = useDadosRepositorio();
-const router = useRouter();
+
 const api = axios.create({
   baseURL: apiConfig.baseURL,
 });
@@ -97,7 +97,9 @@ export async function listarClasses(keyword: string) {
         ),
         nome_curto: textoAposUltimoChar(item.class.value, '#'),
       };
-      listaClasses.value.push(classItem);
+      if (classItem.subclassof != '-') {
+        listaClasses.value.push(classItem);
+      }
     });
   } catch (error) {
     console.error('Erro ao buscar classes:', error);
@@ -111,54 +113,6 @@ export async function listarClasses(keyword: string) {
   return listaClasses.value;
 }
 
-export async function listarClasses2(keyword: string) {
-  const uri = authStore.get.repositorio_conectado.uri;
-  const listaClasses = ref<ClasseComum[]>([]);
-  try {
-    if (uri == '') {
-      Notify.create({
-        type: 'negative',
-        message: 'selecione o repositório',
-        timeout: 5000,
-      });
-      return [];
-    }
-
-    const response = await axios.post<ClassQueryResult>(
-      apiConfig.endpoints.class.list,
-      {
-        keyword: keyword,
-        repository: uri,
-        orderby: 'subclassof',
-      }
-    );
-
-    listaClasses.value = [];
-    response.data.results.bindings.forEach((item) => {
-      const classItem: ClasseComum = {
-        uri: item.class.value,
-        label: item.label ? item.label.value : '',
-        description: item.description ? item.description.value : '',
-        subclassof: item.subclassof ? item.subclassof.value : '-',
-        mae_curta: textoAposUltimoChar(
-          item.subclassof ? item.subclassof.value : '-',
-          '#'
-        ),
-        nome_curto: textoAposUltimoChar(item.class.value, '#'),
-      };
-      listaClasses.value.push(classItem);
-    });
-  } catch (error) {
-    console.log('erro', error);
-    Notify.create({
-      type: 'negative',
-      message: 'Erro ao buscar classes',
-      timeout: 5000,
-    }); // Mostra notificação de erro
-  }
-
-  return listaClasses.value;
-}
 export async function listarClassesFetch(keyword: string) {
   console.log('Iniciando requisição com Fetch...');
 
@@ -186,6 +140,53 @@ export async function listarClassesFetch(keyword: string) {
     console.log('Resposta recebida:', data);
   } catch (error) {
     console.error('Erro capturado pelo catch:', error);
+  }
+}
+
+export interface SugestaoCidade {
+  descricao: string;
+  latitude: string;
+  longitude: string;
+  lugar: string;
+  titulo: string;
+}
+
+export async function PesquisarSugestaoCidade(
+  keyword: string
+): Promise<SugestaoCidade[]> {
+  const uri = authStore.repositorio_conectado?.uri;
+
+  if (!uri) {
+    Notify.create({
+      type: 'negative',
+      message: 'Selecione o repositório antes de buscar sugestão de cidade',
+      timeout: 5000,
+    });
+    return [];
+  }
+
+  try {
+    const response = await axios.post<{ cidades: SugestaoCidade[] }>(
+      apiConfig.endpoints.cidadeai,
+      {
+        cidades: [keyword],
+      },
+      {
+        headers: {
+          Authorization: 'Bearer ' + authStore.token,
+        },
+      }
+    );
+
+    return response.data.cidades || [];
+  } catch (error) {
+    console.error('Erro ao buscar sugestão de cidade:', error);
+    Notify.create({
+      type: 'negative',
+      message: 'Erro ao buscar sugestão de cidade',
+      timeout: 5000,
+    });
+    return [];
   }
 }
 

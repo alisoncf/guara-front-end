@@ -28,7 +28,7 @@ export function gravarObjetoDim(objeto: ObjetoDimensional) {
       ? apiConfig.endpoints.dimensional.create
       : apiConfig.endpoints.dimensional.update;
 
-  fetch(url, {
+  return fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -58,6 +58,7 @@ export function gravarObjetoDim(objeto: ObjetoDimensional) {
       }); // Mostra notificação de sucesso
       console.log(data);
       id_novo_objeto_dim_gravado.value = data['id'];
+      return data;
     })
     .catch((error) => {
       console.error('Erro ao criar objeto:', error);
@@ -66,6 +67,8 @@ export function gravarObjetoDim(objeto: ObjetoDimensional) {
         message: `Erro ao criar objeto: ${error.message}`,
         timeout: 5000,
       }); // Mostra notificação de erro
+      throw error; // repropaga: quem chamou (await gravarObjetoDim(...)) precisa
+                   // saber que falhou, senão segue como se tivesse dado certo
     });
 }
 
@@ -387,4 +390,44 @@ export function atualizarObjetoFisico(objeto: ObjetoFisico) {
         message: 'Atualização cancelada.',
       });
     });
+}
+
+
+export async function buscarSugestoesSemanticas(objeto: { id: string; titulo: string; descricao: string }) {
+  const lista = ref([] as any[]);
+
+  if (
+    !authStore.get.repositorio_conectado ||
+    authStore.get.repositorio_conectado.uri == '' ||
+    authStore.get.repositorio_conectado.uri == undefined
+  ) {
+    Notify.create({
+      type: 'negative',
+      message: 'selecione um repositório',
+      timeout: 5000,
+    });
+    return [];
+  }
+  try {
+    const response = await axios.post(
+      apiConfig.endpoints.rec.sugerir,
+      {
+        titulo: objeto.titulo,
+        descricao: objeto.descricao,
+        repository: authStore.get.repositorio_conectado.uri,
+      },
+      {
+        headers: { Authorization: 'Bearer ' + authStore.token },
+      }
+    );
+    lista.value = response.data.sugestoes;
+    return lista.value;
+  } catch (error) {
+    Notify.create({
+      type: 'negative',
+      message: 'Erro ao buscar sugestões semânticas: ' + error,
+      timeout: 5000,
+    });
+    return [];
+  }
 }

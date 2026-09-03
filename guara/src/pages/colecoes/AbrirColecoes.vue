@@ -16,7 +16,7 @@ import {
   usuarioAdminLogado,
 } from '../objetos/manter-objeto';
 
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
 import { pesquisarObjetosDim } from 'src/services/api-objeto-dim';
 import {
@@ -35,6 +35,7 @@ import ComponenteAddRelacao from '../objetos/ComponenteAddRelacao.vue';
 import ComponenteGrafoRelacoes from '../objetos/ComponenteGrafoRelacoes.vue';
 
 const router = useRouter();
+const route = useRoute();
 
 const useObjetoStore = useDadosObjetoFisico();
 const keyword = ref(useObjetoStore.getKeyword); // Carrega a última pesquisa
@@ -71,6 +72,13 @@ function filtrarColecoes(valor: string, atualizar: FuncaoComCallback) {
 }
 onMounted(() => {
   carregarColecoes();
+  const colecaoNaUrl = route.query.colecao;
+  if (typeof colecaoNaUrl === 'string' && colecaoNaUrl !== '') {
+    aba.value = 'fisicos';
+    keyword.value = '';
+    colecaoSelecionada.value = colecaoNaUrl;
+    pesquisarFis();
+  }
 });
 
 const labelTipo = computed(() => {

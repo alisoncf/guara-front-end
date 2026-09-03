@@ -21,7 +21,13 @@ import {
 } from './manter-objeto';
 
 import { colunasDim, colunasRelacaoFis } from '../colecoes/funcoes-funcoes';
-import { pesquisarRelacoes, removerRelacao } from 'src/services/api-objeto-dim';
+import {
+  pesquisarRelacoes,
+  removerRelacao,
+  addRelacao,
+  buscarSugestoesSemanticas,
+} from 'src/services/api-objeto-dim';
+import { truncarTexto } from '../funcoes';
 
 const LIMITE_LISTA = 50;
 const RELACAO_POR_DIMENSAO: Record<string, Relacao> = {
@@ -51,6 +57,18 @@ const objetoSelecionado = ref({} as ObjetoFisico);
 const listaDimensoes = ListaTipoDim();
 // null = mostra todas as relações; caso contrário, mostra somente a dimensão escolhida
 const dimensaoAtiva = ref<Dimensao | null>(null);
+
+// --- Sugestões semânticas (BERTimbau) ---
+const listaSugestoes = ref([] as any[]);
+const carregandoSugestoes = ref(false);
+const sugestoesFiltradas = computed(() => {
+  if (!dimensaoAtiva.value) {
+    return listaSugestoes.value;
+  }
+  return listaSugestoes.value.filter(
+    (s: any) => s.dimensao === dimensaoAtiva.value?.tipo
+  );
+});
 
 function dimensaoSelecionada(dim: Dimensao) {
   return dimensaoAtiva.value?.tipo === dim.tipo;
@@ -82,6 +100,39 @@ async function buscarRelacoes() {
   objetoId.value = objetoStore.getObjeto.obj;
   objetoSelecionado.value = objetoStore.getObjeto;
   listaRelacoesDoObjeto.value = await pesquisarRelacoes(objetoId.value);
+
+  carregandoSugestoes.value = true;
+  const resultado = await buscarSugestoesSemanticas({
+    id: objetoId.value,
+    titulo: objetoSelecionado.value.titulo,
+    descricao: (objetoSelecionado.value as any).descricao || '',
+  });
+  listaSugestoes.value = resultado || [];
+  carregandoSugestoes.value = false;
+}
+
+async function aceitarSugestao(sugestao: any) {
+  const tripla: Tripla = {
+    prefixo: '',
+    id: objetoId.value,
+    propriedade: sugestao.propriedade,
+    valor: sugestao.uri_recurso,
+    complemento: '',
+    tipo_recurso: 'uri',
+    titulo: '',
+    propriedade_abreviada: '',
+  };
+  await addRelacao(tripla);
+  listaSugestoes.value = listaSugestoes.value.filter(
+    (s: any) => s !== sugestao
+  );
+  await buscarRelacoes(); // atualiza a tabela de relações confirmadas e recalcula sugestões
+}
+
+function descartarSugestao(sugestao: any) {
+  listaSugestoes.value = listaSugestoes.value.filter(
+    (s: any) => s !== sugestao
+  );
 }
 watchEffect(() => {
   if (mostrarPopUpRelacoes.value) {
@@ -94,6 +145,9 @@ watchEffect(() => {
     }
   }
 });
+function ehLink(valor: unknown): boolean {
+  return typeof valor === 'string' && /^https?:\/\//i.test(valor);
+}
 function confirmarExclusao(row: any) {
   Dialog.create({
     title: 'Confirmação',
@@ -217,6 +271,21 @@ onBeforeMount(() => {
                 <q-td>{{ rowIndex + 1 }}</q-td>
               </template>
 
+              <template v-slot:body-cell-valor="props">
+                <q-td :props="props">
+                  <a
+                    v-if="ehLink(props.row.valor?.value)"
+                    :href="props.row.valor.value"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-primary"
+                  >
+                    {{ truncarTexto(props.value, 60) }}
+                    <q-icon name="open_in_new" size="14px" class="q-ml-xs" />
+                  </a>
+                  <span v-else>{{ props.value }}</span>
+                </q-td>
+              </template>
 
               <template v-slot:body-cell-acoes="props">
                 <q-td>
@@ -237,6 +306,53 @@ onBeforeMount(() => {
                 </q-td>
               </template>
             </q-table>
+
+            <div
+              v-if="listaSugestoes.length > 0 || carregandoSugestoes"
+              class="q-mt-lg"
+            >
+              <div class="text-subtitle2 q-mb-sm">
+                Sugestões semânticas (IA)
+                <q-spinner v-if="carregandoSugestoes" size="1em" class="q-ml-sm" />
+              </div>
+              <q-list bordered separator>
+                <q-item v-for="sugestao in sugestoesFiltradas" :key="sugestao.uri_recurso">
+                  <q-item-section>
+                    <q-item-label>
+                      <q-badge color="grey-7">{{ sugestao.dimensao }}</q-badge>
+                      {{ sugestao.titulo_recurso }}
+                    </q-item-label>
+                    <q-item-label caption>
+                      Similaridade: {{ (sugestao.similaridade * 100).toFixed(0) }}%
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <div class="q-gutter-x-sm">
+                      <q-btn
+                        icon="check"
+                        color="positive"
+                        flat
+                        round
+                        dense
+                        @click="aceitarSugestao(sugestao)"
+                      >
+                        <q-tooltip>Aceitar sugestão</q-tooltip>
+                      </q-btn>
+                      <q-btn
+                        icon="close"
+                        color="negative"
+                        flat
+                        round
+                        dense
+                        @click="descartarSugestao(sugestao)"
+                      >
+                        <q-tooltip>Descartar sugestão</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </div>
           </q-card-section>
         </q-card>
       </div>
