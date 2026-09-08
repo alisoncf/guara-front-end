@@ -1,0 +1,7 @@
+# Copie para ".env" e ajuste o valor. O docker-compose.yml lê essa
+# variável e o container injeta ela em window.__APP_CONFIG__ em tempo de
+# execução (sem precisar rebuildar a imagem).
+#
+# Tem que ser uma URL alcançável pelo NAVEGADOR do usuário final - não
+# "localhost" nem o nome de um serviço Docker interno.
+API_BASE_URL=https://api.guara.ueg.br

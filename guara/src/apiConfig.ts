@@ -1,12 +1,16 @@
 // src/apiConfig.js
 
-const isProduction = process.env.NODE_ENV === 'production';
 const baseOnto = 'http://guara.ueg.br/ontologias/v1/objetos#';
-const baseURL = isProduction
-  ? 'https://localhost:5000'
-  : 'http://localhost:5000';
+
+// O navegador sempre fala com a MESMA origem do front (nunca direto com o
+// backend) - isso evita CORS por completo. Quem faz a ponte de verdade é
+// o servidor: o Nginx, em produção (ver nginx.conf.template e a variável
+// BACKEND_URL no docker-compose.yml), e o dev server do Vite, em
+// desenvolvimento (ver devServer.proxy no quasar.config.js).
+const baseURL = '/api';
+
 const apiConfig = {
-  baseURL: isProduction ? 'https://localhost:5000' : 'http://localhost:5000',
+  baseURL,
   endpoints: {
     classapi: '/classapi',
     recomendacao: {
@@ -46,6 +50,7 @@ const apiConfig = {
       getFile: baseURL + '/uploadapi/midias',
     },
     cidadeai: baseURL +'/ia/cidades',
+    eventoai: baseURL +'/ia/eventos',
 
     listar_repo: baseURL + '/repositorios/list',
     login: baseURL + '/acesso/login',

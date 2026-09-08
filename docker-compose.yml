@@ -1,0 +1,31 @@
+services:
+  guara-front-end:
+    build:
+      context: ./guara
+      dockerfile: Dockerfile
+    image: guara-frontend:latest
+    ports:
+      - "8080:80"
+    environment:
+      # Endereço de REDE do backend, usado pelo Nginx (servidor a servidor)
+      # pra fazer o proxy reverso de /api/*. Isso nunca é exposto ao
+      # navegador, então não precisa (e não deve) ser uma URL pública.
+      #
+      # - Backend rodando no host (fora do Docker), com Docker Desktop:
+      #     http://host.docker.internal:5000
+      # - Backend como outro serviço neste mesmo docker-compose.yml:
+      #     http://nome-do-servico:5000
+      # - Backend em outro servidor, mesma rede interna:
+      #     http://ip-ou-hostname-interno:5000
+      - BACKEND_URL=${BACKEND_URL:-http://host.docker.internal:5000}
+    extra_hosts:
+      # Necessário para host.docker.internal funcionar no Docker Desktop
+      # para Windows/Mac já é automático; esta linha só é preciso se, no
+      # futuro, isso rodar num host Linux "puro" (não Docker Desktop).
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  # Se o backend também for rodar via Docker Compose neste mesmo host,
+  # adicione o serviço dele aqui e troque a BACKEND_URL acima para o nome
+  # desse serviço (ex.: http://backend:5000) - dentro da mesma rede do
+  # compose, os containers se enxergam pelo nome do serviço.

@@ -25,7 +25,11 @@ import {
 } from 'src/services/objeto-fisico-api';
 import { colunasDim, colunasFisico } from './funcoes-funcoes';
 import DialogoObjetoDim from '../objetos/DialogoObjetoDim.vue';
-import { FuncaoComCallback, textoAposUltimoChar, truncarTexto } from '../funcoes';
+import {
+  FuncaoComCallback,
+  textoAposUltimoChar,
+  truncarTexto,
+} from '../funcoes';
 import { listarClasses } from 'src/services/api';
 import { ClasseComum } from '../tipos';
 import DialogoObjetoFis from '../objetos/DialogoObjetoFis.vue';
@@ -50,6 +54,7 @@ const colecoesFiltradas = ref<ClasseComum[]>([]);
 const colecaoSelecionada = ref<string | null>(null);
 
 const aba = ref<string>('fisicos');
+const visualizacao = ref<'tabela' | 'cards'>('tabela');
 
 function rotuloColecao(colecao: ClasseComum): string {
   return colecao.label || colecao.nome_curto;
@@ -234,6 +239,39 @@ watch(aba, () => {
               icon="search"
               class="q-ml-md"
             />
+            <q-btn
+              v-if="aba == 'fisicos' && usuarioAdminLogado"
+              @click="irParaNovo"
+              icon="add"
+              color="green-8"
+              flat
+              rounded
+            />
+            <q-btn
+              v-if="aba == 'dimensionais' && usuarioAdminLogado"
+              @click="irParaNovoDim"
+              icon="add"
+              color="green-8"
+              flat
+              rounded
+            />
+          </div>
+        </div>
+
+        <div class="row q-mb-md">
+          <div class="col-12 flex justify-end">
+            <q-btn-toggle
+              v-model="visualizacao"
+              dense
+              unelevated
+              toggle-color="teal"
+              color="white"
+              text-color="grey-8"
+              :options="[
+                { value: 'tabela', icon: 'table_rows', label: 'Tabela' },
+                { value: 'cards', icon: 'grid_view', label: 'Cards' },
+              ]"
+            />
           </div>
         </div>
 
@@ -280,7 +318,7 @@ watch(aba, () => {
         </div>
 
         <q-table
-          v-if="aba == 'fisicos'"
+          v-if="aba == 'fisicos' && visualizacao == 'tabela'"
           :rows="listaObj"
           :columns="colunasFisico"
           row-key="id"
@@ -370,7 +408,7 @@ watch(aba, () => {
           </template>
         </q-table>
         <q-table
-          v-if="aba == 'dimensionais'"
+          v-if="aba == 'dimensionais' && visualizacao == 'tabela'"
           :rows="listaObjDim"
           :columns="colunasDim"
           row-key="id"
@@ -478,6 +516,234 @@ watch(aba, () => {
             </q-td>
           </template>
         </q-table>
+
+        <div v-if="aba == 'fisicos' && visualizacao == 'cards'">
+          <div
+            v-if="listaObj.length === 0"
+            class="text-grey-7 text-center q-pa-lg"
+          >
+            Nenhum objeto físico encontrado.
+          </div>
+          <div v-else class="row q-col-gutter-md">
+            <div
+              v-for="obj in listaObj"
+              :key="obj.id"
+              class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
+            >
+              <q-card
+                bordered
+                flat
+                class="objeto-card"
+                @click="irParaVisualizar(obj)"
+              >
+                <q-card-section>
+                  <div class="objeto-card-titulo">{{ obj.titulo }}</div>
+                  <div class="text-caption text-grey-7 q-mb-xs">
+                    <span v-if="obj.colecao">{{
+                      textoAposUltimoChar(obj.colecao, '#')
+                    }}</span>
+                    <span
+                      v-if="
+                        obj.tipoFisicoAbreviado &&
+                        obj.tipoFisicoAbreviado.length
+                      "
+                    >
+                      · {{ obj.tipoFisicoAbreviado.join(', ') }}
+                    </span>
+                  </div>
+                  <div class="objeto-card-resumo">
+                    {{
+                      truncarTexto(
+                        obj.resumo || obj.descricao || 'Sem resumo.',
+                        140
+                      )
+                    }}
+                  </div>
+                </q-card-section>
+                <q-separator />
+                <q-card-actions align="right" @click.stop>
+                  <q-btn dense flat icon="more_vert">
+                    <q-menu fit dense>
+                      <q-list dense style="min-width: 100px">
+                        <q-item
+                          clickable
+                          v-close-popup
+                          @click="irParaVisualizar(obj)"
+                        >
+                          <q-item-section avatar>
+                            <q-avatar icon="visibility" />
+                          </q-item-section>
+                          <q-item-section>Visualizar</q-item-section>
+                        </q-item>
+                        <q-item
+                          v-if="usuarioAdminLogado"
+                          clickable
+                          v-close-popup
+                          @click="irParaEditar(obj)"
+                        >
+                          <q-item-section avatar>
+                            <q-avatar icon="edit" />
+                          </q-item-section>
+                          <q-item-section>Editar</q-item-section>
+                        </q-item>
+                        <q-item
+                          clickable
+                          v-close-popup
+                          @click="irParaMidias(obj)"
+                        >
+                          <q-item-section avatar flat>
+                            <q-avatar icon="photo" />
+                          </q-item-section>
+                          <q-item-section>Mídias</q-item-section>
+                        </q-item>
+                        <q-item
+                          clickable
+                          v-close-popup
+                          @click="irParaRelacoes(obj)"
+                        >
+                          <q-item-section avatar flat>
+                            <q-avatar icon="hub" />
+                          </q-item-section>
+                          <q-item-section>Relações</q-item-section>
+                        </q-item>
+                        <q-item
+                          clickable
+                          v-close-popup
+                          @click="irParaGrafo(obj)"
+                        >
+                          <q-item-section avatar flat>
+                            <q-avatar icon="account_tree" />
+                          </q-item-section>
+                          <q-item-section>Grafo</q-item-section>
+                        </q-item>
+                        <q-separator />
+                        <q-item
+                          clickable
+                          v-close-popup
+                          @click="deletarObjeto(obj)"
+                        >
+                          <q-item-section avatar>
+                            <q-avatar icon="delete_forever" color="red-7" />
+                          </q-item-section>
+                          <q-item-section>Excluir</q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-menu>
+                  </q-btn>
+                </q-card-actions>
+              </q-card>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="aba == 'dimensionais' && visualizacao == 'cards'">
+          <div
+            v-if="listaObjDim.length === 0"
+            class="text-grey-7 text-center q-pa-lg"
+          >
+            Nenhum objeto dimensional encontrado.
+          </div>
+          <div v-else class="row q-col-gutter-md">
+            <div
+              v-for="obj in listaObjDim"
+              :key="obj.id"
+              class="col-xs-12 col-sm-6 col-md-4 col-lg-3"
+            >
+              <q-card
+                bordered
+                flat
+                class="objeto-card"
+                @click="irParaVisualizar(obj)"
+              >
+                <q-card-section>
+                  <div class="objeto-card-titulo">{{ obj.titulo }}</div>
+                  <div class="text-caption text-grey-7 q-mb-xs" v-if="(obj as any).dimensao">
+                    {{ textoAposUltimoChar((obj as any).dimensao, '#') }}
+                  </div>
+                  <div class="objeto-card-resumo">
+                    {{
+                      truncarTexto(
+                        obj.resumo || obj.descricao || 'Sem resumo.',
+                        140
+                      )
+                    }}
+                  </div>
+                </q-card-section>
+                <q-separator />
+                <q-card-actions align="right" @click.stop>
+                  <q-btn dense flat icon="more_vert">
+                    <q-menu fit dense>
+                      <q-list dense style="min-width: 100px">
+                        <q-item
+                          clickable
+                          v-close-popup
+                          @click="irParaVisualizar(obj)"
+                        >
+                          <q-item-section avatar>
+                            <q-avatar icon="visibility" />
+                          </q-item-section>
+                          <q-item-section>Visualizar</q-item-section>
+                        </q-item>
+                        <q-item
+                          v-if="usuarioAdminLogado"
+                          clickable
+                          v-close-popup
+                          @click="irParaEditar(obj)"
+                        >
+                          <q-item-section avatar>
+                            <q-avatar icon="edit" />
+                          </q-item-section>
+                          <q-item-section>Editar</q-item-section>
+                        </q-item>
+                        <q-item
+                          clickable
+                          v-close-popup
+                          @click="irParaMidias(obj)"
+                        >
+                          <q-item-section avatar flat>
+                            <q-avatar icon="photo" />
+                          </q-item-section>
+                          <q-item-section>Mídias</q-item-section>
+                        </q-item>
+                        <q-item
+                          clickable
+                          v-close-popup
+                          @click="irParaRelacoes(obj)"
+                        >
+                          <q-item-section avatar flat>
+                            <q-avatar icon="hub" />
+                          </q-item-section>
+                          <q-item-section>Relações</q-item-section>
+                        </q-item>
+                        <q-item
+                          clickable
+                          v-close-popup
+                          @click="irParaGrafo(obj)"
+                        >
+                          <q-item-section avatar flat>
+                            <q-avatar icon="account_tree" />
+                          </q-item-section>
+                          <q-item-section>Grafo</q-item-section>
+                        </q-item>
+                        <q-separator />
+                        <q-item
+                          clickable
+                          v-close-popup
+                          @click="deletarObjeto(obj)"
+                        >
+                          <q-item-section avatar>
+                            <q-avatar icon="delete_forever" color="red-7" />
+                          </q-item-section>
+                          <q-item-section>Excluir</q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-menu>
+                  </q-btn>
+                </q-card-actions>
+              </q-card>
+            </div>
+          </div>
+        </div>
       </q-card-section>
       <q-card-section>
         <q-btn-group flat push>
@@ -485,13 +751,13 @@ watch(aba, () => {
             v-if="aba == 'fisicos' && usuarioAdminLogado"
             @click="irParaNovo"
             color="primary"
-            label="Criar Objeto Físico"
+            label="Criar"
           />
           <q-btn
             v-if="aba == 'dimensionais' && usuarioAdminLogado"
             @click="irParaNovoDim"
             color="green-8"
-            label="Criar Objeto Dimensional"
+            label="Criar"
           />
           <q-btn @click="router.go(-1)" label="Voltar" color="secondary" />
         </q-btn-group>
@@ -516,5 +782,36 @@ watch(aba, () => {
 }
 .tabela-clicavel :deep(tbody tr:hover) {
   background: rgba(0, 150, 136, 0.06);
+}
+
+.objeto-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+.objeto-card:hover {
+  background: rgba(0, 150, 136, 0.06);
+}
+.objeto-card-titulo {
+  font-weight: 700;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.objeto-card-resumo {
+  font-size: 12px;
+  color: #555;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 </style>

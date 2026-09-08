@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeMount, watchEffect } from 'vue';
+import { ref, computed, onMounted, onBeforeMount, watchEffect } from 'vue';
 import axios from 'axios';
-import { useRouter } from 'vue-router';
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
 import { mostrarPopUpMidias, ObjetoFisico } from './manter-objeto';
 import apiConfig from 'src/apiConfig';
@@ -13,7 +12,7 @@ const objetoId = ref({} as string); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
 const store = useAuthStore();
 interface Midia {
-  file: string | null;
+  file: File | null;
   url: string;
   uri: string;
   nome: string;
@@ -22,56 +21,94 @@ interface Midia {
 const objetoSelecionado = ref({} as ObjetoFisico);
 const midias = ref([] as Midia[]);
 const midiasEncontradas = ref([] as Midia[]);
-const useFileUpload = ref([true] as any);
-const thumbnails = ref([] as any);
+const thumbnails = ref<(string | null)[]>([]);
 
-function adicionarMidia() {
-  midias.value.push({ nome: '', file: '', url: '', uri: '' });
-  useFileUpload.value.push(true);
-  thumbnails.value.push();
+// Mídias já salvas no objeto, prontas pra exibir (o backend às vezes
+// devolve um item sentinela "excluidos" que não deve aparecer na galeria)
+const midiasVisiveis = computed(() =>
+  midiasEncontradas.value.filter((midia) => midia.nome !== 'excluidos')
+);
+
+// --- Arrastar e soltar / seleção de arquivos ---
+const arrastando = ref(false);
+const inputArquivoRef = ref<HTMLInputElement | null>(null);
+const novaUrlMidia = ref('');
+
+function abrirSeletorArquivo() {
+  inputArquivoRef.value?.click();
+}
+function aoSoltarArquivos(event: DragEvent) {
+  arrastando.value = false;
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0) {
+    adicionarArquivos(files);
+  }
+}
+function aoSelecionarArquivos(event: Event) {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files.length > 0) {
+    adicionarArquivos(input.files);
+  }
+  input.value = ''; // permite selecionar o mesmo arquivo de novo depois
+}
+function adicionarArquivos(files: FileList) {
+  Array.from(files).forEach((file) => {
+    const index = midias.value.length;
+    midias.value.push({ nome: file.name, file, url: '', uri: '' });
+    thumbnails.value.push(null);
+    gerarThumbnail(file, index);
+  });
+}
+function gerarThumbnail(file: File, index: number) {
+  if (!file.type.startsWith('image/')) {
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (reader.result) {
+      thumbnails.value[index] = reader.result as string;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+function adicionarUrlPendente() {
+  const url = novaUrlMidia.value.trim();
+  if (!url) {
+    return;
+  }
+  midias.value.push({
+    nome: textoAposUltimoChar(url, '/'),
+    file: null,
+    url,
+    uri: '',
+  });
+  thumbnails.value.push(isImage(url) ? url : null);
+  novaUrlMidia.value = '';
 }
 
 function removerMidia(index: number) {
   midias.value.splice(index, 1);
-  useFileUpload.value.splice(index, 1);
   thumbnails.value.splice(index, 1);
 }
 
-function handleFileUpload(
-  event: { target: any },
-  index: string | number | any | never
-) {
-  const input = event.target;
-  if (input && input.files && input.files.length > 0) {
-    const file = input.files[0];
-    midias.value[index].file = file;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (reader.result) {
-        thumbnails.value[index] = reader.result;
-      }
-    };
-    reader.readAsDataURL(file);
-  } else {
-    console.error('Nenhum arquivo selecionado.');
-  }
-}
 function isPDF(url: string) {
   return url.endsWith('.pdf') || url.startsWith('data:application/pdf');
 }
-
-function handleToggleChange(index: number) {
-  if (useFileUpload.value[index]) {
-    midias.value[index].url = '';
-    thumbnails.value[index] = null;
-  } else {
-    midias.value[index].file = null;
-    thumbnails.value[index] = null;
+function isImage(url: string) {
+  if (!url) {
+    return false;
   }
+  if (url.startsWith('data:image/')) {
+    return true;
+  }
+  // URLs "de verdade" (as mídias já enviadas vêm assim, não em base64)
+  return /\.(jpe?g|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url);
 }
+function isVideo(url: string) {
+  return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+}
+
 function excluir(arquivo: string) {
-  console.log('token: ',store.token)
   Dialog.create({
     title: 'Exclusão',
     message:
@@ -94,7 +131,7 @@ function excluir(arquivo: string) {
             },
           }
         )
-        .then((response) => {
+        .then(() => {
           Notify.create({
             type: 'warning',
             message: 'arquivo excluído ',
@@ -114,62 +151,44 @@ function excluir(arquivo: string) {
       console.log('Usuário cancelou a saída');
     });
 }
-function handleUrlInput(index: number) {
-  // Validação simples para verificar se a URL é uma imagem
-  if (isImage(midias.value[index].url)) {
-    thumbnails.value[index] = midias.value[index].url;
-  } else {
-    thumbnails.value[index] = null;
-  }
-}
 
-function isImage(url: string) {
-  return url.startsWith('data:image/') && url.includes('base64');
-}
-function isVideo(url: string) {
-  return /\.(mp4|webm|ogg)$/i.test(url);
-}
 function submitMidias() {
   const formData = new FormData();
   if (midias.value.length == 0) {
     Notify.create({
       type: 'negative',
       message:
-        'Não foram adicionadas mídias. Clique em adicionar mídias para escolher um arquivo ',
+        'Não foram adicionadas mídias. Arraste arquivos ou informe uma URL antes de salvar.',
       timeout: 5000,
     });
     return;
   }
-  // Adiciona o objetoId ao FormData
   formData.append('objetoId', objetoId.value);
   formData.append('repositorio', objetoSelecionado.value.repositorio);
   formData.append('repository', objetoSelecionado.value.repositorio);
-  console.log('selecionado', objetoSelecionado.value.repositorio);
-  // Adiciona cada mídia ao FormData
-  midias.value.forEach(
-    (midia: { file: string | null; url: string | Blob }, index) => {
-      if (midia.file) {
-        formData.append('midias', midia.file); // Envia o arquivo diretamente
-      } else if (midia.url) {
-        formData.append('links', midia.url); // Envia a URL como string
-      }
+  midias.value.forEach((midia) => {
+    if (midia.file) {
+      formData.append('midias', midia.file);
+    } else if (midia.url) {
+      formData.append('links', midia.url);
     }
-  );
+  });
 
   axios
     .post(apiConfig.baseURL + apiConfig.endpoints.upload, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data', // Define o cabeçalho correto
+        'Content-Type': 'multipart/form-data',
       },
     })
-    .then((response) => {
+    .then(() => {
       Notify.create({
-        type: 'positives',
+        type: 'positive',
         message: 'arquivos enviados ',
         timeout: 5000,
       });
       buscarMidias();
       midias.value = [];
+      thumbnails.value = [];
     })
     .catch((error) => {
       Notify.create({
@@ -198,11 +217,10 @@ function buscarMidias() {
           '/' +
           objetoId.value +
           '/' +
-          textoAposUltimoChar(midia.uri, '/'); // Define .url como .uri
+          textoAposUltimoChar(midia.uri, '/');
       });
 
       midiasEncontradas.value = midiasCombinadas.value;
-      console.log('midias', midiasEncontradas.value);
     })
     .catch((error) => {
       Notify.create({
@@ -214,6 +232,8 @@ function buscarMidias() {
 }
 watchEffect(() => {
   if (mostrarPopUpMidias.value) {
+    midias.value = [];
+    thumbnails.value = [];
     buscarMidias();
   }
 });
@@ -221,11 +241,13 @@ onMounted(() => {
   //
 });
 function trataNomeArquivo(nome: string) {
+  if (!nome) {
+    return '';
+  }
   if (nome.length < 50) {
     return nome;
-  } else {
-    return nome.substring(1, 50) + '... .' + textoAposUltimoChar(nome, '.');
   }
+  return nome.substring(0, 50) + '... .' + textoAposUltimoChar(nome, '.');
 }
 onBeforeMount(() => {
   //
@@ -234,9 +256,14 @@ onBeforeMount(() => {
 
 <template>
   <q-dialog v-model="mostrarPopUpMidias" class="q-pa-md scroll" persistent>
-    <q-card style="width: 80vw; max-width: 90vw; max-height: 90vh">
+    <q-card class="dialogo-midias">
       <q-toolbar>
-        <q-toolbar-title>Gerenciar Mídias</q-toolbar-title>
+        <q-toolbar-title
+          >Gerenciar Mídias
+          <span v-if="objetoSelecionado.titulo" class="text-body2">
+            — {{ objetoSelecionado.titulo }}
+          </span>
+        </q-toolbar-title>
         <q-btn
           icon="close"
           label="fechar"
@@ -244,162 +271,258 @@ onBeforeMount(() => {
           flat
         />
       </q-toolbar>
-      <div>
-        <q-card class="q-pa-md">
-          <div class="row">
-            <div class="col-6">
-              <q-item>
-                <q-item-section>
-                  <q-item-label class="text-bold">Objeto Id:</q-item-label>
-                  <q-item-label>{{ objetoSelecionado.id }}</q-item-label>
-                </q-item-section>
-              </q-item>
-            </div>
-            <div class="col-6">
-              <q-item>
-                <q-item-section>
-                  <q-item-label class="text-bold">Título:</q-item-label>
-                  <q-item-label>{{ objetoSelecionado.titulo }}</q-item-label>
-                </q-item-section>
-              </q-item>
-            </div>
-          </div>
 
-          <q-card-section>
-            <q-table
-              title="Arquivos de Mídia"
-              :rows="
-                midiasEncontradas.filter((row) => row.nome !== 'excluidos')
-              "
-              :columns="[
-                { name: 'nome', label: 'Nome', align: 'left', field: 'nome' },
-                {
-                  name: 'preview',
-                  label: '',
-                  align: 'left',
-                  field: '',
-                },
-                {
-                  name: 'acao',
-                  label: '',
-                  align: 'left',
-                  field: '',
-                },
-              ]"
-              row-key="nome"
-            >
-              <template v-slot:body="props">
-                <q-tr :props="props">
-                  <q-td key="nome">{{ trataNomeArquivo(props.row.nome) }}</q-td>
-
-                  <q-td key="preview">
-                    <img
-                      v-if="isImage(props.row.url)"
-                      :src="props.row.url"
-                      style="max-width: 100px; max-height: 100px"
-                    />
-                    <video
-                      v-else-if="isVideo(props.row.url)"
-                      controls
-                      style="max-width: 100px; max-height: 100px"
-                    >
-                      <source :src="props.row.url" />
-                    </video>
-                    <q-btn
-                      v-else-if="isPDF(props.row.url)"
-                      icon="picture_as_pdf"
-                      flat
-                      dense
-                      :href="props.row.url"
-                      target="_blank"
-                    />
-                  </q-td>
-                  <q-td key="acao">
-                    <q-btn
-                      label="Abrir"
-                      color="primary"
-                      icon="panorama"
-                      :href="props.row.url"
-                      size="sm"
-                      flat
-                      target="_blank"
-                    />
-                  </q-td>
-                  <q-td key="acao">
-                    <q-btn
-                      label="Excluir"
-                      color="red"
-                      icon="delete"
-                      size="sm"
-                      flat
-                      @click="excluir(props.row.nome)"
-                    />
-                  </q-td>
-                </q-tr>
-              </template>
-            </q-table>
-            <q-btn
-              label="Adicionar Mídia"
-              @click="adicionarMidia"
-              color="primary"
-            />
-          </q-card-section>
-          <q-card-section>
-            <q-list>
-              <q-item v-for="(midia, index) in midias" :key="index">
-                <q-item-section>
-                  <q-toggle
-                    v-model="useFileUpload[index]"
-                    label="Upload de Arquivo"
-                    @update:model-value="() => handleToggleChange(index)"
+      <q-card-section class="dialogo-midias-corpo">
+        <div class="text-subtitle2 q-mb-sm">Mídias do objeto</div>
+        <div
+          v-if="midiasVisiveis.length === 0"
+          class="text-grey-7 text-center q-pa-lg"
+        >
+          Nenhuma mídia enviada ainda.
+        </div>
+        <div v-else class="row q-col-gutter-md q-mb-lg">
+          <div
+            v-for="midia in midiasVisiveis"
+            :key="midia.nome"
+            class="col-xs-6 col-sm-4 col-md-3"
+          >
+            <q-card bordered flat class="midia-card">
+              <a
+                :href="midia.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="midia-preview-link"
+              >
+                <div class="midia-preview">
+                  <img v-if="isImage(midia.url)" :src="midia.url" />
+                  <video v-else-if="isVideo(midia.url)" muted>
+                    <source :src="midia.url" />
+                  </video>
+                  <q-icon
+                    v-else-if="isPDF(midia.url)"
+                    name="picture_as_pdf"
+                    size="42px"
+                    color="red-6"
                   />
-                  <input
-                    v-if="useFileUpload[index]"
-                    type="file"
-                    @change="(e) => handleFileUpload(e, index)"
-                  />
-
-                  <q-input
+                  <q-icon
                     v-else
-                    v-model="midias[index].url"
-                    label="Ou cole aqui a URL da mídia"
-                    @input="() => handleUrlInput(index)"
+                    name="insert_drive_file"
+                    size="42px"
+                    color="grey-6"
                   />
-                  <div v-if="thumbnails[index]">
-                    <img
-                      v-if="isImage(thumbnails[index])"
-                      :src="thumbnails[index]"
-                      alt="Thumbnail"
-                      style="max-width: 200px; max-height: 200px"
-                    />
-                  </div>
-                  <q-btn-group flat push>
-                    <q-btn
-                      label="Remover"
-                      color="negative"
-                      @click="removerMidia(index)"
-                    />
-                  </q-btn-group>
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-card-section>
-          <q-card-section>
-            <q-btn-group flat push>
+                </div>
+              </a>
+              <q-card-section class="q-py-xs">
+                <div class="midia-nome" :title="midia.nome">
+                  {{ trataNomeArquivo(midia.nome) }}
+                </div>
+              </q-card-section>
+              <q-card-actions align="right">
+                <q-btn
+                  icon="open_in_new"
+                  flat
+                  dense
+                  round
+                  size="sm"
+                  :href="midia.url"
+                  target="_blank"
+                >
+                  <q-tooltip>Abrir em nova aba</q-tooltip>
+                </q-btn>
+                <q-btn
+                  icon="delete"
+                  flat
+                  dense
+                  round
+                  size="sm"
+                  color="red-6"
+                  @click="excluir(midia.nome)"
+                >
+                  <q-tooltip>Excluir</q-tooltip>
+                </q-btn>
+              </q-card-actions>
+            </q-card>
+          </div>
+        </div>
+
+        <q-separator class="q-mb-md" />
+
+        <div class="text-subtitle2 q-mb-sm">Adicionar mídias</div>
+        <div
+          class="dropzone"
+          :class="{ 'dropzone--ativo': arrastando }"
+          @dragover.prevent="arrastando = true"
+          @dragleave.prevent="arrastando = false"
+          @drop.prevent="aoSoltarArquivos"
+          @click="abrirSeletorArquivo"
+        >
+          <q-icon name="cloud_upload" size="42px" />
+          <div class="text-body1">
+            Arraste arquivos aqui ou clique para selecionar
+          </div>
+          <div class="text-caption text-grey-7">
+            Pode soltar várias mídias de uma vez
+          </div>
+          <input
+            ref="inputArquivoRef"
+            type="file"
+            multiple
+            class="dropzone-input-oculto"
+            @change="aoSelecionarArquivos"
+            @click.stop
+          />
+        </div>
+
+        <div class="row items-end q-gutter-sm q-mt-md">
+          <q-input
+            dense
+            outlined
+            v-model="novaUrlMidia"
+            label="Ou cole aqui a URL de uma mídia"
+            class="col"
+            @keyup.enter="adicionarUrlPendente"
+          />
+          <q-btn
+            label="Adicionar link"
+            outline
+            color="primary"
+            @click="adicionarUrlPendente"
+          />
+        </div>
+
+        <div v-if="midias.length > 0" class="row q-col-gutter-md q-mt-md">
+          <div
+            v-for="(midia, index) in midias"
+            :key="index"
+            class="col-xs-6 col-sm-4 col-md-3"
+          >
+            <q-card bordered flat class="midia-card midia-card-pendente">
               <q-btn
-                label="Salvar Mídias"
-                @click="submitMidias"
-                color="green-8"
-              />
-              <q-btn
-                @click="mostrarPopUpMidias = false"
-                label="Voltar"
-                color="secondary"
-              />
-            </q-btn-group>
-          </q-card-section>
-        </q-card>
-      </div>
+                round
+                dense
+                flat
+                icon="close"
+                size="sm"
+                class="midia-card-remover"
+                @click="removerMidia(index)"
+              >
+                <q-tooltip>Remover</q-tooltip>
+              </q-btn>
+              <div class="midia-preview">
+                <img v-if="thumbnails[index]" :src="thumbnails[index]!" />
+                <q-icon
+                  v-else
+                  name="insert_drive_file"
+                  size="42px"
+                  color="grey-6"
+                />
+              </div>
+              <q-card-section class="q-py-xs">
+                <div class="midia-nome" :title="midia.nome">
+                  {{ trataNomeArquivo(midia.nome) }}
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+        </div>
+      </q-card-section>
+
+      <q-card-actions class="botoes-fixos">
+        <q-btn-group flat push>
+          <q-btn
+            label="Salvar Mídias"
+            @click="submitMidias"
+            color="green-8"
+            :disable="midias.length === 0"
+          />
+          <q-btn
+            @click="mostrarPopUpMidias = false"
+            label="Voltar"
+            color="secondary"
+          />
+        </q-btn-group>
+      </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
+
+<style scoped>
+.dialogo-midias {
+  width: 90vw;
+  max-width: 90vw;
+  height: 85vh;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.dialogo-midias-corpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.botoes-fixos {
+  flex: 0 0 auto;
+  border-top: 1px solid #e0e0e0;
+  background: #fff;
+}
+
+.midia-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.midia-preview-link {
+  text-decoration: none;
+  color: inherit;
+}
+.midia-preview {
+  height: 130px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.midia-preview img,
+.midia-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.midia-nome {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.midia-card-remover {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.dropzone {
+  border: 2px dashed #c3c2b7;
+  border-radius: 10px;
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  color: #666;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease;
+}
+.dropzone:hover {
+  background: #fafafa;
+}
+.dropzone--ativo {
+  border-color: #1976d2;
+  background: rgba(25, 118, 210, 0.06);
+  color: #1976d2;
+}
+.dropzone-input-oculto {
+  display: none;
+}
+</style>

@@ -1,0 +1,33 @@
+services:
+  quasar-dev:
+    build:
+      context: ./guara
+      dockerfile: Dockerfile.dev
+    ports:
+      - "9000:9000"
+    volumes:
+      # código-fonte vem do host, pra edições aparecerem na hora (hot-reload)
+      - ./guara:/app
+      # node_modules fica num volume À PARTE: não pode vir do host, porque
+      # foi instalado pra Linux (dentro da imagem) - se o bind mount acima
+      # sobrepusesse essa pasta com a do Windows, quebraria tudo. Na
+      # primeira subida, o Docker "semeia" este volume com o conteúdo que
+      # o Dockerfile.dev já instalou via "npm ci".
+      - node_modules:/app/node_modules
+    environment:
+      - DOCKER_DEV=true
+      # Endereço do backend a partir de DENTRO do container. Se o backend
+      # roda no seu Windows (fora do Docker), use host.docker.internal;
+      # se for outro serviço deste mesmo compose, use o nome do serviço.
+      - DEV_BACKEND_URL=${DEV_BACKEND_URL:-http://host.docker.internal:5000}
+      # Ajuda o watch de arquivos a funcionar de forma confiável com bind
+      # mount no Windows/Docker Desktop (eventos nativos de FS às vezes
+      # não atravessam a fronteira do container).
+      - CHOKIDAR_USEPOLLING=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stdin_open: true
+    tty: true
+
+volumes:
+  node_modules:

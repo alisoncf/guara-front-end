@@ -24,16 +24,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/estrutura/TestarAplicacao.vue'),
       },
       {
-        path: 'criar-objeto',
-        component: () => import('pages/objetos/CriarObjeto.vue'),
-      },
-      {
         path: 'criar-objeto-dim',
         component: () => import('pages/objetos/DialogoObjetoDim.vue'),
-      },
-      {
-        path: 'editar-objeto/:id',
-        component: () => import('pages/objetos/CriarObjeto.vue'),
       },
       {
         path: 'objetos/:id/midias',

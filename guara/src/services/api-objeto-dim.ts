@@ -224,6 +224,7 @@ export async function pesquisarObjetosDim(obj: ObjetoDimensional) {
       titulo: item.titulo.value,
       resumo: item.resumo.value,
       descricao: item.descricao.value,
+      colecao: item.colecao ? item.colecao.value : '',
       dimensao: item.dimensao.value,
       tipo: item.dimensao.value,
       lat: item.lat ? item.lat.value : '',
@@ -410,7 +411,7 @@ export async function buscarSugestoesSemanticas(objeto: { id: string; titulo: st
   }
   try {
     const response = await axios.post(
-      apiConfig.endpoints.rec.sugerir,
+      apiConfig.endpoints.recomendacao.sugerir,
       {
         titulo: objeto.titulo,
         descricao: objeto.descricao,

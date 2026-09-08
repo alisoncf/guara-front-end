@@ -119,6 +119,7 @@ export interface ObjetoDimensional {
   quando: string[];
   onde: string[];
   oque: string[];
+  colecao: string[];
   dataCriacao: string; // Data de criação do objeto
   dataModificacao: string; // Data de modificação do objeto
   associatedMedia: string[];
@@ -248,6 +249,13 @@ export const LIGAR_COM = {
   uri: 'http://purl.org/dc/elements/1.1/relation',
 } as Relacao;
 
+export const PERTENCE_COLECAO = {
+  descricao: 'Relacionar o objeto a uma coleção',
+  nome: 'colecao',
+  prefixo: '@prefix obj: <http://guara.ueg.br/ontologias/v1/fisico#>',
+  uri: 'http://guara.ueg.br/ontologias/v1/objetos#colecao',
+} as Relacao;
+
 export function listaRelacoes() {
   const relacoes = ref([] as Relacao[]);
   relacoes.value.push(QUEM);
@@ -257,6 +265,7 @@ export function listaRelacoes() {
   relacoes.value.push(MIDIA);
   relacoes.value.push(FISICO);
   relacoes.value.push(LIGAR_COM);
+  relacoes.value.push(PERTENCE_COLECAO);
   return relacoes.value;
 }
 

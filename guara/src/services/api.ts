@@ -16,6 +16,7 @@ import { textoAposUltimoChar } from 'src/pages/funcoes';
 
 import { useAuthStore } from 'src/stores/auth-store';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
+import { Notify } from 'quasar';
 const authStore = useAuthStore();
 const repoStore = useDadosRepositorio();
 
@@ -59,7 +60,10 @@ export async function listarRepositorios(nome: string | null) {
   return listaRepo.value;
 }
 
-export async function listarClasses(keyword: string) {
+export async function listarClasses(
+  keyword: string,
+  apenasComClasseMae = false
+) {
   // Aguarda o authStore ser inicializado corretamente
   const uri = authStore.repositorio_conectado?.uri;
 
@@ -97,7 +101,7 @@ export async function listarClasses(keyword: string) {
         ),
         nome_curto: textoAposUltimoChar(item.class.value, '#'),
       };
-      if (classItem.subclassof != '-') {
+      if (!apenasComClasseMae || classItem.subclassof != '-') {
         listaClasses.value.push(classItem);
       }
     });
@@ -150,7 +154,57 @@ export interface SugestaoCidade {
   lugar: string;
   titulo: string;
 }
+export interface SugestaoEvento {
+  descricao_historico: string;
+  evento: string;
+  lugar: string;
+  titulo: string;
+  resumo: string;
+  local_realizacao: string;
+  atividades_principais: string;
+  periodo: string;
+  personagem_ou_santo: string;
 
+}
+
+export async function PesquisarSugestaoEvento(
+  keyword: string
+): Promise<SugestaoEvento[]> {
+  const uri = authStore.repositorio_conectado?.uri;
+
+  if (!uri) {
+    Notify.create({
+      type: 'negative',
+      message: 'Selecione o repositório antes de buscar sugestão de evento',
+      timeout: 5000,
+    });
+    return [];
+  }
+
+  try {
+    const response = await axios.post<{ eventos: SugestaoEvento[] }>(
+      apiConfig.endpoints.eventoai,
+      {
+        eventos: [keyword],
+      },
+      {
+        headers: {
+          Authorization: 'Bearer ' + authStore.token,
+        },
+      }
+    );
+
+    return response.data.eventos || [];
+  } catch (error) {
+    console.error('Erro ao buscar sugestão de evento:', error);
+    Notify.create({
+      type: 'negative',
+      message: 'Erro ao buscar sugestão de evento',
+      timeout: 5000,
+    });
+    return [];
+  }
+}
 export async function PesquisarSugestaoCidade(
   keyword: string
 ): Promise<SugestaoCidade[]> {

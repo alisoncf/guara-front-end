@@ -1,0 +1,15 @@
+# Imagem de desenvolvimento: roda "quasar dev" com hot-reload.
+# O código-fonte é montado como volume (ver docker-compose-dev.yml), então
+# o COPY aqui só serve pra "semear" a imagem/o volume de node_modules na
+# primeira subida.
+FROM node:20-alpine
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+EXPOSE 9000
+
+CMD ["npx", "quasar", "dev"]

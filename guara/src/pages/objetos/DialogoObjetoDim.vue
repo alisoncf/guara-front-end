@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onBeforeMount, watchEffect } from 'vue';
+import { computed, ref, onBeforeMount, watchEffect } from 'vue';
 
 import {
   ListaTipoDim,
@@ -19,7 +19,7 @@ import {
 } from 'src/services/api-objeto-dim';
 import { useDadosObjetoFisico } from 'src/stores/objeto-fisico';
 import { textoAposUltimoChar } from '../funcoes';
-import { PesquisarSugestaoCidade, SugestaoCidade } from 'src/services/api';
+import { PesquisarSugestaoCidade, PesquisarSugestaoEvento } from 'src/services/api';
 const useObjetoStore = useDadosObjetoFisico();
 const listaDim = ListaTipoDim();
 const tipoSelecionado = ref(DimMapping('pessoa') as Dimensao);
@@ -67,7 +67,7 @@ async function gravar() {
 
   if (eraNovo) {
     objeto.value.id = id_novo_objeto_dim_gravado.value;
-    useObjetoStore.setObjetoDim(objeto);
+    useObjetoStore.setObjetoDim(objeto.value);
   }
 }
 function irParaMapa() {
@@ -82,24 +82,66 @@ function irParaMapa() {
   }
 }
 
-function irParaSugestaoCidade() {
-  PesquisarSugestaoCidade(objeto.value.titulo).then((resultado: SugestaoCidade[]) => {
+// Os dois dependem de um backend com IA, que às vezes demora ou falha -
+// esses indicadores dão feedback visual de que a busca está em andamento.
+const buscandoSugestaoCidade = ref(false);
+const buscandoSugestaoEvento = ref(false);
+const dicaBuscaIA = computed(() => {
+  if (buscandoSugestaoCidade.value) {
+    return 'Buscando sugestão de cidade com IA... isso pode levar alguns segundos.';
+  }
+  if (buscandoSugestaoEvento.value) {
+    return 'Buscando sugestão de evento com IA... isso pode levar alguns segundos.';
+  }
+  return '';
+});
+
+async function irParaSugestaoCidade() {
+  if (buscandoSugestaoCidade.value) {
+    return;
+  }
+  buscandoSugestaoCidade.value = true;
+  try {
+    const resultado = await PesquisarSugestaoCidade(objeto.value.titulo);
     if (resultado && resultado.length > 0) {
       const sugestao = resultado[0];
       objeto.value.coordenadas = `${sugestao.latitude},${sugestao.longitude}`;
-
-      objeto.value.descricao = sugestao.lugar + ' - '+sugestao.titulo;
+      objeto.value.descricao = sugestao.lugar + ' - ' + sugestao.titulo;
       objeto.value.resumo = sugestao.descricao;
     } else {
       console.warn('Nenhuma sugestão de cidade encontrada');
     }
-  });
+  } finally {
+    buscandoSugestaoCidade.value = false;
+  }
+}
+async function irParaSugestaoEvento() {
+  if (buscandoSugestaoEvento.value) {
+    return;
+  }
+  buscandoSugestaoEvento.value = true;
+  try {
+    const resultado = await PesquisarSugestaoEvento(objeto.value.titulo);
+    if (resultado && resultado.length > 0) {
+      const sugestao = resultado[0];
+      objeto.value.descricao =
+        sugestao.descricao_historico +
+        sugestao.atividades_principais +
+        sugestao.lugar +
+        sugestao.titulo;
+      objeto.value.resumo = sugestao.descricao_historico;
+    } else {
+      console.warn('Nenhuma sugestão de evento encontrada');
+    }
+  } finally {
+    buscandoSugestaoEvento.value = false;
+  }
 }
 function irParaRelacoes() {
   if (somenteLeituraObjeto.value) {
     return;
   }
-  useObjetoStore.setObjeto(objeto);
+  useObjetoStore.setObjeto(objeto.value);
   mostrarPopUpRelacoes.value = true;
 }
 function novo() {
@@ -189,14 +231,36 @@ onBeforeMount(() => {
                 outlined
                 label="Título/nome do objeto"
                 :readonly="somenteLeituraObjeto"
+                :hint="dicaBuscaIA"
               >
                 <q-btn
                   v-if="tipoSelecionado.tipo.toLowerCase() == 'lugar'"
                   icon="smart_toy"
+                  :loading="buscandoSugestaoCidade"
+                  :disable="buscandoSugestaoCidade"
                   @click="irParaSugestaoCidade"
                   flat
                   size="smaller"
-                />
+                >
+                  <q-tooltip>Sugerir dados da cidade com IA</q-tooltip>
+                  <template v-slot:loading>
+                    <q-spinner-dots />
+                  </template>
+                </q-btn>
+                <q-btn
+                  v-if="tipoSelecionado.tipo.toLowerCase() == 'evento'"
+                  icon="smart_toy"
+                  :loading="buscandoSugestaoEvento"
+                  :disable="buscandoSugestaoEvento"
+                  @click="irParaSugestaoEvento"
+                  flat
+                  size="smaller"
+                >
+                  <q-tooltip>Sugerir dados do evento com IA</q-tooltip>
+                  <template v-slot:loading>
+                    <q-spinner-dots />
+                  </template>
+                </q-btn>
               </q-input>
               <q-input
                 v-model="objeto.descricao"

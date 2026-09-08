@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeMount, watch, watchEffect, computed } from 'vue';
-import axios from 'axios';
-import { useRouter } from 'vue-router';
+
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
 import {
   listaRelacoes,
   mostrarPopUpAddRelacao,
-  mostrarPopUpMidias,
+
   mostrarPopUpObjetoDim,
   mostrarPopUpObjetoFis,
   ObjetoDigital,
@@ -17,11 +16,11 @@ import {
   somenteLeituraObjeto,
   Tripla,
 } from './manter-objeto';
-import apiConfig from 'src/apiConfig';
-import { Dialog, Notify } from 'quasar';
-import { colunasDim, colunasRelacaoFis } from '../colecoes/funcoes-funcoes';
+
 import { FuncaoComCallback } from '../funcoes';
 import { addRelacao, pesquisarObjetos } from 'src/services/api-objeto-dim';
+import { listarClasses } from 'src/services/api';
+import { ClasseComum } from '../tipos';
 
 const objetoId = ref({} as string); // Ajuste conforme necessário
 const objetoStore = useDadosObjetoFisico();
@@ -43,10 +42,12 @@ const labelTipo = computed(() => {
 const objetoSelecionado = ref({} as ObjetoDigital);
 const objetoEmEdicao = ref({} as ObjetoDigital);
 
-const useFileUpload = ref([true] as any);
-const thumbnails = ref([] as any);
-const router = useRouter();
-const mostrar_excluidos = ref(false);
+// Usado quando o tipo de relação é "colecao" (PERTENCE_COLECAO): em vez de
+// relacionar a um objeto, relaciona a uma CLASSE da estrutura do acervo.
+const listaClasses = ref([] as ClasseComum[]);
+const classeSelecionada = ref({} as ClasseComum);
+
+
 const valorSelecionado = ref('');
 function buscarRelacoes() {
   objetoId.value = objetoStore.getObjeto.id;
@@ -105,19 +106,36 @@ async function adicionarRelacao() {
   tripla.value.propriedade = relacaoSelecionada.value.uri;
   tripla.value.tipo_recurso =
     relacaoSelecionada.value.nome == 'relation' ? 'string' : 'uri';
-  tripla.value.valor =
-    relacaoSelecionada.value.nome != 'relation'
-      ? objetoSelecionado.value.obj //#uri
-      : valorSelecionado.value;
-  console.log(tripla.value);
+  if (relacaoSelecionada.value.nome == 'relation') {
+    tripla.value.valor = valorSelecionado.value;
+  } else if (relacaoSelecionada.value.nome == 'colecao') {
+    tripla.value.valor = classeSelecionada.value.uri; //#uri da classe
+  } else {
+    tripla.value.valor = objetoSelecionado.value.obj; //#uri do objeto
+  }
   addRelacao(tripla.value);
+}
 
-  pesquisarObjetos;
+// Ao trocar o tipo de relação, busca de novo na fonte certa (objetos ou
+// classes) e limpa a seleção anterior, pra não sobrar um valor de um tipo
+// de relação diferente.
+function aoTrocarTipoRelacao() {
+  objetoSelecionado.value = {} as ObjetoDigital;
+  classeSelecionada.value = {} as ClasseComum;
+  valorSelecionado.value = '';
+  if (relacaoSelecionada.value.nome == 'colecao') {
+    busque.classes('');
+  } else {
+    busque.objetos('');
+  }
 }
 
 const AcoesFiltro = {
   rotuloRelacao: (relacao: Relacao) => {
     return relacao.descricao;
+  },
+  rotuloClasse: (classe: ClasseComum) => {
+    return classe?.label || classe?.nome_curto || '';
   },
   filtrar: (valor: string, atualizar: FuncaoComCallback) => {
     setTimeout(() => {
@@ -129,6 +147,13 @@ const AcoesFiltro = {
       });
     }, 600);
   },
+  filtrarClasses: (valor: string, atualizar: FuncaoComCallback) => {
+    setTimeout(() => {
+      atualizar(() => {
+        busque.classes(valor.toLocaleLowerCase());
+      });
+    }, 400);
+  },
 };
 
 const busque = {
@@ -138,6 +163,10 @@ const busque = {
     obj.value.tipo = relacaoSelecionada.value.nome;
     listaObjetos.value = await pesquisarObjetos(obj.value);
     console.log('buscando objetos', listaObjetos.value);
+  },
+  async classes(val: string) {
+    // aqui só faz sentido relacionar a uma classe concreta, não à raiz abstrata da hierarquia
+    listaClasses.value = await listarClasses(val, true);
   },
 };
 </script>
@@ -183,7 +212,7 @@ const busque = {
                   v-model="relacaoSelecionada"
                   label="Tipo de Relação"
                   :option-label="AcoesFiltro.rotuloRelacao"
-                  @update:model-value="busque.objetos('')"
+                  @update:model-value="aoTrocarTipoRelacao"
                   outlined
                 >
                 </q-select>
@@ -194,7 +223,40 @@ const busque = {
             <div class="row q-col-gutter-sm q-mb-md">
               <div class="col-xs-12 col-md-12 col-lg-12">
                 <q-select
-                  v-if="relacaoSelecionada.nome != 'relation'"
+                  v-if="relacaoSelecionada.nome == 'colecao'"
+                  :options="listaClasses"
+                  v-model="classeSelecionada"
+                  label="Informe a coleção (classe) que deseja relacionar"
+                  :option-label="AcoesFiltro.rotuloClasse"
+                  outlined
+                  use-input
+                  input-debounce="300"
+                  hide-selected
+                  fill-input
+                  clearable
+                  @filter="AcoesFiltro.filtrarClasses"
+                >
+                  <template v-slot:option="scope">
+                    <q-item v-bind="scope.itemProps">
+                      <q-item-section>
+                        <q-item-label>{{
+                          scope.opt.label || scope.opt.nome_curto
+                        }}</q-item-label>
+                        <q-item-label caption>{{
+                          scope.opt.description
+                        }}</q-item-label>
+                        <q-item-label
+                          caption
+                          v-if="scope.opt.mae_curta && scope.opt.mae_curta != '-'"
+                        >
+                          Classe mãe: {{ scope.opt.mae_curta }}
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </template></q-select
+                >
+                <q-select
+                  v-else-if="relacaoSelecionada.nome != 'relation'"
                   :options="listaObjetos"
                   v-model="objetoSelecionado"
                   label="Informe o recurso que deseja relacionar com"
@@ -230,7 +292,7 @@ const busque = {
                 />
 
                 <div
-                  v-if="relacaoSelecionada.nome != 'relation'"
+                  v-if="relacaoSelecionada.nome != 'relation' && relacaoSelecionada.nome != 'colecao'"
                   class="row q-gutter-sm q-mt-sm"
                 >
                   <span class="text-caption text-grey-7 flex items-center">

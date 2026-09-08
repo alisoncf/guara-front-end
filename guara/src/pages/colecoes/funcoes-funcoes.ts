@@ -84,6 +84,6 @@ export const colunasDim = [
     align: 'left',
     field: 'dimensao',
   },
-
+  { name: 'colecao', label: 'Coleção', align: 'left', field: 'colecao' },
   { name: 'acoes', label: 'Ações', align: 'center' },
 ] as Coluna[];

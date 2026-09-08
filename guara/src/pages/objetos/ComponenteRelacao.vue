@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeMount, watchEffect, computed } from 'vue';
+import { ref, onMounted, onBeforeMount, watch, computed } from 'vue';
 import { Dialog } from 'quasar';
 
 import { useRouter } from 'vue-router';
@@ -101,11 +101,19 @@ async function buscarRelacoes() {
   objetoSelecionado.value = objetoStore.getObjeto;
   listaRelacoesDoObjeto.value = await pesquisarRelacoes(objetoId.value);
 
+  const titulo = objetoSelecionado.value.titulo || '';
+  const descricao = (objetoSelecionado.value as any).descricao || '';
+  if (!titulo && !descricao) {
+    // objeto ainda em branco (recém-criado) - nada pra sugerir com base nisso
+    listaSugestoes.value = [];
+    return;
+  }
+
   carregandoSugestoes.value = true;
   const resultado = await buscarSugestoesSemanticas({
     id: objetoId.value,
-    titulo: objetoSelecionado.value.titulo,
-    descricao: (objetoSelecionado.value as any).descricao || '',
+    titulo,
+    descricao,
   });
   listaSugestoes.value = resultado || [];
   carregandoSugestoes.value = false;
@@ -134,8 +142,13 @@ function descartarSugestao(sugestao: any) {
     (s: any) => s !== sugestao
   );
 }
-watchEffect(() => {
-  if (mostrarPopUpRelacoes.value) {
+// watch (não watchEffect): precisa reagir só à ABERTURA do diálogo, nunca
+// a leituras reativas incidentais dentro de buscarRelacoes() (como
+// objetoStore.getObjeto) - senão qualquer setObjeto() feito em OUTRA tela
+// enquanto este diálogo ainda está aberto por baixo dispara tudo de novo,
+// inclusive a busca de sugestões semânticas com título/descrição vazios.
+watch(mostrarPopUpRelacoes, (aberto) => {
+  if (aberto) {
     buscarRelacoes();
     if (dimensaoFiltroInicialRelacoes.value) {
       dimensaoAtiva.value = dimensaoFiltroInicialRelacoes.value;
