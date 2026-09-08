@@ -86,7 +86,15 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
       obj: item.obj.value,
       titulo: item.titulo.value,
       resumo: item.resumo.value,
-      colecao: item.colecao && item.colecao.value ? item.colecao.value : '',
+      colecao: item.colecoes?.value ? item.colecoes.value.split(', ')[0] : '',
+      colecaoLista: item.colecoes?.value
+        ? item.colecoes.value.split(', ')
+        : [],
+      colecaoListaAbreviada: item.colecoes?.value
+        ? item.colecoes.value
+            .split(', ')
+            .map((colecao: string) => textoAposUltimoChar(colecao, '#'))
+        : [],
       descricao: item.descricao.value,
       tipoFisico: item.tipos?.value ? item.tipos.value.split(', ') : [],
       repositorio: authStore.get.repositorio_conectado.uri,

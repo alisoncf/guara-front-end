@@ -177,6 +177,15 @@ watch(mostrarPopUpRelacoes, (aberto) => {
     }
   }
 });
+// "Adicionar Relação" fica aberto depois de adicionar (permite adicionar
+// mais de uma sem reabrir) e só fecha quando o usuário clica no X - ao
+// fechar, se "Gerenciar Relações" continua aberto por baixo, atualiza a
+// lista pra refletir o que foi adicionado.
+watch(mostrarPopUpAddRelacao, (aberto) => {
+  if (!aberto && mostrarPopUpRelacoes.value) {
+    buscarRelacoes();
+  }
+});
 function ehLink(valor: unknown): boolean {
   return typeof valor === 'string' && /^https?:\/\//i.test(valor);
 }

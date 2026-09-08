@@ -10,29 +10,104 @@ import {
   DimMapping,
   mostrarPopUpObjetoDim,
   mostrarPopUpRelacoes,
+  PERTENCE_COLECAO,
   somenteLeituraObjeto,
+  Tripla,
   usuarioAdminLogado,
 } from './manter-objeto';
 import {
+  addRelacao,
   gravarObjetoDim,
   id_novo_objeto_dim_gravado,
+  pesquisarRelacoes,
+  removerRelacao,
 } from 'src/services/api-objeto-dim';
 import { useDadosObjetoFisico } from 'src/stores/objeto-fisico';
-import { textoAposUltimoChar } from '../funcoes';
-import { PesquisarSugestaoCidade, PesquisarSugestaoEvento } from 'src/services/api';
+import { FuncaoComCallback, textoAposUltimoChar } from '../funcoes';
+import {
+  listarClasses,
+  PesquisarSugestaoCidade,
+  PesquisarSugestaoEvento,
+} from 'src/services/api';
+import { ClasseComum } from '../tipos';
 const useObjetoStore = useDadosObjetoFisico();
 const listaDim = ListaTipoDim();
 const tipoSelecionado = ref(DimMapping('pessoa') as Dimensao);
 const abaObjeto = ref<'basicos' | 'outros'>('basicos');
 const objeto = ref<ObjetoDimensional>(objetoDimensionalVazio());
+
+// Coleção (classe da estrutura do acervo) à qual o objeto vai ser
+// relacionado ao salvar - evita ter que abrir "Adicionar Relação" à parte.
+// colecoesOriginaisUris guarda a(s) relação(ões) :colecao que o objeto já
+// tinha ao abrir o diálogo, pra poder REMOVER na hora de salvar em vez de
+// só empilhar mais uma (senão, editando várias vezes, o objeto acumula
+// várias relações :colecao e fica confuso qual vale).
+const listaColecoes = ref<ClasseComum[]>([]);
+const colecoesFiltradas = ref<ClasseComum[]>([]);
+const colecoesSelecionadas = ref<ClasseComum[]>([]);
+const colecoesOriginaisUris = ref<string[]>([]);
+
+function rotuloColecao(colecao: ClasseComum): string {
+  return colecao?.label || colecao?.nome_curto || '';
+}
+async function carregarColecoes() {
+  listaColecoes.value = await listarClasses('', true);
+  colecoesFiltradas.value = listaColecoes.value;
+}
+function removerColecaoSelecionada(colecao: ClasseComum) {
+  colecoesSelecionadas.value = colecoesSelecionadas.value.filter(
+    (c) => c.uri !== colecao.uri
+  );
+}
+function filtrarColecoes(valor: string, atualizar: FuncaoComCallback) {
+  atualizar(() => {
+    if (valor === '') {
+      colecoesFiltradas.value = listaColecoes.value;
+      return;
+    }
+    const busca = valor.toLocaleLowerCase();
+    colecoesFiltradas.value = listaColecoes.value.filter((colecao) =>
+      rotuloColecao(colecao).toLocaleLowerCase().includes(busca)
+    );
+  });
+}
+async function carregarColecaoAtual(objUri: string) {
+  colecoesOriginaisUris.value = [];
+  colecoesSelecionadas.value = [];
+  if (!objUri) {
+    return;
+  }
+  const relacoes = await pesquisarRelacoes(objUri);
+  const relacoesColecao = relacoes.filter(
+    (r: any) => r.propriedade_abreviada === PERTENCE_COLECAO.nome
+  );
+  colecoesOriginaisUris.value = relacoesColecao
+    .map((r: any) => r.valor?.value)
+    .filter((uri: string | undefined): uri is string => !!uri);
+
+  if (colecoesOriginaisUris.value.length > 0) {
+    if (listaColecoes.value.length === 0) {
+      await carregarColecoes();
+    }
+    colecoesSelecionadas.value = colecoesOriginaisUris.value
+      .map((uri) => listaColecoes.value.find((c) => c.uri === uri))
+      .filter((c): c is ClasseComum => !!c);
+  }
+}
+
 watchEffect(() => {
   if (mostrarPopUpObjetoDim.value) {
     abaObjeto.value = 'basicos';
     carregar();
+    if (listaColecoes.value.length === 0) {
+      carregarColecoes();
+    }
   }
 });
 function carregar() {
   const idNoStore = useObjetoStore.getObjetoDim.id || '';
+  colecoesSelecionadas.value = [];
+  colecoesOriginaisUris.value = [];
   if (objeto.value.id === idNoStore) {
     return;
   }
@@ -41,6 +116,7 @@ function carregar() {
     tipoSelecionado.value = DimMapping(
       textoAposUltimoChar(objeto.value.tipo, '#')
     );
+    carregarColecaoAtual(objeto.value.obj);
   } else {
     objeto.value = objetoDimensionalVazio();
     tipoSelecionado.value = DimMapping('pessoa');
@@ -69,6 +145,36 @@ async function gravar() {
     objeto.value.id = id_novo_objeto_dim_gravado.value;
     useObjetoStore.setObjetoDim(objeto.value);
   }
+
+  const novasUris = colecoesSelecionadas.value
+    .map((c) => c.uri)
+    .filter((uri): uri is string => !!uri);
+  const urisParaRemover = colecoesOriginaisUris.value.filter(
+    (uri) => !novasUris.includes(uri)
+  );
+  const urisParaAdicionar = novasUris.filter(
+    (uri) => !colecoesOriginaisUris.value.includes(uri)
+  );
+
+  function triplaColecao(uri: string): Tripla {
+    return {
+      prefixo: '',
+      id: objeto.value.id,
+      propriedade: PERTENCE_COLECAO.uri,
+      valor: uri,
+      complemento: '',
+      tipo_recurso: 'uri',
+      titulo: '',
+      propriedade_abreviada: PERTENCE_COLECAO.nome,
+    };
+  }
+  for (const uri of urisParaRemover) {
+    await removerRelacao(triplaColecao(uri));
+  }
+  for (const uri of urisParaAdicionar) {
+    addRelacao(triplaColecao(uri));
+  }
+  colecoesOriginaisUris.value = novasUris;
 }
 function irParaMapa() {
   const coordenadas = objeto.value.coordenadas; // Ex: "-16.6809,-49.2534"
@@ -312,6 +418,55 @@ onBeforeMount(() => {
                 title="uma data inicial ou um período final aproximado"
                 :readonly="somenteLeituraObjeto"
               />
+              <q-select
+                v-model="colecoesSelecionadas"
+                :options="colecoesFiltradas"
+                :option-label="rotuloColecao"
+                label="Coleções (opcional)"
+                hint="Ao salvar, relaciona o objeto a essas coleções automaticamente"
+                outlined
+                multiple
+                use-input
+                input-debounce="300"
+                hide-selected
+                clearable
+                :disable="somenteLeituraObjeto"
+                @filter="filtrarColecoes"
+              >
+                <template v-slot:option="scope">
+                  <q-item v-bind="scope.itemProps">
+                    <q-item-section>
+                      <q-item-label>{{
+                        scope.opt.label || scope.opt.nome_curto
+                      }}</q-item-label>
+                      <q-item-label
+                        caption
+                        v-if="scope.opt.mae_curta && scope.opt.mae_curta != '-'"
+                      >
+                        Classe mãe: {{ scope.opt.mae_curta }}
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
+
+              <div
+                v-if="colecoesSelecionadas.length > 0"
+                class="colecoes-selecionadas-chips"
+              >
+                <q-chip
+                  v-for="colecao in colecoesSelecionadas"
+                  :key="colecao.uri"
+                  removable
+                  :disable="somenteLeituraObjeto"
+                  color="primary"
+                  text-color="white"
+                  icon="folder_special"
+                  @remove="removerColecaoSelecionada(colecao)"
+                >
+                  {{ rotuloColecao(colecao) }}
+                </q-chip>
+              </div>
             </q-tab-panel>
             <q-tab-panel name="outros">
               <div class="text-grey-7 q-pa-md text-center">
@@ -348,19 +503,14 @@ onBeforeMount(() => {
           <q-btn
             @click="gravar"
             label="Salvar Objeto"
-            color="green-8"
+            color="primary"
             v-if="!somenteLeituraObjeto"
           />
-          <q-btn
-            @click="novo"
-            label="Novo objeto"
-            color="blue-8"
-            v-if="!somenteLeituraObjeto"
-          />
+
           <q-btn
             @click="irParaRelacoes"
-            label="Adicionar relações"
-            color="orange-8"
+            label="Relações"
+            color="purple-3"
             v-if="objeto.id && objeto.id != '' && !somenteLeituraObjeto"
           />
           <q-btn
@@ -382,12 +532,20 @@ onBeforeMount(() => {
             outlined
           />
         </q-btn-group>
+        <q-btn @click="novo" rounded icon="add" v-if="!somenteLeituraObjeto" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <style scoped>
+.colecoes-selecionadas-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: -8px;
+  margin-bottom: 8px;
+}
 .dialogo-objeto-dim {
   width: 90vw;
   max-width: 90vw;

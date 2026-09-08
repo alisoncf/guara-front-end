@@ -45,7 +45,9 @@ export interface ObjetoFisico {
   material: string;
   dataCriacao: string; // Data de criação do objeto
   dataModificacao: string; // Data de modificação do objeto
-  colecao: string;
+  colecao: string; // classe/coleção atribuída na criação (usada pelo seletor em árvore)
+  colecaoLista: string[]; // todas as coleções associadas (URIs), para exibição em listas/tabelas
+  colecaoListaAbreviada: string[];
   associatedMedia: string[];
   repositorio: string;
   dimensao: string;
@@ -120,6 +122,7 @@ export interface ObjetoDimensional {
   onde: string[];
   oque: string[];
   colecao: string[];
+  colecao_curta: string[];
   dataCriacao: string; // Data de criação do objeto
   dataModificacao: string; // Data de modificação do objeto
   associatedMedia: string[];
@@ -145,6 +148,8 @@ export function objetoDimensionalVazio(): ObjetoDimensional {
     oque: [],
     quando: [],
     quem: [],
+    colecao: [],
+    colecao_curta: [],
     repositorio: '',
     temRelacao: [],
     tipo: { tipo: '', uri: '' },

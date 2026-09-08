@@ -56,6 +56,60 @@ const colecaoSelecionada = ref<string | null>(null);
 const aba = ref<string>('fisicos');
 const visualizacao = ref<'tabela' | 'cards'>('tabela');
 
+// Cor e ícone dos cards por tipo (paleta categórica fixa, mesma do grafo de
+// relações) - identidade visual leve pra reconhecer o tipo de relance.
+const CORES_DIMENSAO: Record<string, string> = {
+  Pessoa: '#2a78d6',
+  Evento: '#eb6834',
+  Lugar: '#1baf7a',
+  Tempo: '#eda100',
+};
+const ICONES_DIMENSAO: Record<string, string> = {
+  Pessoa: 'person',
+  Lugar: 'place',
+  Evento: 'event',
+  Tempo: 'schedule',
+};
+const CORES_TIPO_FISICO: Record<string, string> = {
+  Bibliotecario: '#2a78d6',
+  Arqueologico: '#eb6834',
+  MuseuLogico: '#1baf7a',
+  'Arquivistico-Documental': '#eda100',
+  'Imagetico-Sonoro': '#e87ba4',
+};
+const ICONES_TIPO_FISICO: Record<string, string> = {
+  Bibliotecario: 'menu_book',
+  Arqueologico: 'terrain',
+  MuseuLogico: 'museum',
+  'Arquivistico-Documental': 'folder_open',
+  'Imagetico-Sonoro': 'perm_media',
+};
+const COR_TIPO_PADRAO = '#898781';
+const ICONE_TIPO_PADRAO = 'category';
+
+function hexParaRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+function corDimensao(obj: any): string {
+  const tipo = textoAposUltimoChar(obj?.dimensao || '', '#');
+  return CORES_DIMENSAO[tipo] || COR_TIPO_PADRAO;
+}
+function iconeDimensao(obj: any): string {
+  const tipo = textoAposUltimoChar(obj?.dimensao || '', '#');
+  return ICONES_DIMENSAO[tipo] || ICONE_TIPO_PADRAO;
+}
+function corTipoFisico(obj: ObjetoFisico): string {
+  const tipo = obj.tipoFisicoAbreviado?.[0];
+  return (tipo && CORES_TIPO_FISICO[tipo]) || COR_TIPO_PADRAO;
+}
+function iconeTipoFisico(obj: ObjetoFisico): string {
+  const tipo = obj.tipoFisicoAbreviado?.[0];
+  return (tipo && ICONES_TIPO_FISICO[tipo]) || ICONE_TIPO_PADRAO;
+}
+
 function rotuloColecao(colecao: ClasseComum): string {
   return colecao.label || colecao.nome_curto;
 }
@@ -141,7 +195,9 @@ async function pesquisarFis() {
   obj.value.descricao = keyword.value;
   const resultado = await pesquisarObjetosFisicos(obj.value);
   listaObj.value = colecaoSelecionada.value
-    ? resultado.filter((item) => item.colecao === colecaoSelecionada.value)
+    ? resultado.filter((item) =>
+        item.colecaoLista.includes(colecaoSelecionada.value as string)
+      )
     : resultado;
   useObjetoStore.setLista(listaObj); // Salva no store
   useObjetoStore.setKeyword(keyword.value); // Salva a palavra-chave
@@ -534,14 +590,28 @@ watch(aba, () => {
                 bordered
                 flat
                 class="objeto-card"
+                :style="{
+                  backgroundColor: hexParaRgba(corTipoFisico(obj), 0.1),
+                  borderLeft: '4px solid ' + corTipoFisico(obj),
+                }"
                 @click="irParaVisualizar(obj)"
               >
+                <q-icon
+                  :name="iconeTipoFisico(obj)"
+                  :style="{ color: corTipoFisico(obj) }"
+                  class="objeto-card-icone"
+                  size="18px"
+                />
                 <q-card-section>
                   <div class="objeto-card-titulo">{{ obj.titulo }}</div>
                   <div class="text-caption text-grey-7 q-mb-xs">
-                    <span v-if="obj.colecao">{{
-                      textoAposUltimoChar(obj.colecao, '#')
-                    }}</span>
+                    <span
+                      v-if="
+                        obj.colecaoListaAbreviada &&
+                        obj.colecaoListaAbreviada.length
+                      "
+                      >{{ obj.colecaoListaAbreviada.join(', ') }}</span
+                    >
                     <span
                       v-if="
                         obj.tipoFisicoAbreviado &&
@@ -653,8 +723,18 @@ watch(aba, () => {
                 bordered
                 flat
                 class="objeto-card"
+                :style="{
+                  backgroundColor: hexParaRgba(corDimensao(obj), 0.1),
+                  borderLeft: '4px solid ' + corDimensao(obj),
+                }"
                 @click="irParaVisualizar(obj)"
               >
+                <q-icon
+                  :name="iconeDimensao(obj)"
+                  :style="{ color: corDimensao(obj) }"
+                  class="objeto-card-icone"
+                  size="18px"
+                />
                 <q-card-section>
                   <div class="objeto-card-titulo">{{ obj.titulo }}</div>
                   <div class="text-caption text-grey-7 q-mb-xs" v-if="(obj as any).dimensao">
@@ -789,9 +869,17 @@ watch(aba, () => {
   display: flex;
   flex-direction: column;
   cursor: pointer;
+  position: relative;
+  transition: box-shadow 0.15s ease;
 }
 .objeto-card:hover {
-  background: rgba(0, 150, 136, 0.06);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+}
+.objeto-card-icone {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0.65;
 }
 .objeto-card-titulo {
   font-weight: 700;

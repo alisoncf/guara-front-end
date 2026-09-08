@@ -2,8 +2,6 @@ import {
   ObjetoDigital,
   ObjetoDimensional,
   ObjetoFisico,
-  Relacao,
-  tipoDimensional,
   Tripla,
 } from '../pages/objetos/manter-objeto';
 import { useAuthStore } from 'src/stores/auth-store';
@@ -11,7 +9,7 @@ import { useAuthStore } from 'src/stores/auth-store';
 import axios from 'axios';
 import apiConfig from '../apiConfig';
 
-import { useRouter } from 'vue-router';
+
 import { Dialog, Notify } from 'quasar';
 
 import { ref } from 'vue';
@@ -20,7 +18,7 @@ import { useDadosRepositorio } from 'src/stores/repositorio-store';
 
 const authStore = useAuthStore();
 const repoStore = useDadosRepositorio();
-const router = useRouter();
+
 export const id_novo_objeto_dim_gravado = ref('' as string);
 export function gravarObjetoDim(objeto: ObjetoDimensional) {
   const url =
@@ -56,7 +54,7 @@ export function gravarObjetoDim(objeto: ObjetoDimensional) {
         message: 'Objeto criado com sucesso!',
         timeout: 3000,
       }); // Mostra notificação de sucesso
-      console.log(data);
+      //console.log(data);
       id_novo_objeto_dim_gravado.value = data['id'];
       return data;
     })
@@ -224,7 +222,12 @@ export async function pesquisarObjetosDim(obj: ObjetoDimensional) {
       titulo: item.titulo.value,
       resumo: item.resumo.value,
       descricao: item.descricao.value,
-      colecao: item.colecao ? item.colecao.value : '',
+      colecao: item.colecoes?.value ? item.colecoes.value.split(', ') : [],
+      colecao_curta: item.colecoes?.value
+        ? item.colecoes.value
+            .split(', ')
+            .map((colecao: string) => textoAposUltimoChar(colecao, '#'))
+        : [],
       dimensao: item.dimensao.value,
       tipo: item.dimensao.value,
       lat: item.lat ? item.lat.value : '',

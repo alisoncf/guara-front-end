@@ -8,7 +8,7 @@ export const colunasFisico = [
     name: 'colecao',
     label: 'Coleção',
     align: 'left',
-    field: (row) => textoAposUltimoChar(row.colecao, '#'),
+    field: (row) => row.colecaoListaAbreviada?.join(', ') || '',
     sortable: true,
   },
   {
@@ -84,6 +84,11 @@ export const colunasDim = [
     align: 'left',
     field: 'dimensao',
   },
-  { name: 'colecao', label: 'Coleção', align: 'left', field: 'colecao' },
+  {
+    name: 'colecao',
+    label: 'Coleção',
+    align: 'left',
+    field: (row) => row.colecao_curta?.join(', ') || '',
+  },
   { name: 'acoes', label: 'Ações', align: 'center' },
 ] as Coluna[];

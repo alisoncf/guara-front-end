@@ -104,9 +104,10 @@ async function adicionarRelacao() {
   const tripla = ref({} as Tripla);
   tripla.value.id = objetoEmEdicao.value.id;
   tripla.value.propriedade = relacaoSelecionada.value.uri;
+
   tripla.value.tipo_recurso =
-    relacaoSelecionada.value.nome == 'relation' ? 'string' : 'uri';
-  if (relacaoSelecionada.value.nome == 'relation') {
+    relacaoSelecionada.value.nome == 'relation'||relacaoSelecionada.value.nome == 'associatedMedia'  ? 'string' : 'uri';
+  if (relacaoSelecionada.value.nome == 'relation'|| relacaoSelecionada.value.nome == 'associatedMedia') {
     tripla.value.valor = valorSelecionado.value;
   } else if (relacaoSelecionada.value.nome == 'colecao') {
     tripla.value.valor = classeSelecionada.value.uri; //#uri da classe
@@ -256,7 +257,7 @@ const busque = {
                   </template></q-select
                 >
                 <q-select
-                  v-else-if="relacaoSelecionada.nome != 'relation'"
+                  v-else-if="relacaoSelecionada.nome != 'relation' && relacaoSelecionada.nome != 'associatedMedia'"
                   :options="listaObjetos"
                   v-model="objetoSelecionado"
                   label="Informe o recurso que deseja relacionar com"
