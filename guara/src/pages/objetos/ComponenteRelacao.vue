@@ -59,6 +59,9 @@ const listaDimensoes = ListaTipoDim();
 const dimensaoAtiva = ref<Dimensao | null>(null);
 
 // --- Sugestões semânticas (BERTimbau) ---
+// Desligado por padrão: esse recurso consome bastante memória no backend,
+// então só busca quando o usuário liga explicitamente.
+const recomendacaoAtiva = ref(false);
 const listaSugestoes = ref([] as any[]);
 const carregandoSugestoes = ref(false);
 const sugestoesFiltradas = computed(() => {
@@ -100,6 +103,14 @@ async function buscarRelacoes() {
   objetoId.value = objetoStore.getObjeto.obj;
   objetoSelecionado.value = objetoStore.getObjeto;
   listaRelacoesDoObjeto.value = await pesquisarRelacoes(objetoId.value);
+  await atualizarSugestoes();
+}
+
+async function atualizarSugestoes() {
+  if (!recomendacaoAtiva.value) {
+    listaSugestoes.value = [];
+    return;
+  }
 
   const titulo = objetoSelecionado.value.titulo || '';
   const descricao = (objetoSelecionado.value as any).descricao || '';
@@ -117,6 +128,14 @@ async function buscarRelacoes() {
   });
   listaSugestoes.value = resultado || [];
   carregandoSugestoes.value = false;
+}
+
+function aoAlternarRecomendacao() {
+  if (recomendacaoAtiva.value) {
+    atualizarSugestoes();
+  } else {
+    listaSugestoes.value = [];
+  }
 }
 
 async function aceitarSugestao(sugestao: any) {
@@ -320,14 +339,29 @@ onBeforeMount(() => {
               </template>
             </q-table>
 
-            <div
-              v-if="listaSugestoes.length > 0 || carregandoSugestoes"
-              class="q-mt-lg"
-            >
-              <div class="text-subtitle2 q-mb-sm">
-                Sugestões semânticas (IA)
-                <q-spinner v-if="carregandoSugestoes" size="1em" class="q-ml-sm" />
+            <div class="q-mt-lg">
+              <div class="row items-center q-gutter-sm">
+                <q-toggle
+                  v-model="recomendacaoAtiva"
+                  color="primary"
+                  label="Sugestões semânticas (IA)"
+                  @update:model-value="aoAlternarRecomendacao"
+                />
+                <q-spinner v-if="carregandoSugestoes" size="1em" />
               </div>
+              <div
+                v-if="!recomendacaoAtiva"
+                class="text-caption text-grey-7 q-mt-xs"
+              >
+                Desligado por padrão — consome bastante memória no servidor.
+                Ligue para buscar sugestões de relação por IA.
+              </div>
+            </div>
+
+            <div
+              v-if="recomendacaoAtiva && (listaSugestoes.length > 0 || carregandoSugestoes)"
+              class="q-mt-md"
+            >
               <q-list bordered separator>
                 <q-item v-for="sugestao in sugestoesFiltradas" :key="sugestao.uri_recurso">
                   <q-item-section>
