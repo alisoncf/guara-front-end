@@ -30,7 +30,7 @@ jobs:
       - name: Build e push da imagem
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./guara
           push: true
           # Se a URL da API for definida em build-time (ex: VITE_API_URL),
           # descomente e ajuste a linha abaixo:
