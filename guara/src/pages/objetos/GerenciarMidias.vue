@@ -3,7 +3,7 @@ import { ref, onMounted, onBeforeMount } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
-import { ObjetoFisico } from './manter-objeto';
+import { ObjetoFisico, usuarioAdminLogado } from './manter-objeto';
 import apiConfig from 'src/apiConfig';
 import { Dialog, Notify } from 'quasar';
 import { useAuthStore } from 'src/stores/auth-store';
@@ -307,6 +307,7 @@ onBeforeMount(() => {
                 </q-td>
                 <q-td key="acao">
                   <q-btn
+                  v-if="usuarioAdminLogado"
                     label="Excluir"
                     color="red"
                     icon="delete"

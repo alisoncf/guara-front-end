@@ -7,6 +7,7 @@ import { useQuasar } from 'quasar';
 
 import { listarClasses } from 'src/services/api';
 import { useAuthStore } from 'src/stores/auth-store';
+import { usuarioAdminLogado } from '../objetos/manter-objeto';
 import { textoAposUltimoChar, truncarTexto } from '../funcoes';
 import { ClasseComum, ClassQueryResult, Coluna, TreeNode } from '../tipos';
 import apiConfig from 'src/apiConfig';
@@ -210,7 +211,7 @@ function closeDialog() {
 
 async function excluir_classe(row: ClasseComum) {
   try {
-    console.log('repo', authStore.get.repositorio_conectado.uri);
+
     const confirmDelete = window.confirm(
       `Você realmente deseja excluir a classe ${row.label}?`
     );
@@ -391,6 +392,7 @@ watch(
                 title="ir para os objetos desta coleção"
               />
               <q-btn
+                v-if="usuarioAdminLogado"
                 dense
                 flat
                 icon="delete"
@@ -454,6 +456,7 @@ watch(
                   title="ir para os objetos desta coleção"
                 />
                 <q-btn
+                  v-if="usuarioAdminLogado"
                   dense
                   flat
 

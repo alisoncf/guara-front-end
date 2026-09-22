@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount, ref } from 'vue';
 import { listarRepositorios } from 'src/services/api-repo';
-import { Auth, Repositorio } from './tipos';
+import { Repositorio } from './tipos';
 import { Notify } from 'quasar';
 import { useRouter } from 'vue-router'; // Importando o router
 import { useAuthStore } from 'src/stores/auth-store';
@@ -10,18 +10,16 @@ const repositorioSelecionado = ref({} as Repositorio);
 const listaRepositorios = ref([] as Repositorio[]);
 const router = useRouter(); // Instanciando o router
 const authStore = useAuthStore();
-// Função de login
+// Função de logout
 function logout() {
   try {
-    const usuario = ref({} as Auth);
-    authStore.set(usuario.value);
-    authStore.logout;
+    authStore.logout();
     router.push('/');
   } catch (error) {
-    console.error('Erro no login:', error);
+    console.error('Erro no logout:', error);
     Notify.create({
       type: 'negative',
-      message: 'Erro ao tentar efetuar login. Tente novamente.',
+      message: 'Erro ao tentar efetuar logout. Tente novamente.',
     });
   }
 }

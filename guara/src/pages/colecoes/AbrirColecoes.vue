@@ -447,13 +447,13 @@ watch(aba, () => {
                       <q-item-section>Grafo</q-item-section>
                     </q-item>
                     <q-separator />
-                    <q-item
+                    <q-item v-if="usuarioAdminLogado"
                       clickable
                       v-close-popup
                       @click="deletarObjeto(props.row)"
                     >
                       <q-item-section avatar>
-                        <q-avatar icon="delete_forever" color="red-7" />
+                        <q-avatar icon="delete_forever" color="red-7" v-if="usuarioAdminLogado" />
                       </q-item-section>
                       <q-item-section>Excluir</q-item-section>
                     </q-item>
@@ -557,6 +557,7 @@ watch(aba, () => {
                     </q-item>
                     <q-separator />
                     <q-item
+                    v-if="usuarioAdminLogado"
                       clickable
                       v-close-popup
                       @click="deletarObjeto(props.row)"
@@ -687,7 +688,7 @@ watch(aba, () => {
                           <q-item-section>Grafo</q-item-section>
                         </q-item>
                         <q-separator />
-                        <q-item
+                        <q-item v-if="usuarioAdminLogado"
                           clickable
                           v-close-popup
                           @click="deletarObjeto(obj)"
@@ -806,7 +807,7 @@ watch(aba, () => {
                           <q-item-section>Grafo</q-item-section>
                         </q-item>
                         <q-separator />
-                        <q-item
+                        <q-item v-if="usuarioAdminLogado"
                           clickable
                           v-close-popup
                           @click="deletarObjeto(obj)"

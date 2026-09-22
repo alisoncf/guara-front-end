@@ -49,6 +49,7 @@ export const useAuthStore = defineStore('useAuthStore', {
       this.user = objeto.user;
       this.validade = objeto.validade;
       this.repositorio_conectado = objeto.repositorio_conectado;
+      this.isLoggedIn = !!objeto.isLoggedIn;
     },
 
     limpar() {
@@ -64,6 +65,8 @@ export const useAuthStore = defineStore('useAuthStore', {
       this.repositorio_conectado = defaultState.repositorio_conectado;
     },
     logout() {
+      SessionStorage.remove(StorageKey.auth); // Remove do armazenamento de sessão
+
       this.email = '';
       this.permissao = '';
       this.repositorio = '';

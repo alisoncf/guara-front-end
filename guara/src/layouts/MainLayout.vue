@@ -115,7 +115,7 @@ function toggleLeftDrawer() {
     </q-header>
 
     <q-drawer
-      v-if="authStore.get.user != ''"
+      v-if="!!authStore.get.user"
       v-model="leftDrawerOpen"
       show-if-above
       bordered

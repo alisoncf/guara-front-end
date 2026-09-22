@@ -2,7 +2,11 @@
 import { ref, computed, onMounted, onBeforeMount, watchEffect } from 'vue';
 import axios from 'axios';
 import { useDadosObjetoFisico } from '../../stores/objeto-fisico';
-import { mostrarPopUpMidias, ObjetoFisico } from './manter-objeto';
+import {
+  mostrarPopUpMidias,
+  ObjetoFisico,
+  usuarioAdminLogado,
+} from './manter-objeto';
 import apiConfig from 'src/apiConfig';
 import { Dialog, Notify } from 'quasar';
 import { textoAposUltimoChar } from '../funcoes';
@@ -330,6 +334,7 @@ onBeforeMount(() => {
                   <q-tooltip>Abrir em nova aba</q-tooltip>
                 </q-btn>
                 <q-btn
+                  v-if="usuarioAdminLogado"
                   icon="delete"
                   flat
                   dense

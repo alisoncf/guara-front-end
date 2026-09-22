@@ -18,6 +18,7 @@ import {
   Relacao,
   relacaoPreSelecionada,
   Tripla,
+  usuarioAdminLogado,
 } from './manter-objeto';
 
 import { colunasDim, colunasRelacaoFis } from '../colecoes/funcoes-funcoes';
@@ -336,6 +337,7 @@ onBeforeMount(() => {
                     flat
                   ></q-btn>
                   <q-btn
+                    v-if="usuarioAdminLogado"
                     icon="delete_forever"
                     color="red-7"
                     flat
