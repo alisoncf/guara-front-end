@@ -5,7 +5,10 @@ services:
       dockerfile: Dockerfile
     image: guara-frontend:latest
     ports:
-      - "8080:80"
+      # Porta do HOST que expõe o Nginx (container escuta sempre na 80).
+      # Padrão 8080; sobrescreva localmente via FRONTEND_PORT no seu .env
+      # (sem precisar editar este arquivo).
+      - "${FRONTEND_PORT:-8080}:80"
     environment:
       # Endereço de REDE do backend, usado pelo Nginx (servidor a servidor)
       # pra fazer o proxy reverso de /api/*. Isso nunca é exposto ao
