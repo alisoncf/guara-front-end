@@ -25,6 +25,16 @@ const repositorio = reactive<Repositorio>({
   imagem: '',
 });
 
+const curadorDialogOpen = ref<boolean>(false);
+const novoRepoSlug = ref<string>('');
+const curador = reactive({
+  username: '',
+  email: '',
+  password: '',
+  permissao: 'curador',
+});
+const opcoesPermissao = ['curador', 'admin'];
+
 const columns = [
   { name: 'nome', label: 'Nome', align: 'left', field: 'nome' },
 
@@ -54,29 +64,107 @@ async function saveRepo() {
     const data = {
       nome: repositorio.nome,
       uri: repositorio.nome,
+      contato: repositorio.contato,
       descricao: repositorio.descricao,
       responsavel: repositorio.responsavel,
     };
 
-    const url = editMode.value
-      ? apiConfig.endpoints.repositorio.update
-      : apiConfig.endpoints.repositorio.create;
-    const response = await axios.post(url, data);
+    if (editMode.value) {
+      // TODO: /repositorios não tem rota de update ainda.
+      showNotif('Edição de repositório ainda não está disponível');
+      return;
+    }
+
+    const response = await axios.post(
+      apiConfig.endpoints.repositorio.create,
+      data,
+      {
+        headers: {
+          Authorization: 'Bearer ' + auth.token,
+        },
+      }
+    );
 
     if (response.status === 200) {
-      showNotif(
-        editMode.value
-          ? 'Classe editada com sucesso!'
-          : 'Classe criada com sucesso!'
-      );
+      const slug = response.data.slug;
+      if (arquivo.value && slug) {
+        await enviarAvatar(slug);
+      }
+      if (response.data.aviso) {
+        showNotif(response.data.message);
+      } else {
+        showNotif('Repositório criado com sucesso!');
+      }
+      await search();
+      closeDialog();
+      if (slug) {
+        abrirCuradorDialog(slug);
+      }
+      return;
     } else {
-      showNotif('Erro ao salvar a classe');
+      showNotif('Erro ao salvar o repositório');
     }
 
     await search();
     closeDialog();
   } catch (error: any) {
     showNotif(`Erro ao tentar gravar: ${error.message}`);
+  }
+}
+
+function closeCuradorDialog() {
+  curadorDialogOpen.value = false;
+}
+
+function slugDaUri(uri: string) {
+  return uri.replace(/\/$/, '').split('/').pop() || '';
+}
+
+function abrirCuradorDialog(slug: string) {
+  novoRepoSlug.value = slug;
+  curador.username = '';
+  curador.email = '';
+  curador.password = '';
+  curador.permissao = 'curador';
+  curadorDialogOpen.value = true;
+}
+
+async function salvarCurador() {
+  try {
+    await axios.post(
+      apiConfig.endpoints.addUser,
+      {
+        username: curador.username,
+        email: curador.email,
+        password: curador.password,
+        permissao: curador.permissao,
+        repo: novoRepoSlug.value,
+      },
+      {
+        headers: {
+          Authorization: 'Bearer ' + auth.token,
+        },
+      }
+    );
+    showNotif('Curador criado com sucesso!');
+    closeCuradorDialog();
+  } catch (error: any) {
+    showNotif(`Erro ao criar curador: ${error.message}`);
+  }
+}
+
+async function enviarAvatar(slug: string) {
+  try {
+    const formData = new FormData();
+    formData.append('uri', slug);
+    formData.append('avatar', arquivo.value as unknown as Blob);
+    await axios.post(apiConfig.endpoints.repositorio.uploadAvatar, formData, {
+      headers: {
+        Authorization: 'Bearer ' + auth.token,
+      },
+    });
+  } catch (error: any) {
+    showNotif(`Repositório criado, mas falhou ao enviar o avatar: ${error.message}`);
   }
 }
 async function search() {
@@ -92,8 +180,14 @@ async function editRepo(row: Repositorio) {
   repositorio.descricao = row.descricao;
   repositorio.responsavel = row.responsavel;
   repositorio.uri = row.uri;
+  novoRepoSlug.value = slugDaUri(row.uri);
 
   dialogOpen.value = true;
+}
+
+function criarCuradorParaRepoAtual() {
+  closeDialog();
+  abrirCuradorDialog(novoRepoSlug.value);
 }
 async function selecionarRepo(row: Repositorio) {
   repoStore.set(row);
@@ -200,6 +294,22 @@ onBeforeMount(() => {
         </q-card-section>
         <q-card-section>
           <q-input
+            v-model="repositorio.contato"
+            outlined
+            dense
+            label="Contato"
+          />
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model="repositorio.responsavel"
+            outlined
+            dense
+            label="Responsável"
+          />
+        </q-card-section>
+        <q-card-section>
+          <q-input
             v-model="repositorio.uri"
             readonly
             outlined
@@ -234,8 +344,75 @@ onBeforeMount(() => {
           />
         </q-card-section>
         <q-card-actions align="right">
+          <q-btn
+            v-if="editMode"
+            label="Criar curador"
+            color="secondary"
+            icon="person_add"
+            @click="criarCuradorParaRepoAtual"
+          />
           <q-btn label="Cancelar" color="negative" @click="closeDialog" />
           <q-btn label="Salvar" color="primary" @click="saveRepo" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    <q-dialog v-model="curadorDialogOpen">
+      <q-card style="min-width: 500px">
+        <q-toolbar>
+          <q-toolbar-title
+            >Criar curador para "{{ novoRepoSlug }}"</q-toolbar-title
+          >
+          <q-btn icon="close" flat round dense @click="closeCuradorDialog" />
+        </q-toolbar>
+        <q-card-section>
+          Criar um usuário curador vinculado a este repositório.
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model="curador.username"
+            outlined
+            dense
+            label="Nome de usuário"
+          />
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model="curador.email"
+            type="email"
+            outlined
+            dense
+            label="E-mail"
+          />
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model="curador.password"
+            type="password"
+            outlined
+            dense
+            label="Senha"
+          />
+        </q-card-section>
+        <q-card-section>
+          <q-select
+            v-model="curador.permissao"
+            :options="opcoesPermissao"
+            outlined
+            dense
+            label="Permissão"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn
+            label="Deixar para depois"
+            color="negative"
+            @click="closeCuradorDialog"
+          />
+          <q-btn
+            label="Criar curador"
+            color="primary"
+            @click="salvarCurador"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>

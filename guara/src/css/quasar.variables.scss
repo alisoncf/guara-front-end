@@ -12,19 +12,20 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
-$primary: rgba(37, 145, 207, 0.993);
-$secondary: #bbbebe;
-$thirty: rgba(92, 188, 212, 0.281);
-$accent: #9c27b0;
+// Paleta alinhada à identidade visual do Guará (o lobo-guará da logo:
+// céu noturno do Cerrado + laranja do entardecer). Mesmos tons usados
+// na home (IndexPage.vue) - ver --night-mid e --guara-orange lá.
+$primary: #263451; // azul-noite profundo - cabeçalho, botões, links
+$secondary: #746b5e; // cinza-pedra quente (Cerrado seco) - ações secundárias
+$accent: #f4941e; // laranja do guará - destaques e chamadas de atenção
 
-$dark: #1d1d1d;
-$dark-page: #121212;
+$dark: #151a30;
+$dark-page: #0b1533;
 
-$positive: #21ba45;
-$negative: #c10015;
-$info: #31ccec;
-$warning: #f2c037;
-$back-title: rgba(176, 176, 248, 0.842);
+$positive: #2e7d32;
+$negative: #c62828;
+$info: #2591cf; // era o $primary antigo - reaproveitado como azul de info
+$warning: #e8a33d;
 
 $typography-font-family: 'Open Sans', 'Segoe UI', 'Roboto', 'Noto Sans',
   'Segoe UI', '-apple-system', 'Helvetica Neue', Helvetica, Arial, sans-serif;

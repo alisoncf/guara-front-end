@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeMount, watch, reactive, ref, computed } from 'vue';
+import { onBeforeMount, watch, reactive, ref } from 'vue';
 import axios from 'axios';
 
 import { useQuasar } from 'quasar';
@@ -9,7 +9,7 @@ import { listarClasses } from 'src/services/api';
 import { useAuthStore } from 'src/stores/auth-store';
 import { usuarioAdminLogado } from '../objetos/manter-objeto';
 import { textoAposUltimoChar, truncarTexto } from '../funcoes';
-import { ClasseComum, ClassQueryResult, Coluna, TreeNode } from '../tipos';
+import { ClasseComum, ClassQueryResult, Coluna } from '../tipos';
 import apiConfig from 'src/apiConfig';
 import { useRouter } from 'vue-router';
 const router = useRouter();
@@ -27,40 +27,34 @@ const novaClasse = reactive<ClasseComum>({
   mae_curta: '',
   nome_curto: '',
 });
-const selectedNode = ref<string>('');
 const classeMaeSelecionada = ref<ClasseComum | null>(null);
-// Lista de classes mãe disponíveis (para selecionar a subClassOf)
-function onNodeSelect() {
-  classeMaeSelecionada.value = encontrarClassePorLabel(selectedNode.value);
-}
-function encontrarClassePorLabel(label: string): ClasseComum {
-  const data = listaClassesMae.value.find(
-    (classe) => classe.nome_curto === label
-  );
-  if (data) {
-    return data;
-  } else {
-    return {
-      uri: '',
-      label: '',
-      description: '',
-      subclassof: '',
-      mae_curta: '',
-      nome_curto: '',
-    };
-  }
-}
-
-const selectedClassUri = computed({
-  get() {
-    return classeMaeSelecionada.value ? classeMaeSelecionada.value.uri : '';
-  },
-  set(value) {
-    if (classeMaeSelecionada.value) {
-      classeMaeSelecionada.value.uri = value;
+// Opções exibidas no q-select de classe mãe - começa igual a
+// listaClassesMae e é filtrada conforme o usuário digita (ver filtrarClasseMae)
+const opcoesClasseMae = ref<ClasseComum[]>([]);
+function filtrarClasseMae(
+  val: string,
+  update: (callback: () => void) => void
+) {
+  update(() => {
+    // Uma classe não pode ser mãe dela mesma - some da lista quando
+    // estiver editando (em modo de criação novaClasse.uri é '', não
+    // exclui nada).
+    const disponiveis = listaClassesMae.value.filter(
+      (classe) => classe.uri !== novaClasse.uri
+    );
+    if (!val) {
+      opcoesClasseMae.value = disponiveis;
+      return;
     }
-  },
-});
+    const agulha = val.toLowerCase();
+    opcoesClasseMae.value = disponiveis.filter(
+      (classe) =>
+        classe.label.toLowerCase().includes(agulha) ||
+        classe.nome_curto.toLowerCase().includes(agulha) ||
+        classe.mae_curta.toLowerCase().includes(agulha)
+    );
+  });
+}
 
 function encontrarClassePorUri(uri: string): ClasseComum {
   const data = listaClassesMae.value.find((classe) => classe.uri === uri);
@@ -82,7 +76,6 @@ const listaClassesMae = ref<ClasseComum[]>([]);
 const keyword = ref<string>('');
 
 const listaClasses = ref<ClasseComum[]>([]);
-const arvoreClasses = ref<TreeNode[]>([]);
 const visualizacao = ref<'tabela' | 'cards'>('cards');
 const LIMITE_DESCRICAO_CARD = 140;
 
@@ -103,49 +96,6 @@ const columns = [
   { name: 'acoes', label: 'Ações', align: 'center' },
 ] as Coluna[];
 
-function organiza_arvore(lista: ClasseComum[]) {
-  lista.forEach((classItem) => {
-    if (classItem.subclassof == '-') {
-      arvoreClasses.value.push({
-        label: classItem.nome_curto,
-        icon: 'home',
-        displayLabel: classItem.label,
-        children: [],
-        classData: classItem,
-      });
-    }
-  });
-
-  lista.forEach((classItem) => {
-    if (classItem.subclassof !== '-') {
-      const parent = findParentNode(arvoreClasses.value, classItem.mae_curta);
-      if (parent) {
-        parent.children.push({
-          label: classItem.nome_curto,
-          icon: 'description',
-          displayLabel: classItem.label,
-          classData: classItem,
-          children: [],
-        });
-      }
-    }
-  });
-}
-
-function findParentNode(nodes: TreeNode[], parentLabel: string): any {
-  for (let node of nodes) {
-    if (node.label === parentLabel) {
-      return node;
-    }
-    if (node.children && node.children.length > 0) {
-      const result = findParentNode(node.children, parentLabel);
-      if (result) {
-        return result;
-      }
-    }
-  }
-  return null;
-}
 function irParaObjetos(classe: ClasseComum) {
   router.push({
     path: '/abrir-colecoes',
@@ -176,7 +126,6 @@ async function listarClasseMae() {
         repository: uri,
       }
     );
-    arvoreClasses.value = [];
     listaClassesMae.value = [];
     response.data.results.bindings.forEach((item) => {
       const classItem: ClasseComum = {
@@ -193,7 +142,7 @@ async function listarClasseMae() {
       listaClassesMae.value.push(classItem);
     });
     classeMaeSelecionada.value = listaClassesMae.value[0];
-    organiza_arvore(listaClassesMae.value);
+    opcoesClasseMae.value = listaClassesMae.value;
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
   }
@@ -243,6 +192,15 @@ async function excluir_classe(row: ClasseComum) {
 
 async function gravarClasse() {
   try {
+    if (
+      editMode.value &&
+      classeMaeSelecionada.value &&
+      classeMaeSelecionada.value.uri === novaClasse.uri
+    ) {
+      showNotif('Uma classe não pode ser mãe dela mesma.');
+      return;
+    }
+
     const subClassOfValue = textoAposUltimoChar(
       classeMaeSelecionada.value?.uri,
       '#'
@@ -287,7 +245,6 @@ async function editClass(row: ClasseComum) {
   novaClasse.subclassof = row.subclassof;
   novaClasse.nome_curto = row.nome_curto;
   novaClasse.mae_curta = row.mae_curta;
-  selectedNode.value = row.mae_curta;
   classeMaeSelecionada.value = encontrarClassePorUri(row.subclassof);
   dialogOpen.value = true;
 }
@@ -497,19 +454,46 @@ watch(
             />
           </q-card-section>
           <q-card-section>
-            <q-input
-              v-model="selectedClassUri"
-              readonly
+            <q-select
+              v-model="classeMaeSelecionada"
+              :options="opcoesClasseMae"
               outlined
               dense
-              label="Classe mãe selecionada"
-            />
-            <q-tree
-              :nodes="arvoreClasses"
-              node-key="label"
-              v-model:selected="selectedNode"
-              @update:selected="onNodeSelect"
-            />
+              clearable
+              use-input
+              input-debounce="0"
+              label="Classe mãe"
+              hint="Digite pra buscar pela classe ou pela classe mãe dela"
+              @filter="filtrarClasseMae"
+            >
+              <template v-slot:selected-item="scope">
+                {{ scope.opt.label || scope.opt.nome_curto }}
+              </template>
+              <template v-slot:option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section>
+                    <q-item-label>
+                      {{ scope.opt.label || scope.opt.nome_curto }}
+                    </q-item-label>
+                    <q-item-label caption>
+                      Mãe:
+                      {{
+                        scope.opt.mae_curta && scope.opt.mae_curta !== '-'
+                          ? scope.opt.mae_curta
+                          : 'nenhuma (classe raiz)'
+                      }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </template>
+              <template v-slot:no-option>
+                <q-item>
+                  <q-item-section class="text-grey">
+                    Nenhuma classe encontrada
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
           </q-card-section>
           <q-separator></q-separator>
           <q-card-actions align="right">

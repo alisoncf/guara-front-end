@@ -95,14 +95,6 @@ function toggleLeftDrawer() {
           </div>
         </div>
 
-        <q-space />
-
-        <img
-          src="../assets/cmg.gif"
-          class="header-logo-parceiro gt-xs"
-          alt=""
-
-        />
       </q-toolbar>
       <q-tabs
         align="left"
@@ -150,6 +142,14 @@ function toggleLeftDrawer() {
             {{ authStore.get.repositorio_conectado.nome }}
           </div>
         </div>
+
+        <q-space />
+
+        <img
+          src="../assets/cmg.gif"
+          class="footer-logo-parceiro gt-xs"
+          alt=""
+        />
       </q-toolbar>
     </q-footer>
 
@@ -190,17 +190,6 @@ function toggleLeftDrawer() {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.header-logo-parceiro {
-  flex-shrink: 0;
-  height: 62px;
-  width: auto;
-  max-width: 100px;
-  object-fit: contain;
-  background: #ffffff;
-  border-radius: 4px;
-  padding: 2px 6px;
-}
-
 .footer-texto {
   min-width: 0;
   flex: 1 1 auto;
@@ -212,6 +201,16 @@ function toggleLeftDrawer() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.footer-logo-parceiro {
+  flex-shrink: 0;
+  height: 28px;
+  width: auto;
+  max-width: 90px;
+  object-fit: contain;
+  background: #ffffff;
+  border-radius: 3px;
+  padding: 2px 6px;
 }
 
 /* Em telas bem estreitas, esconde o subtítulo pra não espremer o logo do menu */

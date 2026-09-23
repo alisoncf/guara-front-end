@@ -92,11 +92,11 @@ onBeforeMount(() => {
         <p class="hero-subtitle">Sistema de Informação Patrimonial</p>
 
         <p class="hero-description">
-          Batizado em homenagem ao lobo-guará, símbolo do Cerrado brasileiro,
+          Batizado em homenagem ao lobo-guará, maior e mais belo canídeo, símbolo do Cerrado brasileiro,
           o Guará é uma plataforma para documentar, organizar e preservar
-          acervos patrimoniais. Cataloga objetos e coleções, estrutura
-          vocabulários e ontologias, e conecta-se a uma rede de repositórios
-          amigos — levando a memória institucional a mais gente.
+          pequenos acervos patrimoniais. Cataloga objetos e coleções e estrutura repositórios
+          com vocabulários baseados em micro-ontologias, e conecta-se a uma rede de repositórios
+          amigos.
         </p>
 
         <div class="hero-actions">
@@ -234,15 +234,14 @@ onBeforeMount(() => {
     <!-- ÁREA ADMINISTRATIVA -->
     <section v-if="store.user" class="repos">
       <div class="q-pa-md flex column items-center">
-        <q-card class="q-pa-md" style="max-width: 400px; width: 100%">
+        <q-card class="q-pa-md" style="max-width: 400px; width: 100%" v-if="false">
           <q-card-section>
             <div class="text-subtitle1">Usuário conectado: {{ store.user }}</div>
             <div v-if="store.repositorio_conectado" class="q-mt-sm">
               Repositório: {{ store.repositorio_conectado.nome }}
             </div>
             <div v-if="store.repositorio_conectado" class="q-mt-sm">
-              URI: {{ store.repositorio_conectado.uri }} token
-              {{ store.token }} validade {{ store.validade }}
+              URI: {{ store.repositorio_conectado.uri }}
             </div>
           </q-card-section>
           <q-card-actions align="right">
@@ -328,6 +327,7 @@ onBeforeMount(() => {
   line-height: 1.7;
   font-size: 1rem;
   color: rgba(255, 255, 255, 0.88);
+  text-align: justify;
 }
 .hero-actions {
   margin-top: 28px;

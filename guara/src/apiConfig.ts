@@ -22,7 +22,10 @@ const apiConfig = {
     objectapi: '/objectapi',
     class: { list: baseURL + '/classapi/list' },
     repositorio: {
-      create: baseURL + '/repo_handler/add',
+      create: baseURL + '/repositorios/create',
+      uploadAvatar: baseURL + '/repositorios/upload_avatar',
+      // TODO: /repositorios não tem rota de update ainda - editar um
+      // repositório existente segue quebrado até isso ser implementado.
       update: baseURL + '/repo_handler/update',
     },
     dimensional: {
@@ -54,6 +57,7 @@ const apiConfig = {
 
     listar_repo: baseURL + '/repositorios/list',
     login: baseURL + '/acesso/login',
+    addUser: baseURL + '/acesso/add_user',
   },
   dimension: {
     Pessoa: baseOnto + 'Pessoa',

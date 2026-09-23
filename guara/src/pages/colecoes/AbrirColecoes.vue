@@ -54,7 +54,7 @@ const colecoesFiltradas = ref<ClasseComum[]>([]);
 const colecaoSelecionada = ref<string | null>(null);
 
 const aba = ref<string>('fisicos');
-const visualizacao = ref<'tabela' | 'cards'>('tabela');
+const visualizacao = ref<'tabela' | 'cards'>('cards');
 
 // Cor e ícone dos cards por tipo (paleta categórica fixa, mesma do grafo de
 // relações) - identidade visual leve pra reconhecer o tipo de relance.
