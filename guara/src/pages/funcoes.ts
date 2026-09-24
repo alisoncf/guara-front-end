@@ -97,3 +97,15 @@ export function truncarTexto(texto: string, limite: number): string {
   }
   return texto;
 }
+
+// O backend concatena URIs (coleções, tipos) num único texto, mas o
+// separador exato pode variar ("," ou ", "). Split fixo em ', ' quebra
+// filtros silenciosamente (nada dá match, lista fica vazia). Isto tolera
+// espaços variáveis ao redor da vírgula e descarta vazios.
+export function dividirLista(valor?: string): string[] {
+  if (!valor) return [];
+  return valor
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item !== '');
+}

@@ -89,7 +89,7 @@ onBeforeMount(() => {
         </q-avatar>
 
         <h1 class="hero-title">Guará</h1>
-        <p class="hero-subtitle">Sistema de Informação Patrimonial</p>
+        <p class="hero-subtitle">Sistema de Informação do Patrimônio Cultural</p>
 
         <p class="hero-description">
           Batizado em homenagem ao lobo-guará, maior e mais belo canídeo, símbolo do Cerrado brasileiro,

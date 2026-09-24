@@ -13,7 +13,7 @@ import apiConfig from '../apiConfig';
 import { Dialog, Notify } from 'quasar';
 
 import { ref } from 'vue';
-import { textoAposUltimoChar } from 'src/pages/funcoes';
+import { dividirLista, textoAposUltimoChar } from 'src/pages/funcoes';
 import { useDadosRepositorio } from 'src/stores/repositorio-store';
 
 const authStore = useAuthStore();
@@ -222,12 +222,13 @@ export async function pesquisarObjetosDim(obj: ObjetoDimensional) {
       titulo: item.titulo.value,
       resumo: item.resumo.value,
       descricao: item.descricao.value,
-      colecao: item.colecoes?.value ? item.colecoes.value.split(', ') : [],
-      colecao_curta: item.colecoes?.value
-        ? item.colecoes.value
-            .split(', ')
-            .map((colecao: string) => textoAposUltimoChar(colecao, '#'))
-        : [],
+      // Objeto dimensional nem sempre está ligado a uma coleção - por isso
+      // vem opcional (?). O nome do campo às vezes vem como "colecao"
+      // (singular, igual à busca de objetos físicos), então tenta os dois.
+      colecao: dividirLista(item.colecao?.value ?? item.colecoes?.value),
+      colecao_curta: dividirLista(
+        item.colecao?.value ?? item.colecoes?.value
+      ).map((colecao: string) => textoAposUltimoChar(colecao, '#')),
       dimensao: item.dimensao.value,
       tipo: item.dimensao.value,
       lat: item.lat ? item.lat.value : '',

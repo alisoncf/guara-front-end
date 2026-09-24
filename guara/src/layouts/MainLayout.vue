@@ -91,7 +91,7 @@ function toggleLeftDrawer() {
         <div class="header-titulo">
           <div class="header-titulo-principal">Guará</div>
           <div class="header-titulo-sub">
-            Sistema de Informação Patrimonial
+            Sistema de Informação do Patrimônio Cultural
           </div>
         </div>
 
@@ -196,15 +196,17 @@ function toggleLeftDrawer() {
   font-size: 13px;
   line-height: 1;
   overflow: hidden;
+  color: #ffffff;
 }
 .footer-texto-linha {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
 }
 .footer-logo-parceiro {
   flex-shrink: 0;
-  height: 28px;
+  height: 38px;
   width: auto;
   max-width: 90px;
   object-fit: contain;

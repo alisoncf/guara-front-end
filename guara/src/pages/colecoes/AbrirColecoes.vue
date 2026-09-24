@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 
 import {
   Dimensao,
+  LabelValue,
   ListaTipoDim,
   mostrarPopUpGrafoRelacoes,
   mostrarPopUpMidias,
@@ -13,6 +14,7 @@ import {
   objetoDimensionalVazio,
   ObjetoFisico,
   somenteLeituraObjeto,
+  tipos_fisicos,
   usuarioAdminLogado,
 } from '../objetos/manter-objeto';
 
@@ -51,7 +53,12 @@ const dimensoesSelecionadas = ref<Dimensao[]>([...listaDimensoes]);
 
 const listaColecoes = ref<ClasseComum[]>([]);
 const colecoesFiltradas = ref<ClasseComum[]>([]);
-const colecaoSelecionada = ref<string | null>(null);
+const colecaoSelecionada = ref<string[]>([]);
+
+// Começa com todos marcados = sem filtro (mesmo padrão de dimensoesSelecionadas)
+const tiposFisicosSelecionados = ref<string[]>(
+  tipos_fisicos.map((tipo) => tipo.value)
+);
 
 const aba = ref<string>('fisicos');
 const visualizacao = ref<'tabela' | 'cards'>('cards');
@@ -109,6 +116,21 @@ function iconeTipoFisico(obj: ObjetoFisico): string {
   const tipo = obj.tipoFisicoAbreviado?.[0];
   return (tipo && ICONES_TIPO_FISICO[tipo]) || ICONE_TIPO_PADRAO;
 }
+// q-chip/q-btn "color" só aceita nome de cor da paleta Quasar (ex.: 'teal',
+// 'red-6') - hex customizado vira classe CSS inválida e não pinta nada
+// (por isso os chips ficavam apagados). Aqui aplicamos o hex via :style.
+function estiloChipCategoria(
+  cores: Record<string, string>,
+  chave: string,
+  selecionado: boolean
+) {
+  const cor = cores[chave] || COR_TIPO_PADRAO;
+  return {
+    border: `2px solid ${cor}`,
+    backgroundColor: selecionado ? cor : 'transparent',
+    color: selecionado ? '#fff' : cor,
+  };
+}
 
 function rotuloColecao(colecao: ClasseComum): string {
   return colecao.label || colecao.nome_curto;
@@ -135,7 +157,7 @@ onMounted(() => {
   if (typeof colecaoNaUrl === 'string' && colecaoNaUrl !== '') {
     aba.value = 'fisicos';
     keyword.value = '';
-    colecaoSelecionada.value = colecaoNaUrl;
+    colecaoSelecionada.value = [colecaoNaUrl];
     pesquisarFis();
   }
 });
@@ -166,6 +188,26 @@ function alternarDimensao(dim: Dimensao) {
   }
   pesquisarDim();
 }
+function tipoFisicoSelecionado(tipo: LabelValue) {
+  return tiposFisicosSelecionados.value.includes(tipo.value);
+}
+function alternarTipoFisico(tipo: LabelValue) {
+  if (tipoFisicoSelecionado(tipo)) {
+    tiposFisicosSelecionados.value = tiposFisicosSelecionados.value.filter(
+      (v) => v !== tipo.value
+    );
+  } else {
+    tiposFisicosSelecionados.value.push(tipo.value);
+  }
+  pesquisarFis();
+}
+// Nomes curtos (depois do '#') das coleções marcadas no filtro - não dá
+// pra comparar pela URI completa porque ela vem de um endpoint diferente
+// do da busca de objetos e pode usar um prefixo ligeiramente diferente.
+function colecoesSelecionadasCurtas(): string[] {
+  return colecaoSelecionada.value.map((uri) => textoAposUltimoChar(uri, '#'));
+}
+
 async function pesquisarDim() {
   let resultado: ObjetoDimensional[] = [];
   if (dimensoesSelecionadas.value.length !== 0) {
@@ -185,6 +227,17 @@ async function pesquisarDim() {
       resultado = resultados.flat();
     }
   }
+  const colecoesCurtas = colecoesSelecionadasCurtas();
+  // Múltiplas coleções selecionadas = OR. Objeto dimensional pode não ter
+  // nenhuma coleção associada (colecao_curta vazio) - nesse caso ele só
+  // aparece quando nenhum filtro de coleção estiver marcado.
+  if (colecoesCurtas.length) {
+    resultado = resultado.filter((item) =>
+      (item.colecao_curta || []).some((colecao) =>
+        colecoesCurtas.includes(colecao)
+      )
+    );
+  }
   listaObjDim.value = resultado;
   useObjetoStore.setListaDim(resultado); // Salva no store
   useObjetoStore.setKeyword(keyword.value); // Salva a palavra-chave
@@ -193,12 +246,31 @@ async function pesquisarDim() {
 async function pesquisarFis() {
   const obj = ref({} as ObjetoFisico);
   obj.value.descricao = keyword.value;
-  const resultado = await pesquisarObjetosFisicos(obj.value);
-  listaObj.value = colecaoSelecionada.value
-    ? resultado.filter((item) =>
-        item.colecaoLista.includes(colecaoSelecionada.value as string)
+  let resultado = await pesquisarObjetosFisicos(obj.value);
+
+  const colecoesCurtas = colecoesSelecionadasCurtas();
+  // Múltiplas coleções selecionadas = OR (mostra o objeto se ele pertencer
+  // a pelo menos uma delas).
+  if (colecoesCurtas.length) {
+    resultado = resultado.filter((item) =>
+      item.colecaoListaAbreviada.some((colecao) =>
+        colecoesCurtas.includes(colecao)
       )
-    : resultado;
+    );
+  }
+
+  // Igual à coleção: só filtra de verdade quando algum tipo foi
+  // desmarcado. Com todos marcados (padrão) mostra tudo, sem exigir que
+  // o objeto tenha um tipo físico preenchido.
+  if (tiposFisicosSelecionados.value.length !== tipos_fisicos.length) {
+    resultado = resultado.filter((item) =>
+      item.tipoFisicoAbreviado.some((tipo) =>
+        tiposFisicosSelecionados.value.includes(tipo)
+      )
+    );
+  }
+
+  listaObj.value = resultado;
   useObjetoStore.setLista(listaObj); // Salva no store
   useObjetoStore.setKeyword(keyword.value); // Salva a palavra-chave
 }
@@ -278,22 +350,25 @@ watch(aba, () => {
     <q-card>
       <q-card-section>
         <div class="row q-col-gutter-sm q-mb-md">
-          <div class="col-xs-6 col-md-6 col-lg-8">
+          <div class="col-xs-6 col-md-6 col-lg-6">
             <q-input
               outlined
               dense
               v-model="keyword"
               :option-label="labelTipo"
+              label="Palavra-chave"
               @keyup.enter="buscar()"
+
             />
           </div>
-          <div class="col-xs-6 col-md-6 col-lg-4">
+          <div class="col-xs-6 col-md-6 col-lg-2">
             <q-btn
               @click="buscar"
               color="teal"
               label="Pesquisar"
               icon="search"
               class="q-ml-md"
+
             />
             <q-btn
               v-if="aba == 'fisicos' && usuarioAdminLogado"
@@ -312,26 +387,22 @@ watch(aba, () => {
               rounded
             />
           </div>
+
+          <q-btn-toggle
+            v-model="visualizacao"
+            dense
+            unelevated
+            toggle-color="teal"
+            color="white"
+            text-color="grey-8"
+            :options="[
+              { value: 'tabela', icon: 'table_rows', label: 'Tabela' },
+              { value: 'cards', icon: 'grid_view', label: 'Cards' },
+            ]"
+          />
         </div>
 
         <div class="row q-mb-md">
-          <div class="col-12 flex justify-end">
-            <q-btn-toggle
-              v-model="visualizacao"
-              dense
-              unelevated
-              toggle-color="teal"
-              color="white"
-              text-color="grey-8"
-              :options="[
-                { value: 'tabela', icon: 'table_rows', label: 'Tabela' },
-                { value: 'cards', icon: 'grid_view', label: 'Cards' },
-              ]"
-            />
-          </div>
-        </div>
-
-        <div v-if="aba == 'fisicos'" class="row q-mb-md">
           <div class="col-xs-12 col-md-6">
             <div class="text-caption text-grey-8 q-mb-xs">
               Filtrar por coleção
@@ -343,14 +414,17 @@ watch(aba, () => {
               option-value="uri"
               emit-value
               map-options
+              multiple
+              use-chips
               outlined
               dense
               clearable
               use-input
               input-debounce="0"
               label="Todas as coleções"
+              hint="Vale para objetos físicos e dimensionais"
               @filter="filtrarColecoes"
-              @update:model-value="pesquisarFis()"
+              @update:model-value="buscar()"
             />
           </div>
         </div>
@@ -363,13 +437,39 @@ watch(aba, () => {
             v-for="dim in listaDimensoes"
             :key="dim.tipo"
             clickable
-            :outline="!dimensaoSelecionada(dim)"
-            :color="dimensaoSelecionada(dim) ? 'teal' : 'grey-6'"
-            :text-color="dimensaoSelecionada(dim) ? 'white' : 'grey-8'"
-            :icon="dimensaoSelecionada(dim) ? 'check' : undefined"
+            :style="
+              estiloChipCategoria(
+                CORES_DIMENSAO,
+                dim.tipo,
+                dimensaoSelecionada(dim)
+              )
+            "
+            :icon="ICONES_DIMENSAO[dim.tipo] || ICONE_TIPO_PADRAO"
             @click="alternarDimensao(dim)"
           >
             {{ dim.tipo }}
+          </q-chip>
+        </div>
+
+        <div v-if="aba == 'fisicos'" class="q-mb-md">
+          <div class="text-caption text-grey-8 q-mb-xs">
+            Filtrar por tipo físico
+          </div>
+          <q-chip
+            v-for="tipo in tipos_fisicos"
+            :key="tipo.value"
+            clickable
+            :style="
+              estiloChipCategoria(
+                CORES_TIPO_FISICO,
+                tipo.value,
+                tipoFisicoSelecionado(tipo)
+              )
+            "
+            :icon="ICONES_TIPO_FISICO[tipo.value] || ICONE_TIPO_PADRAO"
+            @click="alternarTipoFisico(tipo)"
+          >
+            {{ tipo.label }}
           </q-chip>
         </div>
 
@@ -447,13 +547,18 @@ watch(aba, () => {
                       <q-item-section>Grafo</q-item-section>
                     </q-item>
                     <q-separator />
-                    <q-item v-if="usuarioAdminLogado"
+                    <q-item
+                      v-if="usuarioAdminLogado"
                       clickable
                       v-close-popup
                       @click="deletarObjeto(props.row)"
                     >
                       <q-item-section avatar>
-                        <q-avatar icon="delete_forever" color="red-7" v-if="usuarioAdminLogado" />
+                        <q-avatar
+                          icon="delete_forever"
+                          color="red-7"
+                          v-if="usuarioAdminLogado"
+                        />
                       </q-item-section>
                       <q-item-section>Excluir</q-item-section>
                     </q-item>
@@ -557,7 +662,7 @@ watch(aba, () => {
                     </q-item>
                     <q-separator />
                     <q-item
-                    v-if="usuarioAdminLogado"
+                      v-if="usuarioAdminLogado"
                       clickable
                       v-close-popup
                       @click="deletarObjeto(props.row)"
@@ -688,7 +793,8 @@ watch(aba, () => {
                           <q-item-section>Grafo</q-item-section>
                         </q-item>
                         <q-separator />
-                        <q-item v-if="usuarioAdminLogado"
+                        <q-item
+                          v-if="usuarioAdminLogado"
                           clickable
                           v-close-popup
                           @click="deletarObjeto(obj)"
@@ -738,7 +844,10 @@ watch(aba, () => {
                 />
                 <q-card-section>
                   <div class="objeto-card-titulo">{{ obj.titulo }}</div>
-                  <div class="text-caption text-grey-7 q-mb-xs" v-if="(obj as any).dimensao">
+                  <div
+                    class="text-caption text-grey-7 q-mb-xs"
+                    v-if="(obj as any).dimensao"
+                  >
                     {{ textoAposUltimoChar((obj as any).dimensao, '#') }}
                   </div>
                   <div class="objeto-card-resumo">
@@ -807,7 +916,8 @@ watch(aba, () => {
                           <q-item-section>Grafo</q-item-section>
                         </q-item>
                         <q-separator />
-                        <q-item v-if="usuarioAdminLogado"
+                        <q-item
+                          v-if="usuarioAdminLogado"
                           clickable
                           v-close-popup
                           @click="deletarObjeto(obj)"
