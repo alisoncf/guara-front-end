@@ -182,6 +182,7 @@ function submitMidias() {
     .post(apiConfig.baseURL + apiConfig.endpoints.upload, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${store.token}`,
       },
     })
     .then(() => {

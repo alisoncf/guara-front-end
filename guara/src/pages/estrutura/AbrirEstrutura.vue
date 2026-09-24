@@ -173,7 +173,10 @@ async function excluir_classe(row: ClasseComum) {
     };
     const response = await axios.delete(
       'http://localhost:5000/classapi/excluir_classe',
-      { data }
+      {
+        data,
+        headers: { Authorization: 'Bearer ' + authStore.token },
+      }
     );
 
     if (response.status === 200) {
@@ -216,7 +219,9 @@ async function gravarClasse() {
     const url = editMode.value
       ? 'http://localhost:5000/classapi/alterar_classe'
       : 'http://localhost:5000/classapi/adicionar_classe';
-    const response = await axios.post(url, data);
+    const response = await axios.post(url, data, {
+      headers: { Authorization: 'Bearer ' + authStore.token },
+    });
 
     if (response.status === 200) {
       showNotif(
