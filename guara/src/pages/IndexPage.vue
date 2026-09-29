@@ -2,15 +2,29 @@
 import { useAuthStore } from 'src/stores/auth-store';
 import { useRouter } from 'vue-router';
 import { Auth, Repositorio } from './tipos';
-import { onBeforeMount, ref } from 'vue';
+import { computed, onBeforeMount, ref } from 'vue';
 import { listarRepositorios } from 'src/services/api';
 import { Notify } from 'quasar';
+import { useDadosObjetoFisico } from 'src/stores/objeto-fisico';
+import {
+  mostrarPopUpObjetoFis,
+  ObjetoFisico,
+  somenteLeituraObjeto,
+} from './objetos/manter-objeto';
+import GrafoRedeObjetos from 'src/components/GrafoRedeObjetos.vue';
 
 const router = useRouter();
 const store = useAuthStore();
+const useObjetoStore = useDadosObjetoFisico();
 
 const listaRepositorios = ref([] as Repositorio[]);
 const repositorioPreview = ref<Repositorio | null>(null);
+
+// Repositório usado pela amostra de rede de objetos: o já conectado (pra
+// quem está logado) ou o que está em prévia na lista (navegação anônima).
+const repositorioAtual = computed<Repositorio | null>(() =>
+  store.user ? store.repositorio_conectado : repositorioPreview.value
+);
 
 const projectUrl = 'https://guara.ueg.br';
 const githubUrl = 'https://github.com/alisoncf/guara-front-end';
@@ -48,17 +62,35 @@ function goToLogout() {
 function irParaColecoes() {
   router.push('/abrir-colecoes');
 }
-function selecionarRepositorio(repo: Repositorio) {
+// Conecta ao repositório sem mexer numa sessão já logada - usado tanto
+// pela seleção manual quanto pelo clique num nó da amostra do grafo.
+function entrarNoRepositorio(repo: Repositorio) {
+  if (store.user) return;
   const auth = ref({} as Auth);
   auth.value.isLoggedIn = false;
   auth.value.user = '';
   auth.value.repositorio_conectado = repo;
   store.set(auth.value);
+}
+function selecionarRepositorio(repo: Repositorio) {
+  entrarNoRepositorio(repo);
   Notify.create({
     message: `Repositório "${repo.nome}" selecionado.`,
     color: 'primary',
     position: 'top',
   });
+  router.push('/abrir-colecoes');
+}
+function abrirObjetoDoGrafo(payload: {
+  repositorio: Repositorio;
+  objeto?: ObjetoFisico;
+}) {
+  entrarNoRepositorio(payload.repositorio);
+  if (payload.objeto) {
+    useObjetoStore.setObjeto(payload.objeto);
+    somenteLeituraObjeto.value = true;
+    mostrarPopUpObjetoFis.value = true;
+  }
   router.push('/abrir-colecoes');
 }
 onBeforeMount(() => {
@@ -212,6 +244,23 @@ onBeforeMount(() => {
       </div>
     </section>
 
+    <!-- AMOSTRA DA REDE DE OBJETOS -->
+    <section v-if="repositorioAtual" class="rede-objetos">
+      <div class="rede-objetos-inner">
+        <div class="text-h6 text-weight-bold">
+          Uma amostra do acervo de {{ repositorioAtual.nome }}
+        </div>
+        <p class="text-body2 text-grey-8 q-mb-md">
+          Objetos e suas relações com pessoas, lugares e eventos. Arraste os
+          nós, dê zoom e clique num objeto (laranja) pra abri-lo.
+        </p>
+        <GrafoRedeObjetos
+          :repositorio="repositorioAtual"
+          @abrir-objeto="abrirObjetoDoGrafo"
+        />
+      </div>
+    </section>
+
     <!-- DESTAQUES -->
     <section class="features">
       <div class="features-grid">
@@ -343,6 +392,18 @@ onBeforeMount(() => {
 }
 .btn-hero-primary:hover {
   background: var(--guara-gold);
+}
+
+/* AMOSTRA DA REDE DE OBJETOS */
+.rede-objetos {
+  background: #fff;
+  padding: 40px 24px;
+  border-bottom: 1px solid #edeef3;
+}
+.rede-objetos-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
 }
 
 /* DESTAQUES */

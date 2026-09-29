@@ -148,19 +148,19 @@ export async function removerRelacao(tripla: Tripla): Promise<boolean> {
   }
 }
 
-export async function pesquisarRelacoes(obj_uri: string) {
+// repositorioUri: mesmo override opcional de pesquisarObjetosFisicos.
+export async function pesquisarRelacoes(obj_uri: string, repositorioUri?: string) {
   const lista = ref([] as Tripla[]);
+  const uri = repositorioUri || authStore.get.repositorio_conectado?.uri;
 
-  if (
-    !authStore.get.repositorio_conectado ||
-    authStore.get.repositorio_conectado.uri == '' ||
-    authStore.get.repositorio_conectado.uri == undefined
-  ) {
-    Notify.create({
-      type: 'negative',
-      message: 'selecione um repositório',
-      timeout: 5000,
-    });
+  if (!uri) {
+    if (!repositorioUri) {
+      Notify.create({
+        type: 'negative',
+        message: 'selecione um repositório',
+        timeout: 5000,
+      });
+    }
     return [];
   }
   try {
@@ -168,7 +168,7 @@ export async function pesquisarRelacoes(obj_uri: string) {
       keyword: '',
       type: '',
       id: obj_uri,
-      repository: authStore.get.repositorio_conectado.uri,
+      repository: uri,
     });
 
     lista.value = (await response.data.results.bindings.map((item: any) => ({

@@ -60,26 +60,31 @@ export function gravarObjetoFisico(objeto: ObjetoFisico) {
     });
 }
 
-export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
+// repositorioUri: override opcional - usado por quem precisa buscar num
+// repositório que ainda não foi "conectado" (ex.: prévia na home antes de
+// escolher/entrar num repositório). Sem ele, comportamento é o de sempre.
+export async function pesquisarObjetosFisicos(
+  obj: ObjetoFisico,
+  repositorioUri?: string
+) {
   const listaObj = ref([] as ObjetoFisico[]);
+  const uri = repositorioUri || authStore.get.repositorio_conectado?.uri;
 
-  if (
-    !authStore.get.repositorio_conectado ||
-    authStore.get.repositorio_conectado.uri == '' ||
-    authStore.get.repositorio_conectado.uri == undefined
-  ) {
-    Notify.create({
-      type: 'negative',
-      message: 'selecione um repositório',
-      timeout: 5000,
-    });
+  if (!uri) {
+    if (!repositorioUri) {
+      Notify.create({
+        type: 'negative',
+        message: 'selecione um repositório',
+        timeout: 5000,
+      });
+    }
     return [];
   }
   try {
     const response = await axios.post(apiConfig.endpoints.fisico.list, {
       keyword: obj.descricao,
       type: 'fisico',
-      repository: authStore.get.repositorio_conectado.uri,
+      repository: uri,
     });
 
     listaObj.value = response.data.results.bindings.map((item: any) => ({
@@ -93,7 +98,7 @@ export async function pesquisarObjetosFisicos(obj: ObjetoFisico) {
       ),
       descricao: item.descricao.value,
       tipoFisico: dividirLista(item.tipos?.value),
-      repositorio: authStore.get.repositorio_conectado.uri,
+      repositorio: uri,
       tipoFisicoAbreviado: dividirLista(item.tipos?.value).map(
         (tipo: string) => textoAposUltimoChar(tipo, '#')
       ),
