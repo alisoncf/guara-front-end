@@ -17,7 +17,7 @@ server {
     # backend (não precisa, e não deve, ser público) e é substituído aqui
     # em tempo de execução (ver docker-compose.yml e a imagem oficial do
     # Nginx, que processa arquivos *.template com envsubst antes de subir).
-    location /api/ {
+    location ^~ /api/ {
         proxy_pass ${BACKEND_URL}/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
