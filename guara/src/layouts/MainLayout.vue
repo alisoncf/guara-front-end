@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import EssentialLink, {
   EssentialLinkProps,
 } from 'components/EssentialLink.vue';
@@ -10,7 +11,12 @@ defineOptions({
   name: 'MainLayout',
 });
 
+const router = useRouter();
 const authStore = useAuthStore();
+
+function alternarAcessoAdmin() {
+  router.push(authStore.get.user ? '/logout' : '/login');
+}
 
 const linksList: EssentialLinkProps[] = [
   {
@@ -95,6 +101,21 @@ function toggleLeftDrawer() {
           </div>
         </div>
 
+        <q-space />
+
+        <q-btn
+          flat
+          dense
+          round
+          :icon="authStore.get.user ? 'logout' : 'login'"
+          color="white"
+          :aria-label="authStore.get.user ? 'Sair' : 'Acesso administrativo'"
+          @click="alternarAcessoAdmin"
+        >
+          <q-tooltip>{{
+            authStore.get.user ? 'Sair' : 'Acesso administrativo'
+          }}</q-tooltip>
+        </q-btn>
       </q-toolbar>
       <q-tabs
         align="left"

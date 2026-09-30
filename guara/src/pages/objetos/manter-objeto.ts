@@ -56,6 +56,11 @@ export interface ObjetoFisico {
   lon: string;
   inicio: string;
   fim: string;
+  // "Outros dados": propriedades do guaraonto específicas do(s) tipo(s)
+  // físico(s) do objeto (ex.: ISBN pra Bibliotecário). Opcional porque
+  // objetos já salvos antes dessa feature não têm essa chave ainda - ver
+  // vocabularioFisico.ts pro schema de quais campos existem por tipo.
+  vocabulario?: Record<string, string>;
 }
 export function DimMapping(tipo: string): Dimensao {
   switch (tipo.toLocaleLowerCase()) {
@@ -132,6 +137,9 @@ export interface ObjetoDimensional {
   lon: string;
   inicio: string;
   fim: string;
+  // "Outros dados": propriedades do guaraonto específicas do tipo de
+  // dimensão do objeto (ex.: DataMorte pra Pessoa). Ver vocabularioDimensional.ts.
+  vocabulario?: Record<string, string>;
 }
 
 export function objetoDimensionalVazio(): ObjetoDimensional {
@@ -159,6 +167,7 @@ export function objetoDimensionalVazio(): ObjetoDimensional {
     lon: '',
     fim: '',
     inicio: '',
+    vocabulario: {},
   };
 }
 

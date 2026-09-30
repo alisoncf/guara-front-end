@@ -30,11 +30,21 @@ import {
   PesquisarSugestaoEvento,
 } from 'src/services/api';
 import { ClasseComum } from '../tipos';
+import ComponenteVocabulario from './ComponenteVocabulario.vue';
+import { camposParaTiposDimensao } from './vocabularioDimensional';
 const useObjetoStore = useDadosObjetoFisico();
 const listaDim = ListaTipoDim();
 const tipoSelecionado = ref(DimMapping('pessoa') as Dimensao);
 const abaObjeto = ref<'basicos' | 'outros'>('basicos');
 const objeto = ref<ObjetoDimensional>(objetoDimensionalVazio());
+
+// Objeto dimensional só tem um tipo por vez (diferente do físico, que
+// aceita vários) - camposParaTiposDimensao() já aceita lista, então só
+// embrulha num array de 1.
+const tiposVocabulario = computed(() => [tipoSelecionado.value.tipo]);
+const camposVocabulario = computed(() =>
+  camposParaTiposDimensao(tiposVocabulario.value)
+);
 
 // Coleção (classe da estrutura do acervo) à qual o objeto vai ser
 // relacionado ao salvar - evita ter que abrir "Adicionar Relação" à parte.
@@ -116,6 +126,9 @@ function carregar() {
     tipoSelecionado.value = DimMapping(
       textoAposUltimoChar(objeto.value.tipo, '#')
     );
+    // Objetos gravados antes desta feature (ou vindos do backend, que
+    // ainda não devolve essa chave) chegam sem "vocabulario".
+    objeto.value.vocabulario = { ...(objeto.value.vocabulario || {}) };
     carregarColecaoAtual(objeto.value.obj);
   } else {
     objeto.value = objetoDimensionalVazio();
@@ -469,9 +482,12 @@ onBeforeMount(() => {
               </div>
             </q-tab-panel>
             <q-tab-panel name="outros">
-              <div class="text-grey-7 q-pa-md text-center">
-                Nenhum dado de vocabulário disponível ainda.
-              </div>
+              <ComponenteVocabulario
+                v-model="objeto.vocabulario"
+                :campos="camposVocabulario"
+                :tipos="tiposVocabulario"
+                :somente-leitura="somenteLeituraObjeto"
+              />
             </q-tab-panel>
           </q-tab-panels>
         </q-card-section>

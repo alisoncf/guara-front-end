@@ -487,8 +487,10 @@ watch(aba, () => {
           <template v-slot:body-cell-#="{ rowIndex }">
             <q-td>{{ rowIndex + 1 }}</q-td>
           </template>
-          <template v-slot:body-cell-id="props">
-            <q-td style="font-size: 10px">{{ props.row.id }}</q-td>
+          <template v-slot:body-cell-titulo="props">
+            <q-td >{{ props.row.titulo }}
+              <div style="font-size: 8px; color: gray;">{{ props.row.id }}</div>
+            </q-td>
           </template>
           <template v-slot:body-cell-acoes="props">
             <q-td :props="props" @click.stop>
@@ -582,8 +584,10 @@ watch(aba, () => {
           <template v-slot:body-cell-#="{ rowIndex }">
             <q-td>{{ rowIndex + 1 }}</q-td>
           </template>
-          <template v-slot:body-cell-id="props">
-            <q-td style="font-size: 10px">{{ props.row.id }}</q-td>
+          <template v-slot:body-cell-titulo="props">
+            <q-td >{{ props.row.titulo }}
+              <div style="font-size: 8px; color: gray;">{{ props.row.id }}</div>
+            </q-td>
           </template>
           <template v-slot:body-cell-resumo="props">
             <q-td>{{ truncarTexto(props.row.resumo, 150) }}</q-td>

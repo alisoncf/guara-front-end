@@ -47,14 +47,24 @@ const destaques = [
   },
 ];
 
+// Repositório usado quando ninguém escolheu nada ainda (nem prévia, nem
+// conectado) - em vez de começar tudo em branco.
+const REPOSITORIO_PADRAO = 'festas_populares';
+
 async function listarRepo() {
   listaRepositorios.value = await listarRepositorios('');
   if (listaRepositorios.value.length > 0) {
-    repositorioPreview.value = listaRepositorios.value[0];
+    const padrao =
+      listaRepositorios.value.find((r) => r.nome === REPOSITORIO_PADRAO) ||
+      listaRepositorios.value[0];
+    repositorioPreview.value = padrao;
+    // Só entra sozinho se ninguém já estava conectado a algo (sessão
+    // anônima anterior ou repositório vindo de outra navegação) - não
+    // sobrescreve uma escolha que já existia.
+    if (!store.repositorio_conectado?.uri) {
+      entrarNoRepositorio(padrao);
+    }
   }
-}
-function goToLogin() {
-  router.push('/login');
 }
 function goToLogout() {
   router.push('/logout');
@@ -62,8 +72,9 @@ function goToLogout() {
 function irParaColecoes() {
   router.push('/abrir-colecoes');
 }
-// Conecta ao repositório sem mexer numa sessão já logada - usado tanto
-// pela seleção manual quanto pelo clique num nó da amostra do grafo.
+// Conecta ao repositório sem mexer numa sessão já logada - usado pela
+// seleção manual, pelo clique num nó da amostra do grafo e pelo padrão
+// automático de listarRepo().
 function entrarNoRepositorio(repo: Repositorio) {
   if (store.user) return;
   const auth = ref({} as Auth);
@@ -102,19 +113,6 @@ onBeforeMount(() => {
   <div class="guara-home">
     <!-- HERO -->
     <section class="hero">
-      <q-btn
-        :icon="store.user ? 'logout' : 'login'"
-        round
-        flat
-        color="white"
-        @click="store.user ? goToLogout() : goToLogin()"
-        class="hero-admin-btn"
-        size="md"
-        :aria-label="store.user ? 'Sair' : 'Acesso administrativo'"
-      >
-        <q-tooltip>{{ store.user ? 'Sair' : 'Acesso administrativo' }}</q-tooltip>
-      </q-btn>
-
       <div class="hero-content">
         <q-avatar size="140px" class="hero-logo">
           <img src="../assets/guara.png" alt="Guará" />
@@ -336,11 +334,6 @@ onBeforeMount(() => {
     radial-gradient(1px 1px at 10% 65%, rgba(255, 255, 255, 0.4), transparent);
   opacity: 0.8;
   pointer-events: none;
-}
-.hero-admin-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
 }
 .hero-content {
   position: relative;

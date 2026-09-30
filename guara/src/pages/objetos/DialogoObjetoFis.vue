@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onBeforeMount, watchEffect } from 'vue';
+import { computed, ref, onBeforeMount, watchEffect } from 'vue';
 import {
   atualizarObjetoFisico,
   gravarObjetoFisico,
@@ -16,6 +16,8 @@ import {
 import { organiza_arvore, encontrarClassePorLabel } from '../funcoes';
 import { ClasseComum, TreeNode } from '../tipos';
 import { useDadosObjetoFisico } from 'src/stores/objeto-fisico';
+import ComponenteVocabulario from './ComponenteVocabulario.vue';
+import { camposParaTipos } from './vocabularioFisico';
 
 import { Dialog } from 'quasar';
 
@@ -53,7 +55,8 @@ const objeto = ref<ObjetoFisico>({
   fim: '',
   inicio: '',
   lat: '',
-  lon: '',
+  lon: '',colecaoLista: [],colecaoListaAbreviada: [],
+  vocabulario: {},
 });
 
 function irParaMidias(obj: ObjetoFisico) {
@@ -124,6 +127,9 @@ async function PesquisarClasses() {
     arvoreClasses.value = organiza_arvore(listaClasses.value);
   } catch (error) {}
 }
+const camposVocabulario = computed(() =>
+  camposParaTipos(objeto.value.tipoFisicoAbreviado)
+);
 function carregar() {
   if (useObjetoStore.getObjeto.id) {
     objeto.value = { ...useObjetoStore.getObjeto };
@@ -132,6 +138,9 @@ function carregar() {
     objeto.value.tipoFisico = Array.isArray(objeto.value.tipoFisico)
       ? [...objeto.value.tipoFisico]
       : [];
+    // Objetos gravados antes desta feature (ou vindos do backend, que
+    // ainda não devolve essa chave) chegam sem "vocabulario".
+    objeto.value.vocabulario = { ...(objeto.value.vocabulario || {}) };
   }
 }
 onBeforeMount(() => {
@@ -234,9 +243,12 @@ onBeforeMount(() => {
                   />
                 </q-tab-panel>
                 <q-tab-panel name="outros">
-                  <div class="text-grey-7 q-pa-md text-center">
-                    Nenhum dado de vocabulário disponível ainda.
-                  </div>
+                  <ComponenteVocabulario
+                    v-model="objeto.vocabulario"
+                    :campos="camposVocabulario"
+                    :tipos="objeto.tipoFisicoAbreviado"
+                    :somente-leitura="somenteLeituraObjeto"
+                  />
                 </q-tab-panel>
               </q-tab-panels>
             </q-form>
